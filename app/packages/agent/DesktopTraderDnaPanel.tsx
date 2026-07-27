@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
+import { AgentMascotLottie, AGENT_MASCOT_SIZE } from "./AgentMascotLottie";
 import { FlameIcon } from "./FlameIcon";
 import { SuggestArrowIcon } from "./SuggestArrowIcon";
 
@@ -10,7 +11,6 @@ const ASSETS = {
   menu: "/trader-dna/menu.png",
   openInNew: "/trader-dna/open-in-new.png",
   close: "/trader-dna/close.png",
-  mascot: "/trader-dna/mascot.png",
   sparkle: "/trader-dna/sparkle.png",
   add: "/trader-dna/add.png",
   send: "/trader-dna/send.png",
@@ -146,7 +146,7 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
           position: "relative",
           flex: 1,
           minHeight: 0,
-          overflow: "hidden",
+          overflow: "visible",
         }}
       >
         <div
@@ -154,57 +154,59 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
             position: "absolute",
             left: 42,
             right: 42,
-            top: "33%",
+            top: "48%",
+            transform: "translateY(-50%)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 15,
+            gap: 0,
           }}
         >
-          <img
-            src={ASSETS.mascot}
-            alt=""
-            width={75}
-            height={70}
-            style={{ display: "block", width: 75, height: 70, objectFit: "contain" }}
-          />
-          <p
+          <AgentMascotLottie size={AGENT_MASCOT_SIZE} />
+          <div
             style={{
-              margin: 0,
-              fontSize: 14,
-              fontWeight: 500,
-              lineHeight: "17px",
-              color: COLORS.white60,
-              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
+              width: "100%",
+              marginTop: -24,
             }}
           >
-            Would you like to check out BTC or today&apos;s trending coins?
-          </p>
-        </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 14,
+                fontWeight: 500,
+                lineHeight: "17px",
+                color: COLORS.white60,
+                textAlign: "center",
+              }}
+            >
+              Would you like to check out BTC or today&apos;s trending coins?
+            </p>
 
-        <button
-          type="button"
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "53%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            padding: "8px 12px",
-            border: "none",
-            borderRadius: 12,
-            backgroundImage: GRADIENTS.connectBtn,
-            cursor: "pointer",
-            fontFamily: FONT,
-          }}
-        >
-          <img src={ASSETS.sparkle} alt="" width={18} height={18} style={{ display: "block", width: 18, height: 18 }} />
-          <span style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}>
-            Create Custom Signal
-          </span>
-        </button>
+          <button
+            type="button"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              padding: "8px 12px",
+              border: "none",
+              borderRadius: 12,
+              backgroundImage: GRADIENTS.connectBtn,
+              cursor: "pointer",
+              fontFamily: FONT,
+            }}
+          >
+            <img src={ASSETS.sparkle} alt="" width={18} height={18} style={{ display: "block", width: 18, height: 18 }} />
+            <span style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}>
+              Create Custom Signal
+            </span>
+          </button>
+          </div>
+        </div>
 
         <div
           style={{
@@ -255,7 +257,7 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
           style={{
             position: "absolute",
             left: 16,
-            bottom: 5,
+            bottom: 12,
             display: "flex",
             alignItems: "center",
             gap: 8,

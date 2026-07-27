@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
+import { AgentMascotLottie, AGENT_MASCOT_SIZE, AGENT_MASCOT_MINIMIZED, AGENT_MASCOT_MINIMIZED_FRAME } from "./AgentMascotLottie";
 import { FlameIcon } from "./FlameIcon";
 import { SuggestArrowIcon } from "./SuggestArrowIcon";
 
@@ -16,7 +17,6 @@ const ASSETS = {
   openInNew: "/trader-dna/mobile/open-in-new.png",
   minimize: "/trader-dna/mobile/minimize.png",
   maximize: "/trader-dna/mobile/maximize.png",
-  mascot: "/trader-dna/mobile/mascot.png",
   sparkle: "/trader-dna/mobile/sparkle.png",
   chevron: "/trader-dna/mobile/chevron.png",
   add: "/trader-dna/mobile/add.png",
@@ -100,7 +100,20 @@ function ChipRow({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        width: "100%",
+        overflowX: "auto",
+        overflowY: "visible",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none",
+        paddingBottom: 2,
+        boxSizing: "border-box",
+      }}
+    >
       {CHIPS.map((chip) => {
         const active = activeChip === chip.id;
         return (
@@ -119,6 +132,10 @@ function ChipRow({
               background: active ? COLORS.menuHover : "transparent",
               cursor: "pointer",
               fontFamily: FONT,
+              flexShrink: 0,
+              whiteSpace: "nowrap",
+              boxSizing: "border-box",
+              minHeight: 36,
             }}
           >
             <FlameIcon color={chip.color} />
@@ -441,36 +458,31 @@ export function AgentChatDialog({
 
       {/* Expanded body */}
       {!isMinimized && (
-        <div style={{ position: "relative", flex: 1, minHeight: 0, overflow: "hidden" }}>
+        <div style={{ position: "relative", flex: 1, minHeight: 0, overflow: "visible" }}>
           <div
             style={{
               position: "absolute",
               left: "50%",
-              top: "calc(50% - 20px)",
+              top: "50%",
               transform: "translate(-50%, -50%)",
               width: 291,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 21,
+              gap: 0,
             }}
           >
+            <AgentMascotLottie size={AGENT_MASCOT_SIZE} />
             <div
               style={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 15,
+                gap: 12,
                 width: "100%",
+                marginTop: -24,
               }}
             >
-              <img
-                src={ASSETS.mascot}
-                alt=""
-                width={75}
-                height={70}
-                style={{ display: "block", width: 75, height: 70, objectFit: "contain" }}
-              />
               <p
                 style={{
                   margin: 0,
@@ -483,35 +495,35 @@ export function AgentChatDialog({
               >
                 Would you like to check out BTC or today&apos;s trending coins?
               </p>
-            </div>
-            <button
-              type="button"
-              data-chat-hit="signal"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                padding: "8px 12px",
-                border: "none",
-                borderRadius: 12,
-                backgroundImage: GRADIENTS.connectBtn,
-                cursor: "pointer",
-                fontFamily: FONT,
-              }}
-            >
-              <img
-                src={ASSETS.sparkle}
-                alt=""
-                width={18}
-                height={18}
-                style={{ display: "block", width: 18, height: 18 }}
-              />
-              <span
-                style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}
+              <button
+                type="button"
+                data-chat-hit="signal"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: "8px 12px",
+                  border: "none",
+                  borderRadius: 12,
+                  backgroundImage: GRADIENTS.connectBtn,
+                  cursor: "pointer",
+                  fontFamily: FONT,
+                }}
               >
-                Create Custom Signal
-              </span>
-            </button>
+                <img
+                  src={ASSETS.sparkle}
+                  alt=""
+                  width={18}
+                  height={18}
+                  style={{ display: "block", width: 18, height: 18 }}
+                />
+                <span
+                  style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}
+                >
+                  Create Custom Signal
+                </span>
+              </button>
+            </div>
           </div>
 
           {activeChip === "trending" && (
@@ -527,7 +539,7 @@ export function AgentChatDialog({
             </div>
           )}
 
-          <div style={{ position: "absolute", left: 16, bottom: 5 }}>
+          <div style={{ position: "absolute", left: 16, right: 16, bottom: 12 }}>
             <ChipRow activeChip={activeChip} onSelect={setActiveChip} />
           </div>
         </div>
@@ -540,101 +552,112 @@ export function AgentChatDialog({
             position: "relative",
             flex: 1,
             minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
             overflow: "hidden",
           }}
         >
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "25px 19px 0",
-            }}
-          >
-            <img
-              src={ASSETS.mascot}
-              alt=""
-              width={40}
-              height={37}
-              style={{ display: "block", width: 40, height: 37, objectFit: "contain" }}
-            />
-            <p
-              style={{
-                margin: 0,
-                fontSize: 14,
-                fontWeight: 500,
-                lineHeight: "17px",
-                color: COLORS.white70,
-              }}
-            >
-              Hi! How can I help you today?
-            </p>
-          </div>
-
-          <button
-            type="button"
-            data-chat-hit="signal"
-            style={{
-              position: "absolute",
-              left: 16,
-              right: 16,
-              top: 133,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "8px 12px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: COLORS.menuHover,
-              cursor: "pointer",
-              fontFamily: FONT,
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              overflowX: "hidden",
+              padding: "12px 16px 8px",
               boxSizing: "border-box",
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <img
-                src={ASSETS.sparkle}
-                alt=""
-                width={18}
-                height={18}
-                style={{ display: "block", width: 18, height: 18 }}
-              />
-              <span
-                style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}
-              >
-                Create Custom Signal
-              </span>
-            </span>
-            <img
-              src={ASSETS.chevron}
-              alt=""
-              width={16}
-              height={16}
-              style={{ display: "block", width: 16, height: 16 }}
-            />
-          </button>
-
-          {activeChip === "trending" && (
             <div
               style={{
-                position: "absolute",
-                left: 16,
-                right: 16,
-                bottom: 48,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flexShrink: 0,
               }}
             >
-              <SuggestList />
+              <AgentMascotLottie
+                size={AGENT_MASCOT_MINIMIZED}
+                frameSize={AGENT_MASCOT_MINIMIZED_FRAME}
+              />
+              <p
+                style={{
+                margin: 0,
+                marginLeft: -8,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  lineHeight: "17px",
+                  color: COLORS.white70,
+                }}
+              >
+                Hi! How can I help you today?
+              </p>
             </div>
-          )}
 
-          <div style={{ position: "absolute", left: 16, bottom: 5 }}>
+            <button
+              type="button"
+              data-chat-hit="signal"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                marginTop: 12,
+                padding: "10px 12px",
+                minHeight: 40,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.2)",
+                background: COLORS.menuHover,
+                cursor: "pointer",
+                fontFamily: FONT,
+                boxSizing: "border-box",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <img
+                  src={ASSETS.sparkle}
+                  alt=""
+                  width={18}
+                  height={18}
+                  style={{ display: "block", width: 18, height: 18 }}
+                />
+                <span
+                  style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}
+                >
+                  Create Custom Signal
+                </span>
+              </span>
+              <img
+                src={ASSETS.chevron}
+                alt=""
+                width={16}
+                height={16}
+                style={{ display: "block", width: 16, height: 16 }}
+              />
+            </button>
+
+            {activeChip === "trending" && (
+              <div style={{ marginTop: 8, flexShrink: 0 }}>
+                <SuggestList />
+              </div>
+            )}
+          </div>
+
+          {/* Chips reserved outside scroll — never cropped by input */}
+          <div
+            style={{
+              flexShrink: 0,
+              padding: "8px 16px 12px",
+              boxSizing: "border-box",
+            }}
+          >
             <ChipRow activeChip={activeChip} onSelect={setActiveChip} />
           </div>
         </div>
       )}
 
       {/* Input */}
-      <div style={{ padding: "10px 16px 48px", flexShrink: 0 }}>
+      <div style={{ padding: "8px 16px 24px", flexShrink: 0 }}>
         <AskingBox />
       </div>
     </div>

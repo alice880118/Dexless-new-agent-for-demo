@@ -154,8 +154,7 @@ export function SiteFooter() {
               src={FOOTER_ASSETS.orderly}
               alt="Orderly"
               width={45}
-              height={14}
-              style={{ display: "block", width: 45, height: 14 }}
+              style={{ display: "block", width: 45, height: "auto" }}
             />
           </a>
         </div>
