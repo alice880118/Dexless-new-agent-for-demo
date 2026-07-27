@@ -16,10 +16,10 @@ const ITEMS: BottomNavItem[] = [
     iconActive: NAV_ASSETS.bnTradingActive,
   },
   {
-    id: "portfolio",
-    label: "Portfolio",
-    icon: NAV_ASSETS.bnPortfolio,
-    iconActive: NAV_ASSETS.bnPortfolioActive,
+    id: "markets",
+    label: "Markets",
+    icon: NAV_ASSETS.bnMarkets,
+    iconActive: NAV_ASSETS.bnMarketsActive,
   },
   {
     id: "ai",
@@ -28,16 +28,16 @@ const ITEMS: BottomNavItem[] = [
     iconActive: NAV_ASSETS.bnAiActive,
   },
   {
-    id: "markets",
-    label: "Markets",
-    icon: NAV_ASSETS.bnMarkets,
-    iconActive: NAV_ASSETS.bnMarketsActive,
-  },
-  {
     id: "referrals",
     label: "Referrals",
     icon: NAV_ASSETS.bnReferrals,
     iconActive: NAV_ASSETS.bnReferralsActive,
+  },
+  {
+    id: "portfolio",
+    label: "Portfolio",
+    icon: NAV_ASSETS.bnPortfolio,
+    iconActive: NAV_ASSETS.bnPortfolioActive,
   },
 ];
 

@@ -44,6 +44,6 @@ export const NAV_ASSETS = {
 
 /** Footer assets under /public/footer */
 export const FOOTER_ASSETS = {
-  twitter: "/footer/twitter.svg",
+  twitter: "/footer/twitter.png",
   orderly: "/footer/orderly.png",
 } as const;

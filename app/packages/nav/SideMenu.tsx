@@ -5,10 +5,12 @@ import {
   GRADIENTS,
   CLOSE_ICON_SIZE,
   DOCS_URL,
+  FOOTER_ASSETS,
   LOGO_HEIGHT,
   LOGO_WIDTH,
   NAV_ASSETS,
-} from "./tokens";
+  TWITTER_URL,
+} from "./design-system";
 import type { NavPageId } from "./navPages";
 import { isTradePage } from "./navPages";
 
@@ -113,7 +115,7 @@ function SideNavItem({
   airdrop,
 }: {
   label: string;
-  icon: string;
+  icon?: string;
   expandable?: boolean;
   expanded?: boolean;
   active?: boolean;
@@ -138,7 +140,9 @@ function SideNavItem({
       }}
     >
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <img src={icon} alt="" style={{ width: 20, height: 20, display: "block" }} />
+        {icon ? (
+          <img src={icon} alt="" style={{ width: 20, height: 20, display: "block" }} />
+        ) : null}
         <span
           style={{
             fontSize: 16,
@@ -199,7 +203,7 @@ export function SideMenu({
     display: "flex",
     flexDirection: "column",
     fontFamily: FONT,
-    overflowY: "auto",
+    overflow: "hidden",
   };
 
   return (
@@ -215,6 +219,9 @@ export function SideMenu({
         }}
       />
       <aside style={panelStyle}>
+        <style>{`
+          .side-menu-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        `}</style>
         <div
           style={{
             display: "flex",
@@ -272,7 +279,12 @@ export function SideMenu({
             gap: 12,
             padding: "0 12px 12px",
             flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
+          className="side-menu-scroll"
         >
           {walletConnected && (
             <div
@@ -420,23 +432,7 @@ export function SideMenu({
             })}
           </div>
 
-          <div
-            style={{
-              height: 1,
-              background: "rgba(255,255,255,0.05)",
-              width: "100%",
-            }}
-          />
-
-          <SideNavItem label="Dexless Support" icon={NAV_ASSETS.menuSupport} />
-
-          <div
-            style={{
-              height: 1,
-              background: "rgba(255,255,255,0.05)",
-              width: "100%",
-            }}
-          />
+          <SideNavItem label="Dexless Support" />
 
           <button
             type="button"
@@ -497,17 +493,38 @@ export function SideMenu({
         <div
           style={{
             padding: "12px 16px",
-            borderTop: "1px solid rgba(255,255,255,0.05)",
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
-            gap: 4,
+            justifyContent: "center",
+            gap: 12,
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: 12, color: COLORS.white50 }}>
+          <span style={{ fontSize: 12, color: COLORS.white50, whiteSpace: "nowrap" }}>
             How to trade on Dexless?
           </span>
+          <a
+            href={TWITTER_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="X"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 24,
+              height: 24,
+              flexShrink: 0,
+            }}
+          >
+            <img
+              src={FOOTER_ASSETS.twitter}
+              alt=""
+              width={24}
+              height={24}
+              style={{ display: "block", width: 24, height: 24, objectFit: "contain" }}
+            />
+          </a>
         </div>
       </aside>
     </>
