@@ -27,7 +27,7 @@ export function SiteFooter() {
         right: 0,
         bottom: 0,
         height: FOOTER_HEIGHT,
-        zIndex: 100,
+        zIndex: 200,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",

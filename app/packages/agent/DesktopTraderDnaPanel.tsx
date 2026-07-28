@@ -35,12 +35,25 @@ type DesktopTraderDnaPanelProps = {
 
 export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanelProps) {
   const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [entered, setEntered] = useState(false);
 
   useEffect(() => {
-    if (isOpen) setActiveChip(null);
+    if (isOpen) {
+      setActiveChip(null);
+      setVisible(true);
+      setEntered(false);
+      const id = window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setEntered(true));
+      });
+      return () => window.cancelAnimationFrame(id);
+    }
+    setEntered(false);
+    const t = window.setTimeout(() => setVisible(false), 220);
+    return () => window.clearTimeout(t);
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!visible) return null;
 
   const panelStyle: CSSProperties = {
     position: "fixed",
@@ -56,9 +69,14 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
     border: "1px solid #343538",
     borderRadius: 12,
     overflow: "hidden",
-    pointerEvents: "auto",
+    pointerEvents: isOpen ? "auto" : "none",
     fontFamily: FONT,
     boxSizing: "border-box",
+    opacity: entered ? 1 : 0,
+    transform: entered ? "translateY(0) scale(1)" : "translateY(14px) scale(0.96)",
+    transition:
+      "opacity 240ms ease-out, transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
+    willChange: "opacity, transform",
   };
 
   return (

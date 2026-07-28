@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="14" viewBox="0 0 48 14" fill="none">
+  <circle cx="7" cy="7" r="6" fill="rgba(255,255,255,0.85)"/>
+  <path d="M4.2 7.2c0-1.7 1.2-2.8 2.8-2.8 1 0 1.7.4 2.2 1.1l-1 .7c-.3-.4-.7-.6-1.2-.6-.8 0-1.4.7-1.4 1.6s.6 1.6 1.4 1.6c.5 0 .9-.2 1.2-.6l1 .7c-.5.7-1.2 1.1-2.2 1.1-1.6 0-2.8-1.1-2.8-2.8z" fill="#0b0d12"/>
+  <text x="16" y="10.5" fill="rgba(255,255,255,0.55)" font-family="Poppins, sans-serif" font-size="10" font-weight="500">privy</text>
+</svg>

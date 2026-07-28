@@ -12,7 +12,6 @@ import {
   TWITTER_URL,
 } from "./design-system";
 import type { NavPageId } from "./navPages";
-import { isTradePage } from "./navPages";
 
 type SideMenuProps = {
   open: boolean;
@@ -22,6 +21,8 @@ type SideMenuProps = {
   onNavigate?: (page: NavPageId) => void;
   onOpenAgent?: () => void;
   walletConnected?: boolean;
+  /** >=768: hover bg; <768: no hover / no selected bg */
+  enableHover?: boolean;
 };
 
 type NavItemConfig = {
@@ -64,10 +65,12 @@ const NAV_ITEMS: NavItemConfig[] = [
 function SubItem({
   label,
   active,
+  enableHover = false,
   onClick,
 }: {
   label: string;
   active?: boolean;
+  enableHover?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -82,12 +85,27 @@ function SubItem({
         padding: "6px 10px",
         border: "none",
         borderRadius: 4,
-        background: active ? COLORS.menuHover : "transparent",
+        background: enableHover && active ? COLORS.menuHover : "transparent",
         cursor: "pointer",
         fontFamily: FONT,
         textAlign: "left",
         boxSizing: "border-box",
       }}
+      onMouseEnter={
+        enableHover
+          ? (e) => {
+              e.currentTarget.style.background = COLORS.menuHover;
+            }
+          : undefined
+      }
+      onMouseLeave={
+        enableHover
+          ? (e) => {
+              e.currentTarget.style.background =
+                enableHover && active ? COLORS.menuHover : "transparent";
+            }
+          : undefined
+      }
     >
       <span
         style={{
@@ -111,6 +129,7 @@ function SideNavItem({
   expandable,
   expanded,
   active,
+  enableHover = false,
   onClick,
   airdrop,
 }: {
@@ -119,6 +138,7 @@ function SideNavItem({
   expandable?: boolean;
   expanded?: boolean;
   active?: boolean;
+  enableHover?: boolean;
   onClick?: () => void;
   airdrop?: boolean;
 }) {
@@ -134,10 +154,25 @@ function SideNavItem({
         padding: "6px 10px",
         border: "none",
         borderRadius: 4,
-        background: active ? COLORS.menuHover : "transparent",
+        background: enableHover && active ? COLORS.menuHover : "transparent",
         cursor: expandable || onClick ? "pointer" : "default",
         fontFamily: FONT,
       }}
+      onMouseEnter={
+        enableHover
+          ? (e) => {
+              e.currentTarget.style.background = COLORS.menuHover;
+            }
+          : undefined
+      }
+      onMouseLeave={
+        enableHover
+          ? (e) => {
+              e.currentTarget.style.background =
+                enableHover && active ? COLORS.menuHover : "transparent";
+            }
+          : undefined
+      }
     >
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
         {icon ? (
@@ -180,6 +215,7 @@ export function SideMenu({
   onNavigate,
   onOpenAgent,
   walletConnected = false,
+  enableHover = false,
 }: SideMenuProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     trade: false,
@@ -385,8 +421,9 @@ export function SideMenu({
             {NAV_ITEMS.map((item) => {
               const isOpen = !!expanded[item.id];
               const parentActive =
-                (item.id === "trade" && isTradePage(activePage)) ||
-                (!!item.page && activePage === item.page);
+                item.id === "trade"
+                  ? false
+                  : (!!item.page && activePage === item.page);
               return (
                 <div key={item.id} style={{ width: "100%" }}>
                   <SideNavItem
@@ -395,6 +432,7 @@ export function SideMenu({
                     expandable={item.expandable}
                     expanded={isOpen}
                     active={parentActive}
+                    enableHover={enableHover}
                     airdrop={item.airdrop}
                     onClick={() => {
                       if (item.expandable) {
@@ -405,12 +443,24 @@ export function SideMenu({
                     }}
                   />
                   {item.expandable && isOpen && item.children && (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 4,
+                        marginTop: 4,
+                      }}
+                    >
                       {item.children.map((child) => (
                         <SubItem
                           key={child.id}
                           label={child.label}
-                          active={!!child.page && activePage === child.page}
+                          active={
+                            item.id === "trade"
+                              ? false
+                              : !!child.page && activePage === child.page
+                          }
+                          enableHover={enableHover}
                           onClick={() => {
                             if (child.external) {
                               window.open(
@@ -432,7 +482,41 @@ export function SideMenu({
             })}
           </div>
 
-          <SideNavItem label="Dexless Support" />
+          <div
+            style={{
+              width: "100%",
+              height: 1,
+              background: COLORS.white10,
+              flexShrink: 0,
+            }}
+          />
+
+          <button
+            type="button"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              padding: "6px 10px",
+              border: "none",
+              borderRadius: 4,
+              background: "transparent",
+              cursor: "pointer",
+              fontFamily: FONT,
+              textAlign: "left",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: "20px",
+                color: COLORS.white70,
+              }}
+            >
+              Dexless Support
+            </span>
+          </button>
 
           <button
             type="button"
@@ -449,30 +533,25 @@ export function SideMenu({
               fontFamily: FONT,
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <img
-                src={NAV_ASSETS.language}
-                alt=""
-                style={{ width: 20, height: 20, display: "block" }}
-              />
-              <span
-                style={{
-                  fontSize: 16,
-                  fontWeight: 500,
-                  lineHeight: "26px",
-                  color: "rgba(255,255,255,0.9)",
-                }}
-              >
-                Language
-              </span>
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: "20px",
+                color: COLORS.white70,
+              }}
+            >
+              Language
             </span>
             <span
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 4,
-                fontSize: 16,
-                color: COLORS.white50,
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: "20px",
+                color: COLORS.white70,
               }}
             >
               English

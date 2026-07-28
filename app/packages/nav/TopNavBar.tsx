@@ -40,6 +40,8 @@ type TopNavBarProps = {
   activePage?: NavPageId | null;
   onNavigate?: (page: NavPageId) => void;
   onOpenAgent?: () => void;
+  /** Open onboarding instead of connecting immediately */
+  onConnectRequest?: () => void;
 };
 
 function IconBox({
@@ -160,13 +162,7 @@ function NavLink({
   );
 }
 
-function AirdropButton({
-  active = false,
-  onClick,
-}: {
-  active?: boolean;
-  onClick?: () => void;
-}) {
+function AirdropButton({ onClick }: { onClick?: () => void }) {
   return (
     <div
       style={{
@@ -199,9 +195,9 @@ function AirdropButton({
         <span
           style={{
             fontSize: 14,
-            fontWeight: active ? 600 : 500,
+            fontWeight: 500,
             lineHeight: "20px",
-            color: active ? COLORS.brandGreen : "#ffffff",
+            color: "#ffffff",
             whiteSpace: "nowrap",
           }}
         >
@@ -263,6 +259,7 @@ export function TopNavBar({
   activePage = null,
   onNavigate,
   onOpenAgent,
+  onConnectRequest,
 }: TopNavBarProps) {
   const [internalWallet, setInternalWallet] = useState<WalletState>("unconnected");
   const walletState = controlledWallet ?? internalWallet;
@@ -309,7 +306,17 @@ export function TopNavBar({
   };
 
   const handleConnect = () => {
-    setWalletState(isConnected ? "unconnected" : "connected");
+    if (isConnected) {
+      setWalletState("unconnected");
+      setOpenMenu(null);
+      return;
+    }
+    if (onConnectRequest) {
+      onConnectRequest();
+      setOpenMenu(null);
+      return;
+    }
+    setWalletState("connected");
     setOpenMenu(null);
   };
 
@@ -650,10 +657,7 @@ export function TopNavBar({
             </div>
 
             <Divider height={16} />
-            <AirdropButton
-              active={activePage === "airdrop"}
-              onClick={() => goTo("airdrop")}
-            />
+            <AirdropButton onClick={() => goTo("airdrop")} />
           </div>
         )}
 
@@ -780,6 +784,7 @@ export function TopNavBar({
           onNavigate={goTo}
           onOpenAgent={onOpenAgent}
           walletConnected={isConnected}
+          enableHover={breakpoint !== "390"}
         />
       )}
     </>

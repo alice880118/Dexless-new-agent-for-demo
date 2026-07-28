@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AgentChatDialog } from "./AgentChatDialog";
 import { DesktopTraderDnaPanel } from "./DesktopTraderDnaPanel";
 import {
@@ -24,9 +24,9 @@ type AgentOverlayProps = {
   walletConnected?: boolean;
 };
 
-/** Agent phone (draggable) only below 768; ≥768 uses fixed Trader DNA badge */
-function isAgentPhone(bp: Breakpoint): boolean {
-  return bp === "390";
+/** Floating agent icon when bottom nav is shown (768 / 390); desktop uses Trader DNA badge */
+function useFloatingAgentEntry(bp: Breakpoint): boolean {
+  return bp === "768" || bp === "390";
 }
 
 export function AgentOverlay({
@@ -36,9 +36,10 @@ export function AgentOverlay({
   onOpenChange,
   walletConnected = false,
 }: AgentOverlayProps) {
-  const phoneMode = isAgentPhone(breakpoint);
+  const phoneMode = useFloatingAgentEntry(breakpoint);
   const bottomInset = showBottomNav ? BOTTOM_NAV_HEIGHT : 0;
   const isControlled = controlledOpen !== undefined;
+  const prevPhoneModeRef = useRef(phoneMode);
 
   const [viewport, setViewport] = useState(() => ({
     width: typeof window === "undefined" ? 1920 : window.innerWidth,
@@ -68,7 +69,10 @@ export function AgentOverlay({
     }
   }, [walletConnected, setChatOpen]);
 
+  // Close chat only when floating/badge mode actually switches (not on first mount)
   useEffect(() => {
+    if (prevPhoneModeRef.current === phoneMode) return;
+    prevPhoneModeRef.current = phoneMode;
     setChatOpen(false);
     setIsIconActive(false);
   }, [phoneMode, setChatOpen]);

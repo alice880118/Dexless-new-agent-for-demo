@@ -66,7 +66,7 @@ export function BottomNavBar({
         left: 0,
         right: 0,
         bottom: 0,
-        zIndex: 100,
+        zIndex: 200,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",

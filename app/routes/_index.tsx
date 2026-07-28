@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AgentOverlay } from "../packages/agent";
+import { OnboardingDialog } from "../packages/onboarding";
 import {
   BottomNavBar,
   TopNavBar,
@@ -20,7 +21,9 @@ export function IndexPage() {
   const [activePage, setActivePage] = useState<NavPageId | null>(null);
   const [agentOpen, setAgentOpen] = useState(false);
   const [walletState, setWalletState] = useState<WalletState>("unconnected");
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
   const walletConnected = walletState === "connected";
+  const bottomInset = showBottom ? 53 : showFooter ? FOOTER_HEIGHT : 0;
 
   return (
     <div
@@ -40,6 +43,7 @@ export function IndexPage() {
           setWalletState(next);
           if (next !== "connected") setAgentOpen(false);
         }}
+        onConnectRequest={() => setOnboardingOpen(true)}
         onOpenAgent={() => {
           if (walletConnected) setAgentOpen(true);
         }}
@@ -85,8 +89,8 @@ export function IndexPage() {
                 lineHeight: 1.5,
               }}
             >
-              Default: unconnected. Click Connect wallet to connect. On desktop,
-              open Trade / More menus. Bottom nav shows at 768 / 390.
+              Default: unconnected. Click Connect wallet to open onboarding.
+              On desktop, open Trade / More menus. Bottom nav shows at 768 / 390.
             </p>
           </>
         )}
@@ -121,6 +125,23 @@ export function IndexPage() {
       )}
 
       {showFooter && <SiteFooter />}
+
+      <OnboardingDialog
+        open={onboardingOpen}
+        onClose={() => setOnboardingOpen(false)}
+        topInset={48}
+        bottomInset={bottomInset}
+        onConnectWallet={() => {
+          setWalletState("connected");
+          setOnboardingOpen(false);
+        }}
+        onComplete={(options) => {
+          setWalletState("connected");
+          if (options?.openAgent) {
+            window.setTimeout(() => setAgentOpen(true), 0);
+          }
+        }}
+      />
 
       <AgentOverlay
         breakpoint={breakpoint}
