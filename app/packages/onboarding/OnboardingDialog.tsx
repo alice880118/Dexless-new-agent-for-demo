@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
+import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
 import { AddFundsPanel } from "./AddFundsPanel";
 import { EmailAuthModal, type EmailAuthStep } from "./EmailAuthModal";
@@ -53,6 +54,7 @@ const overlayStyle: CSSProperties = {
   backdropFilter: "blur(8px)",
   WebkitBackdropFilter: "blur(8px)",
   fontFamily: FONT,
+  overflow: "auto",
 };
 
 export function OnboardingDialog({
@@ -63,6 +65,9 @@ export function OnboardingDialog({
   topInset = 48,
   bottomInset = 0,
 }: OnboardingDialogProps) {
+  const breakpoint = useBreakpoint();
+  /** <768 only — 390 breakpoint */
+  const isMobile = breakpoint === "390";
   const [step, setStep] = useState<FlowStep>("sign-in");
   const [email, setEmail] = useState("");
   const [setupPhase, setSetupPhase] = useState<1 | 2>(1);
@@ -138,7 +143,256 @@ export function OnboardingDialog({
 
   let panel = null;
   if (step === "sign-in") {
-    panel = (
+    const authActions = (
+      <>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            width: "100%",
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontSize: isMobile ? 18 : 20,
+              fontWeight: 600,
+              lineHeight: "20px",
+              color: "#ffffff",
+            }}
+          >
+            Sign In
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontSize: 14,
+              fontWeight: 500,
+              lineHeight: "20px",
+              color: COLORS.white60,
+            }}
+          >
+            Choose one to continue. You can link both methods later.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+            width: "100%",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setStep("wallet-connect")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: 44,
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: 999,
+              cursor: "pointer",
+              backgroundImage: GRADIENTS.connectBtn,
+              fontFamily: FONT,
+              boxSizing: "border-box",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: "18px",
+                color: "#ffffff",
+              }}
+            >
+              Connect Wallet
+            </span>
+          </button>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              height: isMobile ? 36 : 40,
+              width: "100%",
+            }}
+          >
+            <span style={orLineStyle} />
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: "18px",
+                color: COLORS.white50,
+                flexShrink: 0,
+              }}
+            >
+              Or
+            </span>
+            <span style={orLineStyle} />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setStep("email")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: 44,
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: 999,
+              cursor: "pointer",
+              background: "rgba(255,255,255,0.8)",
+              fontFamily: FONT,
+              boxSizing: "border-box",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                lineHeight: "18px",
+                color: "#000000",
+              }}
+            >
+              Continue with Email
+            </span>
+          </button>
+        </div>
+
+        <p
+          style={{
+            margin: 0,
+            width: "100%",
+            fontSize: isMobile ? 12 : 13,
+            fontWeight: 500,
+            lineHeight: isMobile ? "16px" : "18px",
+            color: COLORS.white40,
+          }}
+        >
+          By continuing, you agree to the Terms of Service and Risk Disclosure.
+        </p>
+      </>
+    );
+
+    if (isMobile) {
+      panel = (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            maxWidth: 360,
+            maxHeight: "100%",
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "#08080c",
+            boxSizing: "border-box",
+            border: "1px solid #424242",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            style={{
+              position: "relative",
+              flexShrink: 0,
+              height: 168,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              padding: "20px 20px 16px",
+              boxSizing: "border-box",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={ONBOARDING_ASSETS.info}
+              alt=""
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                pointerEvents: "none",
+              }}
+            />
+            <img
+              src={ONBOARDING_ASSETS.logo}
+              alt="DEXLESS"
+              style={{
+                position: "relative",
+                zIndex: 1,
+                display: "block",
+                width: LOGO_WIDTH,
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+            <div
+              style={{
+                position: "relative",
+                zIndex: 1,
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                width: "100%",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 18,
+                  fontWeight: 600,
+                  lineHeight: "22px",
+                  color: "rgba(255,255,255,0.8)",
+                }}
+              >
+                Trade Smarter with Dexless AI
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  lineHeight: "18px",
+                  color: "rgba(255,255,255,0.47)",
+                }}
+              >
+                Understands your trading behavior
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              flex: "1 1 auto",
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              padding: "20px 20px 16px",
+              boxSizing: "border-box",
+              background: "#08080c",
+              overflowY: "auto",
+            }}
+          >
+            {authActions}
+          </div>
+        </div>
+      );
+    } else {
+      panel = (
         <div
           style={{
             display: "flex",
@@ -242,147 +496,11 @@ export function OnboardingDialog({
               background: "#08080c",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-                width: "100%",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 20,
-                  fontWeight: 600,
-                  lineHeight: "20px",
-                  color: "#ffffff",
-                }}
-              >
-                Sign In
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  lineHeight: "20px",
-                  color: COLORS.white60,
-                }}
-              >
-                Choose one to continue. You can link both methods later.
-              </p>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-                width: "100%",
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => setStep("wallet-connect")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "100%",
-                  height: 44,
-                  padding: "6px 12px",
-                  border: "none",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  backgroundImage: GRADIENTS.connectBtn,
-                  fontFamily: FONT,
-                  boxSizing: "border-box",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    lineHeight: "18px",
-                    color: "#ffffff",
-                  }}
-                >
-                  Connect Wallet
-                </span>
-              </button>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 7,
-                  height: 40,
-                  width: "100%",
-                }}
-              >
-                <span style={orLineStyle} />
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    lineHeight: "18px",
-                    color: COLORS.white50,
-                    flexShrink: 0,
-                  }}
-                >
-                  Or
-                </span>
-                <span style={orLineStyle} />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setStep("email")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "100%",
-                  height: 44,
-                  padding: "6px 12px",
-                  border: "none",
-                  borderRadius: 999,
-                  cursor: "pointer",
-                  background: "rgba(255,255,255,0.8)",
-                  fontFamily: FONT,
-                  boxSizing: "border-box",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    lineHeight: "18px",
-                    color: "#000000",
-                  }}
-                >
-                  Continue with Email
-                </span>
-              </button>
-            </div>
-
-            <p
-              style={{
-                margin: 0,
-                width: "100%",
-                fontSize: 13,
-                fontWeight: 500,
-                lineHeight: "18px",
-                color: COLORS.white40,
-              }}
-            >
-              By continuing, you agree to the Terms of Service and Risk
-              Disclosure.
-            </p>
+            {authActions}
           </div>
         </div>
-    );
+      );
+    }
   } else if (step === "email" || step === "code") {
     panel = (
       <EmailAuthModal
@@ -470,7 +588,20 @@ export function OnboardingDialog({
           height: 0;
         }
       `}</style>
-      <FadePanel panelKey={panelKey}>{panel}</FadePanel>
+      <FadePanel
+        panelKey={panelKey}
+        style={{
+          width: "100%",
+          maxWidth: step === "sign-in" && isMobile ? 360 : undefined,
+          maxHeight: "100%",
+          minHeight: 0,
+          display: "flex",
+          justifyContent: "center",
+          boxSizing: "border-box",
+        }}
+      >
+        {panel}
+      </FadePanel>
     </div>
   );
 }
