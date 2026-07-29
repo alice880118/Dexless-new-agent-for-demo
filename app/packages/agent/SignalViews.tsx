@@ -604,8 +604,11 @@ export function SignalListView({
           display: "flex",
           flexDirection: "column",
           gap: 8,
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
         }}
         className="signal-scroll"
+        data-agent-scroll
       >
         {SIGNAL_CARDS.map((card) => (
           <SignalCard
@@ -703,12 +706,15 @@ export function SignalDetailView({
           padding: "12px 13px 0",
           boxSizing: "border-box",
           scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
           WebkitMaskImage:
             "linear-gradient(180deg, #000 0%, #000 calc(100% - 36px), transparent 100%)",
           maskImage:
             "linear-gradient(180deg, #000 0%, #000 calc(100% - 36px), transparent 100%)",
         }}
         className="signal-scroll"
+        data-agent-scroll
       >
         <div
           style={{

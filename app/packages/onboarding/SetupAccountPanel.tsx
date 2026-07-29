@@ -96,13 +96,13 @@ export function SetupAccountPanel({
       <img
         src="/onboarding/arrow-down.svg"
         alt=""
-        width={24}
-        height={24}
+        width={14}
+        height={14}
         style={{
           display: "block",
           flexShrink: 0,
-          width: 24,
-          height: 24,
+          width: 14,
+          height: 14,
           objectFit: "contain",
           transform: "rotate(90deg)",
         }}
@@ -198,13 +198,13 @@ export function SetupAccountPanel({
       <img
         src={ONBOARDING_ASSETS.arrowRight}
         alt=""
-        width={24}
-        height={24}
+        width={14}
+        height={14}
         style={{
           display: "block",
           flexShrink: 0,
-          width: 24,
-          height: 24,
+          width: 14,
+          height: 14,
           objectFit: "contain",
           alignSelf: "center",
         }}

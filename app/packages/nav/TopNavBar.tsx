@@ -569,13 +569,19 @@ export function TopNavBar({
           )}
         </div>
 
-        {/* Center: Desktop tabs */}
+        {/* Center: Desktop tabs — 60px from logo; item gap 18 (16+2) */}
         {desktop && (
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: 18,
+              marginLeft: 60,
+              position: "relative",
+              zIndex: 1,
+              flex: 1,
+              minWidth: 0,
+              justifyContent: "flex-start",
             }}
           >
             <button

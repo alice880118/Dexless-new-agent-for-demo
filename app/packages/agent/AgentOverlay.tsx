@@ -154,6 +154,28 @@ export function AgentOverlay({
         pointerEvents: "none",
       }}
     >
+      {isChatOpen ? (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 150,
+            pointerEvents: "auto",
+            touchAction: "none",
+            overscrollBehavior: "none",
+            background: "transparent",
+          }}
+          onTouchMove={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+          onWheel={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        />
+      ) : null}
       <div
         style={{
           position: "relative",

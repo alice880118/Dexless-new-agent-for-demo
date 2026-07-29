@@ -555,13 +555,19 @@ export function EmailAuthModal({
               ref={(el) => {
                 inputRefs.current[i] = el;
               }}
+              className="otp-digit-input"
               inputMode="numeric"
+              autoComplete="one-time-code"
               maxLength={1}
               value={d}
               disabled={isSuccess || codeStatus === "verifying"}
               onChange={(e) => onDigitChange(i, e.target.value)}
               onKeyDown={(e) => onDigitKeyDown(i, e)}
               onPaste={onDigitPaste}
+              onFocus={(e) => {
+                // Avoid iOS scroll-into-view jumping the modal
+                e.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest" });
+              }}
               style={{
                 width: 40,
                 height: 48,
@@ -575,7 +581,7 @@ export function EmailAuthModal({
                   ? "rgba(219,253,92,0.12)"
                   : "rgba(255,255,255,0.04)",
                 color: "#ffffff",
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: 600,
                 textAlign: "center",
                 fontFamily: FONT,

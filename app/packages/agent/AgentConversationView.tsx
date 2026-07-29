@@ -1038,8 +1038,11 @@ export function AgentConversationView({
         gap: 8,
         fontFamily: FONT,
         scrollbarWidth: "none",
+        touchAction: "pan-y",
+        overscrollBehavior: "contain",
       }}
       className="signal-scroll"
+      data-agent-scroll
     >
       <style>{`
         @keyframes agentSpinCw {

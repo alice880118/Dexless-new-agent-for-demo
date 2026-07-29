@@ -101,21 +101,6 @@ const pageStyleMobile: CSSProperties = {
   overscrollBehavior: "contain",
 };
 
-const modalOverlayStyle: CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 400,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 16,
-  boxSizing: "border-box",
-  background: "rgba(0,0,0,0.55)",
-  backdropFilter: "blur(6px)",
-  WebkitBackdropFilter: "blur(6px)",
-  fontFamily: FONT,
-};
-
 export function OnboardingDialog({
   open,
   onClose,
@@ -174,23 +159,41 @@ export function OnboardingDialog({
 
   useEffect(() => {
     if (!open || !isMobile) return;
+    // When email/code modal is open, skip page keyboard padding —
+    // the modal is positioned with visualViewport instead (avoids jump).
+    if (
+      step === "email" ||
+      step === "code" ||
+      step === "wallet-connect" ||
+      step === "sign" ||
+      step === "enable-trading" ||
+      step === "trader-dna-live"
+    ) {
+      setKeyboardOffset(0);
+      return;
+    }
     const vv = window.visualViewport;
     if (!vv) return;
+    let raf = 0;
     const update = () => {
-      const covered = Math.max(
-        0,
-        window.innerHeight - vv.height - vv.offsetTop,
-      );
-      setKeyboardOffset(covered > 80 ? covered : 0);
+      window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(() => {
+        const covered = Math.max(
+          0,
+          window.innerHeight - vv.height - vv.offsetTop,
+        );
+        setKeyboardOffset(covered > 80 ? covered : 0);
+      });
     };
     update();
     vv.addEventListener("resize", update);
     vv.addEventListener("scroll", update);
     return () => {
+      window.cancelAnimationFrame(raf);
       vv.removeEventListener("resize", update);
       vv.removeEventListener("scroll", update);
     };
-  }, [open, isMobile]);
+  }, [open, isMobile, step]);
 
   const persistSkipSetupNext = (value: boolean) => {
     setSkipSetupNext(value);
@@ -200,35 +203,66 @@ export function OnboardingDialog({
     if (!open) return;
     const html = document.documentElement;
     const body = document.body;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyOverflow = body.style.overflow;
+    const scrollY = window.scrollY;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+    };
+
     html.style.overflow = "hidden";
     body.style.overflow = "hidden";
-
-    const keepViewport = () => {
-      window.scrollTo(0, 0);
-    };
-    const onFocusIn = (e: FocusEvent) => {
-      const el = e.target as HTMLElement | null;
-      if (!el) return;
-      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
-        window.setTimeout(keepViewport, 0);
-        window.setTimeout(keepViewport, 100);
-        window.setTimeout(keepViewport, 300);
-      }
-    };
-
-    window.addEventListener("scroll", keepViewport, { passive: true });
-    document.addEventListener("focusin", onFocusIn);
-    keepViewport();
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
 
     return () => {
-      html.style.overflow = prevHtmlOverflow;
-      body.style.overflow = prevBodyOverflow;
-      window.removeEventListener("scroll", keepViewport);
-      document.removeEventListener("focusin", onFocusIn);
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.width = prev.bodyWidth;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      window.scrollTo(0, scrollY);
     };
   }, [open]);
+
+  /** Pin mobile modal to visualViewport so keyboard open/OTP focus doesn't bounce the sheet */
+  const [modalViewport, setModalViewport] = useState(() => ({
+    top: 0,
+    height: typeof window === "undefined" ? 800 : window.innerHeight,
+  }));
+
+  useEffect(() => {
+    if (!open || !isMobile || !isModalFlowStep(step)) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    let raf = 0;
+    const update = () => {
+      window.cancelAnimationFrame(raf);
+      raf = window.requestAnimationFrame(() => {
+        setModalViewport({
+          top: vv.offsetTop,
+          height: vv.height,
+        });
+      });
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [open, isMobile, step]);
 
   if (!open) return null;
 
@@ -914,7 +948,10 @@ export function OnboardingDialog({
             font-size: 16px !important;
           }
           .onboarding-dialog input.referral-code-input {
-            font-size: 14px !important;
+            font-size: 16px !important;
+          }
+          .onboarding-dialog input.otp-digit-input {
+            font-size: 16px !important;
           }
         }
       `;
@@ -940,7 +977,26 @@ export function OnboardingDialog({
                     : "Log in or sign up"
         }
         className="onboarding-dialog"
-        style={modalOverlayStyle}
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          top: modalViewport.top,
+          height: modalViewport.height,
+          zIndex: 400,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+          boxSizing: "border-box",
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          fontFamily: FONT,
+          overflow: "hidden",
+          overscrollBehavior: "contain",
+          touchAction: "manipulation",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <style>{motionCss}</style>
@@ -950,6 +1006,8 @@ export function OnboardingDialog({
             maxWidth: 360,
             maxHeight: "100%",
             overflow: "auto",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {renderModalStep(step)}

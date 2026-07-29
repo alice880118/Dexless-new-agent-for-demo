@@ -345,8 +345,11 @@ export function MoreView({
           padding: "16px 16px 24px",
           boxSizing: "border-box",
           scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
         }}
         className="signal-scroll"
+        data-agent-scroll
         onClick={() => {
           setMenuId(null);
           setSwipeId(null);

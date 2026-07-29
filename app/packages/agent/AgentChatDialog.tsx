@@ -26,7 +26,7 @@ type PanelView = "home" | "signals" | "detail" | "more" | "rename" | "chat";
 type MoreTab = "history" | "drafts";
 
 const DRAG_CLOSE_THRESHOLD = 100;
-const DRAG_SCALE_RANGE = 280;
+const DRAG_DISMISS_RANGE = 280;
 const ANIMATION_MS = 320;
 /** Figma minimized sheet height (7452:90298) */
 const MINIMIZED_HEIGHT = 390;
@@ -84,11 +84,6 @@ type AgentChatDialogProps = {
   anchorY: number;
   onTradeNow?: (signal: SignalCardData) => void;
 };
-
-function getDragScale(dragY: number): number {
-  if (dragY <= 0) return 1;
-  return Math.max(0, 1 - dragY / DRAG_SCALE_RANGE);
-}
 
 function IconBtn({
   ariaLabel,
@@ -336,11 +331,61 @@ export function AgentChatDialog({
   const [moreTab, setMoreTab] = useState<MoreTab>("history");
   const { agentName, saveAgentName } = useAgentName();
   const pointerStartYRef = useRef(0);
+  const isDraggingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+    };
+
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+
+    const blockTouchScroll = (event: TouchEvent) => {
+      const target = event.target as HTMLElement | null;
+      // Keep vertical scroll only inside marked agent scroll regions
+      if (target?.closest?.("[data-agent-scroll]")) return;
+      event.preventDefault();
+    };
+
+    document.addEventListener("touchmove", blockTouchScroll, {
+      passive: false,
+    });
+
+    return () => {
+      document.removeEventListener("touchmove", blockTouchScroll);
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.width = prev.bodyWidth;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
       setDragY(0);
       setIsDragging(false);
+      isDraggingRef.current = false;
       setIsMinimized(false);
       setActiveChip(null);
       setPanelView("home");
@@ -408,8 +453,11 @@ export function AgentChatDialog({
   const handleDragPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (!isOpen) return;
+      event.preventDefault();
+      event.stopPropagation();
       event.currentTarget.setPointerCapture(event.pointerId);
       pointerStartYRef.current = event.clientY;
+      isDraggingRef.current = true;
       setIsDragging(true);
     },
     [isOpen],
@@ -417,24 +465,35 @@ export function AgentChatDialog({
 
   const handleDragPointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!isDragging) return;
+      if (!isDraggingRef.current) return;
+      event.preventDefault();
+      event.stopPropagation();
       setDragY(Math.max(0, event.clientY - pointerStartYRef.current));
     },
-    [isDragging],
+    [],
   );
 
   const finishDrag = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (!isDragging) return;
+      if (!isDraggingRef.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      isDraggingRef.current = false;
       setIsDragging(false);
-      event.currentTarget.releasePointerCapture(event.pointerId);
-      if (dragY >= DRAG_CLOSE_THRESHOLD) {
-        onClose();
-        return;
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {
+        // ignore if already released
       }
-      setDragY(0);
+      setDragY((current) => {
+        if (current >= DRAG_CLOSE_THRESHOLD) {
+          onClose();
+          return 0;
+        }
+        return 0;
+      });
     },
-    [dragY, isDragging, onClose],
+    [onClose],
   );
 
   const handleMinimize = useCallback(() => {
@@ -457,11 +516,17 @@ export function AgentChatDialog({
   const panelHeight = isMinimized
     ? Math.min(MINIMIZED_HEIGHT, availableHeight)
     : expandedHeight;
-  const dragScale = isOpen ? getDragScale(dragY) : 0;
-  const opacity = isOpen ? Math.min(1, dragScale + 0.08) : 0;
+  const openScale = isOpen ? 1 : 0;
+  const opacity = isOpen
+    ? Math.max(0.35, 1 - dragY / (DRAG_DISMISS_RANGE * 1.2))
+    : 0;
   const dialogTop = height - sheetBottom - panelHeight;
   const originX = Math.min(Math.max(anchorX, 0), width);
   const originY = Math.min(Math.max(anchorY - dialogTop, 0), panelHeight);
+  const sheetTransform =
+    dragY > 0
+      ? `translateY(${dragY}px)`
+      : `scale(${openScale})`;
 
   return (
     <div
@@ -481,7 +546,7 @@ export function AgentChatDialog({
           : "linear-gradient(180deg, #1b1b1b 0%, #131519 100%)",
         borderTopLeftRadius: 8,
         borderTopRightRadius: 8,
-        transform: `scale(${dragScale})`,
+        transform: sheetTransform,
         transformOrigin: `${originX}px ${originY}px`,
         opacity,
         transition: isDragging
@@ -489,12 +554,15 @@ export function AgentChatDialog({
           : `transform ${ANIMATION_MS}ms cubic-bezier(0.34, 1.2, 0.64, 1), opacity 220ms ease, height ${ANIMATION_MS}ms cubic-bezier(0.34, 1.2, 0.64, 1)`,
         pointerEvents: isOpen ? "auto" : "none",
         overflow: "hidden",
-        touchAction: "pan-y",
+        touchAction: "none",
+        overscrollBehavior: "none",
         cursor: "default",
         display: "flex",
         flexDirection: "column",
         fontFamily: FONT,
         boxSizing: "border-box",
+        WebkitUserSelect: "none",
+        userSelect: "none",
       }}
     >
       {/* Drag handle — only this area can drag-minimize */}
