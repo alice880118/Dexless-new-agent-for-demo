@@ -67,6 +67,7 @@ const modalShell: CSSProperties = {
   maxWidth: 360,
   background: "#0b0d12",
   borderRadius: 16,
+  border: "1px solid #424242",
   padding: "28px 24px 20px",
   boxSizing: "border-box",
   fontFamily: FONT,
@@ -433,7 +434,7 @@ export function EmailAuthModal({
                   outline: "none",
                   background: "transparent",
                   color: "#ffffff",
-                  fontSize: 14,
+                  fontSize: 16,
                   fontWeight: 500,
                   fontFamily: FONT,
                 }}

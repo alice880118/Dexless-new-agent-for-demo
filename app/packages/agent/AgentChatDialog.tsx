@@ -2,7 +2,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { AgentMascotLottie, AGENT_MASCOT_SIZE, AGENT_MASCOT_MINIMIZED, AGENT_MASCOT_MINIMIZED_FRAME } from "./AgentMascotLottie";
 import { FlameIcon } from "./FlameIcon";
+import { AnalysisChipIcon, CryptoChipIcon } from "./ChipIcons";
 import { SuggestArrowIcon } from "./SuggestArrowIcon";
+import {
+  SignalDetailView,
+  SignalListView,
+  SignalMotionStyles,
+  getSignalAskPayload,
+  SIGNAL_CARDS,
+  type SignalAskSnapshot,
+  type SignalCardData,
+} from "./SignalViews";
+import { MoreView, RenameView } from "./MoreViews";
+import { AgentConversationView } from "./AgentConversationView";
+import { AskingBox } from "./AskingBox";
+import type { FileAttachment } from "./file-attachment";
+import { useAgentName } from "./useAgentName";
+import { DEFAULT_AGENT_NAME } from "./agent-name";
+
+type PanelView = "home" | "signals" | "detail" | "more" | "rename" | "chat";
 
 const DRAG_CLOSE_THRESHOLD = 100;
 const DRAG_SCALE_RANGE = 280;
@@ -11,6 +29,8 @@ const ANIMATION_MS = 320;
 const MINIMIZED_HEIGHT = 390;
 /** Mobile expanded max height */
 const MAX_EXPANDED_HEIGHT = 758;
+/** Extra clearance below top nav so sheet does not collide with it */
+const TOP_EXTRA_CLEARANCE = 24;
 
 const ASSETS = {
   menu: "/trader-dna/mobile/menu.png",
@@ -24,9 +44,24 @@ const ASSETS = {
 } as const;
 
 const CHIPS = [
-  { id: "trending", label: "Trending", color: COLORS.brandGreen },
-  { id: "crypto", label: "Crypto", color: "#c9bdff" },
-  { id: "analysis", label: "Analysis", color: "rgba(255,255,255,0.8)" },
+  {
+    id: "trending",
+    label: "Trending",
+    color: COLORS.brandGreen,
+    Icon: FlameIcon,
+  },
+  {
+    id: "crypto",
+    label: "Crypto",
+    color: "#c9bdff",
+    Icon: CryptoChipIcon,
+  },
+  {
+    id: "analysis",
+    label: "Analysis",
+    color: "rgba(255,255,255,0.8)",
+    Icon: AnalysisChipIcon,
+  },
 ] as const;
 
 const SUGGESTS = [
@@ -40,8 +75,13 @@ type AgentChatDialogProps = {
   onClose: () => void;
   width: number;
   height: number;
+  /** Leave bottom nav uncovered */
+  bottomInset?: number;
+  /** Leave top nav + extra clearance uncovered */
+  topInset?: number;
   anchorX: number;
   anchorY: number;
+  onTradeNow?: (signal: SignalCardData) => void;
 };
 
 function getDragScale(dragY: number): number {
@@ -116,6 +156,7 @@ function ChipRow({
     >
       {CHIPS.map((chip) => {
         const active = activeChip === chip.id;
+        const Icon = chip.Icon;
         return (
           <button
             key={chip.id}
@@ -128,8 +169,8 @@ function ChipRow({
               gap: 2,
               padding: "8px 12px",
               borderRadius: 12,
-              border: active ? "1px solid #ffffff" : "1px solid rgba(255,255,255,0.2)",
-              background: active ? COLORS.menuHover : "transparent",
+              border: active ? "none" : "1px solid rgba(255,255,255,0.2)",
+              background: active ? "rgba(255,255,255,0.1)" : "transparent",
               cursor: "pointer",
               fontFamily: FONT,
               flexShrink: 0,
@@ -138,7 +179,7 @@ function ChipRow({
               minHeight: 36,
             }}
           >
-            <FlameIcon color={chip.color} />
+            <Icon color={chip.color} />
             <span
               style={{
                 fontSize: 12,
@@ -156,7 +197,11 @@ function ChipRow({
   );
 }
 
-function SuggestList() {
+function SuggestList({
+  onSelect,
+}: {
+  onSelect: (text: string) => void;
+}) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
       {SUGGESTS.map((text) => (
@@ -164,6 +209,7 @@ function SuggestList() {
           key={text}
           type="button"
           data-chat-hit={`suggest-${text}`}
+          onClick={() => onSelect(text)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -195,66 +241,63 @@ function SuggestList() {
   );
 }
 
-function AskingBox() {
+/** Bottom drawer with 3 suggest questions — slides up from below. */
+function SuggestDrawer({
+  open,
+  onSelect,
+  onClose,
+}: {
+  open: boolean;
+  onSelect: (text: string) => void;
+  onClose: () => void;
+}) {
+  if (!open) return null;
   return (
     <div
       style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: 11,
-        borderRadius: 999,
-        border: "1px solid rgba(255,255,255,0.2)",
-        boxSizing: "border-box",
+        position: "absolute",
+        inset: 0,
+        zIndex: 20,
+        pointerEvents: "auto",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-        <img
-          src={ASSETS.add}
-          alt=""
-          width={27}
-          height={27}
-          style={{ display: "block", width: 27, height: 27, flexShrink: 0 }}
-        />
-        <span
-          style={{
-            fontSize: 13,
-            fontWeight: 500,
-            lineHeight: "18px",
-            color: COLORS.white40,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          Tell me about your trading habits...
-        </span>
-      </div>
       <button
         type="button"
-        data-chat-hit="send"
-        aria-label="Send"
+        aria-label="Close suggestions"
+        data-chat-hit="suggest-drawer-backdrop"
+        onClick={onClose}
         style={{
-          width: 31,
-          height: 31,
+          position: "absolute",
+          inset: 0,
+          margin: 0,
           padding: 0,
           border: "none",
-          background: "transparent",
+          background: "rgba(0,0,0,0.35)",
           cursor: "pointer",
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          padding: "12px 16px 16px",
+          boxSizing: "border-box",
+          background: "linear-gradient(180deg, #2a2a2a 0%, #121419 100%)",
+          borderTopLeftRadius: 12,
+          borderTopRightRadius: 12,
+          borderTop: "1px solid rgba(255,255,255,0.1)",
+          animation: "chipDrawerIn 280ms cubic-bezier(0.22, 1, 0.36, 1) both",
         }}
       >
-        <img
-          src={ASSETS.send}
-          alt=""
-          width={31}
-          height={31}
-          style={{ display: "block", width: 31, height: 31 }}
+        <SuggestList
+          onSelect={(text) => {
+            onSelect(text);
+            onClose();
+          }}
         />
-      </button>
+      </div>
     </div>
   );
 }
@@ -264,13 +307,29 @@ export function AgentChatDialog({
   onClose,
   width,
   height,
+  bottomInset = 0,
+  topInset = 48,
   anchorX,
   anchorY,
+  onTradeNow,
 }: AgentChatDialogProps) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [panelView, setPanelView] = useState<PanelView>("home");
+  const [signalId, setSignalId] = useState("btc-1");
+  const [chatMessage, setChatMessage] = useState(
+    "I want to long BTC with 20U",
+  );
+  const [signalSnapshot, setSignalSnapshot] =
+    useState<SignalAskSnapshot | null>(null);
+  const [draft, setDraft] = useState("");
+  const [attachment, setAttachment] = useState<FileAttachment | null>(null);
+  const [chatAttachment, setChatAttachment] =
+    useState<FileAttachment | null>(null);
+  const [chatKey, setChatKey] = useState(0);
+  const { agentName, saveAgentName } = useAgentName();
   const pointerStartYRef = useRef(0);
 
   useEffect(() => {
@@ -279,8 +338,50 @@ export function AgentChatDialog({
       setIsDragging(false);
       setIsMinimized(false);
       setActiveChip(null);
+      setPanelView("home");
+      setSignalId("btc-1");
+      setChatMessage("I want to long BTC with 20U");
+      setSignalSnapshot(null);
+      setDraft("");
+      setAttachment(null);
+      setChatAttachment(null);
     }
   }, [isOpen]);
+
+  const openSignals = useCallback(() => {
+    setIsMinimized(false);
+    setPanelView("signals");
+  }, []);
+
+  const openMore = useCallback(() => {
+    setIsMinimized(false);
+    setPanelView("more");
+  }, []);
+
+  const startChat = useCallback(
+    (message?: string, snapshot: SignalAskSnapshot | null = null) => {
+      const next = (message ?? draft).trim();
+      if (!next && !attachment) return;
+      setChatMessage(next);
+      setSignalSnapshot(snapshot);
+      setChatAttachment(attachment);
+      setDraft("");
+      setAttachment(null);
+      setPanelView("chat");
+      setChatKey((k) => k + 1);
+    },
+    [draft, attachment],
+  );
+
+  const startNewChat = useCallback(() => {
+    setPanelView("home");
+    setChatMessage("I want to long BTC with 20U");
+    setSignalSnapshot(null);
+    setDraft("");
+    setAttachment(null);
+    setChatAttachment(null);
+    setActiveChip(null);
+  }, []);
 
   const handleDragPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -317,6 +418,8 @@ export function AgentChatDialog({
   const handleMinimize = useCallback(() => {
     setIsMinimized(true);
     setDragY(0);
+    setPanelView((prev) => (prev === "chat" ? "chat" : "home"));
+    setActiveChip(null);
   }, []);
 
   const handleExpand = useCallback(() => {
@@ -324,11 +427,15 @@ export function AgentChatDialog({
     setDragY(0);
   }, []);
 
-  const expandedHeight = Math.min(height, MAX_EXPANDED_HEIGHT);
-  const panelHeight = isMinimized ? MINIMIZED_HEIGHT : expandedHeight;
+  const topSafe = topInset + TOP_EXTRA_CLEARANCE;
+  const availableHeight = Math.max(280, height - topSafe - bottomInset);
+  const expandedHeight = Math.min(availableHeight, MAX_EXPANDED_HEIGHT);
+  const panelHeight = isMinimized
+    ? Math.min(MINIMIZED_HEIGHT, availableHeight)
+    : expandedHeight;
   const dragScale = isOpen ? getDragScale(dragY) : 0;
   const opacity = isOpen ? Math.min(1, dragScale + 0.08) : 0;
-  const dialogTop = height - panelHeight;
+  const dialogTop = height - bottomInset - panelHeight;
   const originX = Math.min(Math.max(anchorX, 0), width);
   const originY = Math.min(Math.max(anchorY - dialogTop, 0), panelHeight);
 
@@ -338,7 +445,13 @@ export function AgentChatDialog({
       role="dialog"
       aria-label="Trader DNA"
       onPointerDown={(event) => {
-        if ((event.target as HTMLElement).closest("[data-chat-hit]")) return;
+        if (
+          (event.target as HTMLElement).closest(
+            "button, a, input, textarea, [data-chat-hit]",
+          )
+        ) {
+          return;
+        }
         handleDragPointerDown(event);
       }}
       onPointerMove={handleDragPointerMove}
@@ -348,9 +461,9 @@ export function AgentChatDialog({
         position: "absolute",
         left: 0,
         right: 0,
-        bottom: 0,
+        bottom: bottomInset,
         height: panelHeight,
-        maxHeight: MAX_EXPANDED_HEIGHT,
+        maxHeight: availableHeight,
         zIndex: 200,
         background: isMinimized
           ? "linear-gradient(180deg, #313030 0%, #121419 100%)"
@@ -398,29 +511,71 @@ export function AgentChatDialog({
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: isMinimized ? "space-between" : "space-between",
+          justifyContent: "space-between",
+          columnGap: 8,
           padding: "8px 16px",
           borderBottom: "1px solid rgba(103,103,103,0.4)",
           flexShrink: 0,
         }}
       >
-        {isMinimized ? (
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 600,
-              lineHeight: "20px",
-              backgroundImage: GRADIENTS.aiText,
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
-          >
-            Trader DNA
-          </span>
-        ) : (
-          <>
-            <IconBtn ariaLabel="Menu" hitId="menu" src={ASSETS.menu} />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            minWidth: 0,
+            flex: isMinimized ? "0 1 auto" : 1,
+          }}
+        >
+          {!isMinimized &&
+            (panelView === "more" || panelView === "rename" ? (
+              <button
+                type="button"
+                data-chat-hit="back-more"
+                onClick={() =>
+                  setPanelView(panelView === "rename" ? "more" : "home")
+                }
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  padding: 0,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  fontFamily: FONT,
+                }}
+              >
+                <img
+                  src="/trader-dna/more/back-chevron.svg"
+                  alt=""
+                  width={18}
+                  height={18}
+                  style={{
+                    display: "block",
+                    transform: "rotate(-90deg) scaleY(-1)",
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    lineHeight: "20px",
+                    color: "rgba(255,255,255,0.8)",
+                  }}
+                >
+                  {panelView === "rename" ? "Back More" : "More"}
+                </span>
+              </button>
+            ) : (
+              <IconBtn
+                ariaLabel="Menu"
+                hitId="menu"
+                src={ASSETS.menu}
+                onClick={openMore}
+              />
+            ))}
+          {isMinimized && (
             <span
               style={{
                 fontSize: 14,
@@ -430,14 +585,51 @@ export function AgentChatDialog({
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",
+                whiteSpace: "nowrap",
               }}
             >
-              Trader DNA
+              {agentName}
             </span>
-          </>
+          )}
+        </div>
+        {!isMinimized && (
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              lineHeight: "20px",
+              backgroundImage: GRADIENTS.aiText,
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+              textAlign: "center",
+              whiteSpace: "nowrap",
+              visibility:
+                panelView === "more" || panelView === "rename"
+                  ? "hidden"
+                  : "visible",
+            }}
+          >
+            {agentName}
+          </span>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <IconBtn ariaLabel="Open in new" hitId="open-in-new" src={ASSETS.openInNew} />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 8,
+            minWidth: 0,
+            flex: isMinimized ? "0 0 auto" : 1,
+            marginLeft: isMinimized ? "auto" : 0,
+          }}
+        >
+          <IconBtn
+            ariaLabel="New chat"
+            hitId="open-in-new"
+            src={ASSETS.openInNew}
+            onClick={startNewChat}
+          />
           {isMinimized ? (
             <IconBtn
               ariaLabel="Expand"
@@ -456,96 +648,195 @@ export function AgentChatDialog({
         </div>
       </div>
 
-      {/* Expanded body */}
+      <SignalMotionStyles />
+
+      {/* Expanded body — flex stack like reference (mascot → CTA → suggests → chips) */}
       {!isMinimized && (
-        <div style={{ position: "relative", flex: 1, minHeight: 0, overflow: "visible" }}>
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 291,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 0,
-            }}
-          >
-            <AgentMascotLottie size={AGENT_MASCOT_SIZE} />
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 12,
-                width: "100%",
-                marginTop: -24,
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  lineHeight: "17px",
-                  color: COLORS.white60,
-                  textAlign: "center",
-                }}
-              >
-                Would you like to check out BTC or today&apos;s trending coins?
-              </p>
-              <button
-                type="button"
-                data-chat-hit="signal"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                  padding: "8px 12px",
-                  border: "none",
-                  borderRadius: 12,
-                  backgroundImage: GRADIENTS.connectBtn,
-                  cursor: "pointer",
-                  fontFamily: FONT,
-                }}
-              >
-                <img
-                  src={ASSETS.sparkle}
-                  alt=""
-                  width={18}
-                  height={18}
-                  style={{ display: "block", width: 18, height: 18 }}
-                />
-                <span
-                  style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}
-                >
-                  Create Custom Signal
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {activeChip === "trending" && (
-            <div
-              style={{
-                position: "absolute",
-                left: 16,
-                right: 16,
-                bottom: 48,
-              }}
-            >
-              <SuggestList />
-            </div>
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {panelView === "more" && (
+            <MoreView onRename={() => setPanelView("rename")} />
           )}
+          {panelView === "rename" && (
+            <RenameView
+              initialName={
+                agentName === DEFAULT_AGENT_NAME ? "" : agentName
+              }
+              onSave={saveAgentName}
+              onBack={() => setPanelView("more")}
+              onCancel={() => setPanelView("more")}
+            />
+          )}
+          {panelView === "chat" && (
+            <AgentConversationView
+              key={chatKey}
+              userMessage={chatMessage}
+              agentName={agentName}
+              signalSnapshot={signalSnapshot}
+              fileAttachment={chatAttachment}
+            />
+          )}
+          {panelView === "signals" && (
+            <SignalListView
+              onBack={() => setPanelView("home")}
+              onViewMore={(id) => {
+                setSignalId(id);
+                setPanelView("detail");
+              }}
+              onAskAgent={(id) => {
+                const card =
+                  SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
+                const payload = getSignalAskPayload(card);
+                setSignalId(id);
+                startChat(payload.message, payload.snapshot);
+              }}
+              onTradeNow={(id) => {
+                const card =
+                  SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
+                onTradeNow?.(card);
+              }}
+            />
+          )}
+          {panelView === "detail" && (
+            <SignalDetailView
+              signalId={signalId}
+              onBack={() => setPanelView("signals")}
+              onAskAgent={() => {
+                const card =
+                  SIGNAL_CARDS.find((c) => c.id === signalId) ??
+                  SIGNAL_CARDS[0];
+                const payload = getSignalAskPayload(card);
+                startChat(payload.message, payload.snapshot);
+              }}
+              onTradeNow={() => {
+                const card =
+                  SIGNAL_CARDS.find((c) => c.id === signalId) ??
+                  SIGNAL_CARDS[0];
+                onTradeNow?.(card);
+              }}
+            />
+          )}
+          {panelView === "home" && (
+            <>
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "8px 16px 0",
+                  boxSizing: "border-box",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: 291,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
+                  <AgentMascotLottie size={AGENT_MASCOT_SIZE} />
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 12,
+                      width: "100%",
+                      marginTop: -24,
+                      transform: "translateY(-24px)",
+                    }}
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 14,
+                        fontWeight: 500,
+                        lineHeight: "17px",
+                        color: COLORS.white60,
+                        textAlign: "center",
+                      }}
+                    >
+                      Would you like to check out BTC or today&apos;s trending
+                      coins?
+                    </p>
+                    <button
+                      type="button"
+                      data-chat-hit="signal"
+                      onClick={openSignals}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        padding: "8px 12px",
+                        border: "none",
+                        borderRadius: 12,
+                        backgroundImage: GRADIENTS.connectBtn,
+                        cursor: "pointer",
+                        fontFamily: FONT,
+                      }}
+                    >
+                      <img
+                        src={ASSETS.sparkle}
+                        alt=""
+                        width={18}
+                        height={18}
+                        style={{ display: "block", width: 18, height: 18 }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          lineHeight: "18px",
+                          color: "#ffffff",
+                        }}
+                      >
+                        View Signal
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-          <div style={{ position: "absolute", left: 16, right: 16, bottom: 12 }}>
-            <ChipRow activeChip={activeChip} onSelect={setActiveChip} />
-          </div>
+              <div
+                style={{
+                  flexShrink: 0,
+                  padding: "12px 16px 0",
+                  marginBottom: 12,
+                  boxSizing: "border-box",
+                }}
+              >
+                <ChipRow
+                  activeChip={activeChip}
+                  onSelect={(id) =>
+                    setActiveChip((prev) => (prev === id ? null : id))
+                  }
+                />
+              </div>
+              <SuggestDrawer
+                open={activeChip !== null}
+                onClose={() => setActiveChip(null)}
+                onSelect={startChat}
+              />
+            </>
+          )}
         </div>
       )}
 
-      {/* Minimized body (Figma 7452:90298) */}
+      {/* Minimized body — CTA + chips gap 12px; chip opens bottom drawer */}
       {isMinimized && (
         <div
           style={{
@@ -557,109 +848,160 @@ export function AgentChatDialog({
             overflow: "hidden",
           }}
         >
-          <div
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: "auto",
-              overflowX: "hidden",
-              padding: "12px 16px 8px",
-              boxSizing: "border-box",
-            }}
-          >
+          {panelView === "chat" ? (
+            <AgentConversationView
+              key={chatKey}
+              userMessage={chatMessage}
+              agentName={agentName}
+              signalSnapshot={signalSnapshot}
+              fileAttachment={chatAttachment}
+            />
+          ) : (
             <div
               style={{
+                position: "relative",
+                flex: 1,
+                minHeight: 0,
+                width: "100%",
+                overflow: "hidden",
                 display: "flex",
-                alignItems: "center",
-                gap: 12,
-                flexShrink: 0,
+                flexDirection: "column",
               }}
             >
-              <AgentMascotLottie
-                size={AGENT_MASCOT_MINIMIZED}
-                frameSize={AGENT_MASCOT_MINIMIZED_FRAME}
-              />
-              <p
+              {/* Greeting */}
+              <div
                 style={{
-                margin: 0,
-                marginLeft: -8,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  lineHeight: "17px",
-                  color: COLORS.white70,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "25px 16px 0 19px",
+                  boxSizing: "border-box",
+                  flexShrink: 0,
                 }}
               >
-                Hi! How can I help you today?
-              </p>
-            </div>
-
-            <button
-              type="button"
-              data-chat-hit="signal"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                width: "100%",
-                marginTop: 12,
-                padding: "10px 12px",
-                minHeight: 40,
-                borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.2)",
-                background: COLORS.menuHover,
-                cursor: "pointer",
-                fontFamily: FONT,
-                boxSizing: "border-box",
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <img
-                  src={ASSETS.sparkle}
-                  alt=""
-                  width={18}
-                  height={18}
-                  style={{ display: "block", width: 18, height: 18 }}
+                <AgentMascotLottie
+                  size={AGENT_MASCOT_MINIMIZED}
+                  frameSize={AGENT_MASCOT_MINIMIZED_FRAME}
                 />
-                <span
-                  style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    lineHeight: "17px",
+                    color: COLORS.white70,
+                    maxWidth: 217,
+                  }}
                 >
-                  Create Custom Signal
-                </span>
-              </span>
-              <img
-                src={ASSETS.chevron}
-                alt=""
-                width={16}
-                height={16}
-                style={{ display: "block", width: 16, height: 16 }}
-              />
-            </button>
-
-            {activeChip === "trending" && (
-              <div style={{ marginTop: 8, flexShrink: 0 }}>
-                <SuggestList />
+                  Hi! How can I help you today?
+                </p>
               </div>
-            )}
-          </div>
 
-          {/* Chips reserved outside scroll — never cropped by input */}
-          <div
-            style={{
-              flexShrink: 0,
-              padding: "8px 16px 12px",
-              boxSizing: "border-box",
-            }}
-          >
-            <ChipRow activeChip={activeChip} onSelect={setActiveChip} />
-          </div>
+              {/* View Signal + chips — 12px gap (Figma 361×80 group) */}
+              <div
+                style={{
+                  marginTop: "auto",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  padding: "0 16px 5px",
+                  boxSizing: "border-box",
+                  width: "100%",
+                }}
+              >
+                <button
+                  type="button"
+                  data-chat-hit="signal"
+                  onClick={openSignals}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: COLORS.menuHover,
+                    cursor: "pointer",
+                    fontFamily: FONT,
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <span
+                    style={{ display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    <img
+                      src={ASSETS.sparkle}
+                      alt=""
+                      width={18}
+                      height={18}
+                      style={{ display: "block", width: 18, height: 18 }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        lineHeight: "18px",
+                        color: "#ffffff",
+                      }}
+                    >
+                      View Signal
+                    </span>
+                  </span>
+                  <img
+                    src={ASSETS.chevron}
+                    alt=""
+                    width={16}
+                    height={16}
+                    style={{ display: "block", width: 16, height: 16 }}
+                  />
+                </button>
+                <ChipRow
+                  activeChip={activeChip}
+                  onSelect={(id) =>
+                    setActiveChip((prev) => (prev === id ? null : id))
+                  }
+                />
+              </div>
+
+              <SuggestDrawer
+                open={activeChip !== null}
+                onClose={() => setActiveChip(null)}
+                onSelect={startChat}
+              />
+            </div>
+          )}
         </div>
       )}
 
-      {/* Input */}
-      <div style={{ padding: "8px 16px 24px", flexShrink: 0 }}>
-        <AskingBox />
-      </div>
+      {/* Input — always available except More/Rename (expanded-only features) */}
+      {!( !isMinimized && (panelView === "more" || panelView === "rename") ) && (
+        <div
+          style={{
+            padding: isMinimized ? "10px 16px 48px" : "0 16px 24px",
+            flexShrink: 0,
+          }}
+        >
+          <AskingBox
+            value={draft}
+            onChange={setDraft}
+            onSend={() => startChat()}
+            attachment={attachment}
+            onAttachmentChange={setAttachment}
+          />
+        </div>
+      )}
+      <style>{`
+        .agent-minimized-scroll::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        @keyframes chipDrawerIn {
+          from { transform: translateY(100%); opacity: 0.85; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

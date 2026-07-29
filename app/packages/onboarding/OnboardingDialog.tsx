@@ -4,6 +4,7 @@ import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
 import { AddFundsPanel } from "./AddFundsPanel";
 import { EmailAuthModal, type EmailAuthStep } from "./EmailAuthModal";
+import { EnableTradingPanel } from "./EnableTradingPanel";
 import { FadePanel, ONBOARDING_MOTION_CSS } from "./motion";
 import { ReferralCodePanel } from "./ReferralCodePanel";
 import { SetupAccountPanel } from "./SetupAccountPanel";
@@ -18,6 +19,7 @@ type FlowStep =
   | "referral"
   | "setup"
   | "sign"
+  | "enable-trading"
   | "funds"
   | "trader-dna-live";
 
@@ -25,6 +27,8 @@ type OnboardingDialogProps = {
   open: boolean;
   onClose: () => void;
   onConnectWallet?: () => void;
+  /** Disconnect wallet — reset to default unconnected Connect wallet state */
+  onDisconnect?: () => void;
   onComplete?: (options?: { openAgent?: boolean }) => void;
   /** Leave top/bottom nav uncovered by blur overlay */
   topInset?: number;
@@ -55,12 +59,14 @@ const overlayStyle: CSSProperties = {
   WebkitBackdropFilter: "blur(8px)",
   fontFamily: FONT,
   overflow: "auto",
+  overscrollBehavior: "contain",
 };
 
 export function OnboardingDialog({
   open,
   onClose,
   onConnectWallet: _onConnectWallet,
+  onDisconnect,
   onComplete,
   topInset = 48,
   bottomInset = 0,
@@ -73,6 +79,11 @@ export function OnboardingDialog({
   const [setupPhase, setSetupPhase] = useState<1 | 2>(1);
   const [waitingSig, setWaitingSig] = useState(false);
   const [signRound, setSignRound] = useState<1 | 2>(1);
+  /** Wallet QC path: show setup steps but skip SignMessageModal */
+  const [skipSignatures, setSkipSignatures] = useState(false);
+  /** Wallet return visit: after enable → trader-dna (no add funds) */
+  const [walletReturnVisit, setWalletReturnVisit] = useState(false);
+  const [skipSetupNext, setSkipSetupNext] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -81,7 +92,57 @@ export function OnboardingDialog({
       setSetupPhase(1);
       setWaitingSig(false);
       setSignRound(1);
+      setSkipSignatures(false);
+      setWalletReturnVisit(false);
+      // Keep skipSetupNext in memory for same-session return visit;
+      // full page refresh resets to default.
     }
+  }, [open]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem("dexless-skip-setup-next");
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const persistSkipSetupNext = (value: boolean) => {
+    setSkipSetupNext(value);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+
+    const keepViewport = () => {
+      window.scrollTo(0, 0);
+    };
+    const onFocusIn = (e: FocusEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (!el) return;
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+        window.setTimeout(keepViewport, 0);
+        window.setTimeout(keepViewport, 100);
+        window.setTimeout(keepViewport, 300);
+      }
+    };
+
+    window.addEventListener("scroll", keepViewport, { passive: true });
+    document.addEventListener("focusin", onFocusIn);
+    keepViewport();
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      body.style.overflow = prevBodyOverflow;
+      window.removeEventListener("scroll", keepViewport);
+      document.removeEventListener("focusin", onFocusIn);
+    };
   }, [open]);
 
   if (!open) return null;
@@ -95,7 +156,30 @@ export function OnboardingDialog({
     setSetupPhase(1);
     setWaitingSig(false);
     setSignRound(1);
+    setWalletReturnVisit(false);
     setStep("setup");
+  };
+
+  const goWalletFirstConnect = () => {
+    setSetupPhase(1);
+    setWaitingSig(false);
+    setSignRound(1);
+    setSkipSignatures(true);
+    setWalletReturnVisit(false);
+    setStep("referral");
+  };
+
+  const goWalletReturnConnect = () => {
+    if (skipSetupNext) {
+      setSkipSignatures(false);
+      setWalletReturnVisit(false);
+      setStep("trader-dna-live");
+      return;
+    }
+    setWaitingSig(false);
+    setSkipSignatures(true);
+    setWalletReturnVisit(true);
+    setStep("enable-trading");
   };
 
   const openSign = (round: 1 | 2) => {
@@ -104,12 +188,55 @@ export function OnboardingDialog({
     setStep("sign");
   };
 
+  const finishSetupAfterEnable = () => {
+    setWaitingSig(false);
+    if (walletReturnVisit) {
+      setStep("trader-dna-live");
+      return;
+    }
+    setStep("funds");
+  };
+
+  /** Wallet Enable trading CTA: 50% CTA + spinner, then banner after 2s */
+  const handleEnableTradingCta = () => {
+    if (waitingSig) return;
+    setWaitingSig(true);
+    window.setTimeout(() => {
+      setWaitingSig(false);
+      setStep("trader-dna-live");
+    }, 2000);
+  };
+
   const handleSetupContinue = () => {
+    if (skipSignatures) {
+      if (setupPhase === 1) {
+        if (waitingSig) return;
+        // Create account CTA → loading → Enable trading (auto loading → funds)
+        setWaitingSig(true);
+        window.setTimeout(() => {
+          setSetupPhase(2);
+          setWaitingSig(true);
+          window.setTimeout(() => {
+            setWaitingSig(false);
+            finishSetupAfterEnable();
+          }, 1200);
+        }, 1200);
+        return;
+      }
+      return;
+    }
     openSign(setupPhase);
   };
 
   const handleSetupDisconnect = () => {
-    openSign(setupPhase);
+    setSkipSignatures(false);
+    setWalletReturnVisit(false);
+    setSetupPhase(1);
+    setWaitingSig(false);
+    setSignRound(1);
+    setStep("sign-in");
+    if (onDisconnect) onDisconnect();
+    else onClose();
   };
 
   const handleSigned = () => {
@@ -130,6 +257,7 @@ export function OnboardingDialog({
     step === "referral" ||
     step === "setup" ||
     step === "sign" ||
+    step === "enable-trading" ||
     step === "funds" ||
     step === "wallet-connect" ||
     step === "trader-dna-live";
@@ -289,6 +417,7 @@ export function OnboardingDialog({
       panel = (
         <div
           style={{
+            position: "relative",
             display: "flex",
             flexDirection: "column",
             width: "100%",
@@ -302,6 +431,35 @@ export function OnboardingDialog({
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 3,
+              width: 28,
+              height: 28,
+              borderRadius: 999,
+              border: "none",
+              background: "rgba(255,255,255,0.06)",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+          >
+            <img
+              src={ONBOARDING_ASSETS.close}
+              alt=""
+              width={14}
+              height={14}
+              style={{ display: "block" }}
+            />
+          </button>
           <div
             style={{
               position: "relative",
@@ -316,7 +474,7 @@ export function OnboardingDialog({
             }}
           >
             <img
-              src={ONBOARDING_ASSETS.info}
+              src={ONBOARDING_ASSETS.infoMobile}
               alt=""
               style={{
                 position: "absolute",
@@ -324,6 +482,7 @@ export function OnboardingDialog({
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
+                objectPosition: "center right",
                 pointerEvents: "none",
               }}
             />
@@ -352,10 +511,10 @@ export function OnboardingDialog({
               <p
                 style={{
                   margin: 0,
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: 600,
-                  lineHeight: "22px",
-                  color: "rgba(255,255,255,0.8)",
+                  lineHeight: "20px",
+                  color: "rgba(255,255,255,0.64)",
                 }}
               >
                 Trade Smarter with Dexless AI
@@ -363,10 +522,10 @@ export function OnboardingDialog({
               <p
                 style={{
                   margin: 0,
-                  fontSize: 13,
+                  fontSize: 11,
                   fontWeight: 500,
-                  lineHeight: "18px",
-                  color: "rgba(255,255,255,0.47)",
+                  lineHeight: "16px",
+                  color: "rgba(255,255,255,0.376)",
                 }}
               >
                 Understands your trading behavior
@@ -395,6 +554,7 @@ export function OnboardingDialog({
       panel = (
         <div
           style={{
+            position: "relative",
             display: "flex",
             flexWrap: "wrap",
             width: "100%",
@@ -404,9 +564,39 @@ export function OnboardingDialog({
             overflow: "hidden",
             background: "#08080c",
             boxSizing: "border-box",
+            border: "1px solid #424242",
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 3,
+              width: 28,
+              height: 28,
+              borderRadius: 999,
+              border: "none",
+              background: "rgba(255,255,255,0.06)",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
+            }}
+          >
+            <img
+              src={ONBOARDING_ASSETS.close}
+              alt=""
+              width={14}
+              height={14}
+              style={{ display: "block" }}
+            />
+          </button>
           <div
             style={{
               position: "relative",
@@ -515,7 +705,10 @@ export function OnboardingDialog({
         }}
         onCodeVerified={(kind) => {
           if (kind === "old") {
-            setStep("trader-dna-live");
+            setWaitingSig(false);
+            setSkipSignatures(true);
+            setWalletReturnVisit(true);
+            setStep("enable-trading");
             return;
           }
           setStep("referral");
@@ -525,38 +718,63 @@ export function OnboardingDialog({
   } else if (step === "wallet-connect") {
     panel = (
       <WalletConnectModal
-        onClose={() => setStep("sign-in")}
-        onConnected={() => setStep("trader-dna-live")}
+        onClose={onClose}
+        skipSetupNext={skipSetupNext}
+        onFirstConnect={goWalletFirstConnect}
+        onReturnConnect={goWalletReturnConnect}
       />
     );
   } else if (step === "referral") {
-    panel = <ReferralCodePanel onApply={goSetup} onSkip={goSetup} />;
+    panel = (
+      <ReferralCodePanel
+        onApply={goSetup}
+        onSkip={goSetup}
+        onClose={onClose}
+      />
+    );
   } else if (step === "setup") {
     panel = (
       <SetupAccountPanel
         phase={setupPhase}
         waiting={waitingSig}
+        skipNext={skipSetupNext}
+        onSkipNextChange={persistSkipSetupNext}
         onBack={() => setStep("referral")}
         onContinue={handleSetupContinue}
         onDisconnect={handleSetupDisconnect}
+        onClose={onClose}
+      />
+    );
+  } else if (step === "enable-trading") {
+    panel = (
+      <EnableTradingPanel
+        waiting={waitingSig}
+        rememberMe={skipSetupNext}
+        onRememberMeChange={persistSkipSetupNext}
+        onClose={onClose}
+        onDisconnect={handleSetupDisconnect}
+        onContinue={handleEnableTradingCta}
       />
     );
   } else if (step === "sign") {
     panel = (
       <SignMessageModal
-        onClose={() => {
-          setStep("setup");
-          setWaitingSig(false);
-        }}
+        onClose={onClose}
         onSign={handleSigned}
       />
     );
   } else if (step === "funds") {
-    panel = <AddFundsPanel onDone={() => setStep("trader-dna-live")} />;
+    panel = (
+      <AddFundsPanel
+        onDone={() => setStep("trader-dna-live")}
+        onClose={onClose}
+      />
+    );
   } else if (step === "trader-dna-live") {
     panel = (
       <TraderDnaLiveModal
         onExplore={() => finish(true)}
+        onClose={onClose}
       />
     );
   }
@@ -570,8 +788,11 @@ export function OnboardingDialog({
         ...overlayStyle,
         top: topInset,
         bottom: bottomInset,
+        alignItems: "center",
+        justifyContent: "center",
         animation: "onboardingOverlayIn 0.22s ease-out both",
       }}
+      className="onboarding-dialog"
       onClick={() => {
         if (!lockedSteps) onClose();
       }}
@@ -587,12 +808,23 @@ export function OnboardingDialog({
           width: 0;
           height: 0;
         }
+        /* Prevent mobile / DevTools device-mode focus zoom on inputs */
+        @media (max-width: 767px) {
+          .onboarding-dialog input:not(.referral-code-input),
+          .onboarding-dialog textarea,
+          .onboarding-dialog select {
+            font-size: 16px !important;
+          }
+          .onboarding-dialog input.referral-code-input {
+            font-size: 14px !important;
+          }
+        }
       `}</style>
       <FadePanel
         panelKey={panelKey}
         style={{
           width: "100%",
-          maxWidth: step === "sign-in" && isMobile ? 360 : undefined,
+          maxWidth: isMobile ? 360 : undefined,
           maxHeight: "100%",
           minHeight: 0,
           display: "flex",

@@ -10,9 +10,10 @@ type SignMessageModalProps = {
 const modalShell: CSSProperties = {
   position: "relative",
   width: "100%",
-  maxWidth: 380,
+  maxWidth: 360,
   background: "#0b0d12",
   borderRadius: 16,
+  border: "1px solid #424242",
   padding: "28px 20px 20px",
   boxSizing: "border-box",
   fontFamily: FONT,

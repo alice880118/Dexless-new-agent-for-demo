@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { COLORS, FONT, isTabletNav } from "../nav/design-system";
+import { COLORS, FONT } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { ONBOARDING_ASSETS } from "./assets";
 import {
@@ -12,28 +12,39 @@ type SetupAccountPanelProps = {
   /** 1 = create account active, 2 = enable trading active */
   phase: 1 | 2;
   waiting?: boolean;
+  skipNext?: boolean;
+  onSkipNextChange?: (value: boolean) => void;
   onBack?: () => void;
   onContinue?: () => void;
   onDisconnect?: () => void;
+  onClose?: () => void;
 };
 
 export function SetupAccountPanel({
   phase,
   waiting = false,
+  skipNext: skipNextProp,
+  onSkipNextChange,
   onBack,
   onContinue,
   onDisconnect,
+  onClose,
 }: SetupAccountPanelProps) {
-  const [skipNext, setSkipNext] = useState(false);
+  const [skipNextLocal, setSkipNextLocal] = useState(false);
+  const skipNext = skipNextProp ?? skipNextLocal;
+  const setSkipNext = (value: boolean) => {
+    if (onSkipNextChange) onSkipNextChange(value);
+    else setSkipNextLocal(value);
+  };
   const createActive = phase === 1 && !waiting;
   const enableActive = phase === 2 || waiting;
-  const isMobile = isTabletNav(useBreakpoint());
+  const isMobile = useBreakpoint() === "390";
   const cardPad = isMobile ? "8px 8px" : "8px 12px";
   const titleSize = isMobile ? 13 : 14;
   const bodySize = isMobile ? 12 : 13;
 
   return (
-    <OnboardingShell stage="setup">
+    <OnboardingShell stage="setup" onClose={onClose ?? onDisconnect}>
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {phase === 1 && !waiting && (
@@ -76,7 +87,9 @@ export function SetupAccountPanel({
                 color: "#ffffff",
               }}
             >
-              Set up your Dexless account
+              {phase === 1 && !waiting
+                ? "Create your Dexless account"
+                : "Enable trading"}
             </h2>
             <p
               style={{
@@ -191,7 +204,7 @@ export function SetupAccountPanel({
 
           <button
             type="button"
-            onClick={() => setSkipNext((v) => !v)}
+            onClick={() => setSkipNext(!skipNext)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -223,7 +236,7 @@ export function SetupAccountPanel({
                 color: "rgba(255,255,255,0.8)",
               }}
             >
-              Skip setup next time
+              Remember me
             </span>
           </button>
         </div>
@@ -233,7 +246,7 @@ export function SetupAccountPanel({
         <PrimaryButton
           label={
             waiting
-              ? `Waiting for signature (${phase} of 2)`
+              ? ""
               : `Continue — Step ${phase} of 2`
           }
           loading={waiting}

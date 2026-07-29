@@ -1,0 +1,43 @@
+/** 15px chip icons for Trader DNA quick-select */
+
+export function CryptoChipIcon({ color = "#C9BDFF" }: { color?: string }) {
+  return (
+    <svg
+      width={15}
+      height={15}
+      viewBox="0 0 15 15"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block", flexShrink: 0 }}
+      aria-hidden
+    >
+      <path
+        d="M8.66006 13.75C16.2989 11.875 12.0211 4.375 6.82669 1.25C6.21581 3.4375 5.29899 4.0625 3.46561 6.25C1.03826 9.14619 2.24344 12.5 5.60449 13.75C5.09525 13.125 3.78099 11.813 4.6875 10C5 9.375 5.625 8.75 5.3125 7.5C5.92361 7.8125 7.1875 8.125 7.5 9.6875C8.00925 9.0625 8.53775 7.75 8.04894 6.25C11.875 9.0625 10.3125 11.875 8.66006 13.75Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
+export function AnalysisChipIcon({
+  color = "rgba(255,255,255,0.8)",
+}: {
+  color?: string;
+}) {
+  return (
+    <svg
+      width={15}
+      height={15}
+      viewBox="0 0 15 15"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: "block", flexShrink: 0 }}
+      aria-hidden
+    >
+      <path
+        d="M8.66006 13.75C16.2989 11.875 12.0211 4.375 6.82669 1.25C6.21581 3.4375 5.29899 4.0625 3.46561 6.25C1.03826 9.14619 2.24344 12.5 5.60449 13.75C5.09525 13.125 3.78099 11.813 4.6875 10C5 9.375 5.625 8.75 5.3125 7.5C5.92361 7.8125 7.1875 8.125 7.5 9.6875C8.00925 9.0625 8.53775 7.75 8.04894 6.25C11.875 9.0625 10.3125 11.875 8.66006 13.75Z"
+        fill={color}
+      />
+    </svg>
+  );
+}

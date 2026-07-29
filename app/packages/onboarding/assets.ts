@@ -1,6 +1,8 @@
 /** Paths under /public/onboarding */
 export const ONBOARDING_ASSETS = {
   info: "/onboarding/info.png",
+  /** Sign In hero for <768 mobile layout */
+  infoMobile: "/onboarding/info-mobile.png",
   logo: "/nav/logo.png",
   logoWordmark: "/nav/logo.png",
   logoMark: "/onboarding/logo-mark.png",
@@ -9,6 +11,7 @@ export const ONBOARDING_ASSETS = {
   stepLine: "/onboarding/step-line.png",
   stepLineActive: "/onboarding/step-line-active.png",
   circleCheck: "/onboarding/circle-check.png",
+  circleCheckGreen: "/onboarding/circle-check-green.svg",
   walletIcon: "/onboarding/wallet-icon.png",
   arrowRight: "/onboarding/arrow-right.png",
   checkbox: "/onboarding/checkbox.png",

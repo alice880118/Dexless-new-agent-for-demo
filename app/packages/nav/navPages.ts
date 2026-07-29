@@ -28,9 +28,9 @@ export function getNavPageLabel(id: NavPageId): string {
 }
 
 export function isTradePage(id: NavPageId | null | undefined): boolean {
-  return id === "trade_perps" || id === "trade_swap";
+  return id === "trade_perps";
 }
 
 export function isMorePage(id: NavPageId | null | undefined): boolean {
-  return id === "more_docs";
+  return id === "more_docs" || id === "trade_swap";
 }

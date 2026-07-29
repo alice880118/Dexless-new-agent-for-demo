@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
+import { ONBOARDING_ASSETS } from "./assets";
 
 const ASSETS = {
   preview: "/onboarding/trader-dna-live.png",
@@ -7,13 +8,14 @@ const ASSETS = {
 
 type TraderDnaLiveModalProps = {
   onExplore?: () => void;
+  onClose?: () => void;
 };
 
 const shell: CSSProperties = {
   width: "100%",
-  maxWidth: 418,
+  maxWidth: 360,
   background: "#0c0d10",
-  border: "1px solid #383838",
+  border: "1px solid #424242",
   borderRadius: 8,
   overflow: "hidden",
   boxSizing: "border-box",
@@ -22,6 +24,7 @@ const shell: CSSProperties = {
 
 export function TraderDnaLiveModal({
   onExplore,
+  onClose,
 }: TraderDnaLiveModalProps) {
   return (
     <div style={shell} onClick={(e) => e.stopPropagation()}>
@@ -31,7 +34,7 @@ export function TraderDnaLiveModal({
           alignItems: "center",
           justifyContent: "center",
           padding: "14px 20px",
-          borderBottom: "1px solid #383838",
+          borderBottom: "1px solid #424242",
           position: "relative",
         }}
       >
@@ -48,6 +51,36 @@ export function TraderDnaLiveModal({
         >
           Trader DNA is Live!
         </h2>
+        {onClose ? (
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={onClose}
+            style={{
+              position: "absolute",
+              right: 20,
+              top: "50%",
+              transform: "translateY(-50%)",
+              width: 20,
+              height: 20,
+              border: "none",
+              background: "transparent",
+              padding: 0,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <img
+              src={ONBOARDING_ASSETS.close}
+              alt=""
+              width={20}
+              height={20}
+              style={{ display: "block" }}
+            />
+          </button>
+        ) : null}
       </div>
 
       <div
@@ -55,7 +88,7 @@ export function TraderDnaLiveModal({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 16,
+          gap: 24,
           padding: "16px 20px 20px",
           boxSizing: "border-box",
         }}
@@ -122,8 +155,8 @@ export function TraderDnaLiveModal({
           onClick={onExplore}
           style={{
             width: "100%",
-            minHeight: 32,
-            padding: "6px 16px",
+            height: 40,
+            padding: "0 16px",
             border: "none",
             borderRadius: 999,
             cursor: "pointer",
@@ -132,6 +165,7 @@ export function TraderDnaLiveModal({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            boxSizing: "border-box",
           }}
         >
           <span

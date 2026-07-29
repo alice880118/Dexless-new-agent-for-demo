@@ -1,11 +1,15 @@
-import { useEffect, useRef, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { COLORS, FONT } from "../nav/design-system";
 import { ONBOARDING_ASSETS, WC_COPY_LINK } from "./assets";
 
 type WalletConnectModalProps = {
   onClose: () => void;
-  /** Called after 1.5s dwell (successful mock connect) */
-  onConnected: () => void;
+  /** QC: first-time wallet → create + enable (no sign popups) → add funds */
+  onFirstConnect: () => void;
+  /** QC: return visit → enable trading (or skip setup if previously checked) */
+  onReturnConnect: () => void;
+  /** When true, return path omits enable-trading step */
+  skipSetupNext?: boolean;
 };
 
 const shell: CSSProperties = {
@@ -14,25 +18,34 @@ const shell: CSSProperties = {
   maxWidth: 360,
   background: "#1a1a1a",
   borderRadius: 24,
+  border: "1px solid #424242",
   padding: "20px 20px 16px",
   boxSizing: "border-box",
   fontFamily: FONT,
 };
 
+const qcBtn: CSSProperties = {
+  width: "100%",
+  padding: "10px 12px",
+  border: "1px solid rgba(255,255,255,0.15)",
+  borderRadius: 12,
+  background: "rgba(255,255,255,0.06)",
+  cursor: "pointer",
+  fontFamily: FONT,
+  fontSize: 12,
+  fontWeight: 600,
+  lineHeight: "16px",
+  color: "#ffffff",
+  textAlign: "left",
+  boxSizing: "border-box",
+};
+
 export function WalletConnectModal({
   onClose,
-  onConnected,
+  onFirstConnect,
+  onReturnConnect,
+  skipSetupNext = false,
 }: WalletConnectModalProps) {
-  const onConnectedRef = useRef(onConnected);
-  onConnectedRef.current = onConnected;
-
-  useEffect(() => {
-    const t = window.setTimeout(() => {
-      onConnectedRef.current();
-    }, 1500);
-    return () => window.clearTimeout(t);
-  }, []);
-
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(WC_COPY_LINK);
@@ -209,6 +222,63 @@ export function WalletConnectModal({
           540+
         </span>
       </button>
+
+      <div
+        style={{
+          marginTop: 16,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          paddingTop: 12,
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: "14px",
+            letterSpacing: "0.04em",
+            color: COLORS.white50,
+            textTransform: "uppercase",
+          }}
+        >
+          QC preview
+        </p>
+        <button type="button" onClick={onFirstConnect} style={qcBtn}>
+          First connect — Referral → Setup → Add funds
+          <span
+            style={{
+              display: "block",
+              marginTop: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              color: COLORS.white50,
+            }}
+          >
+            Skips signature popups
+          </span>
+        </button>
+        <button type="button" onClick={onReturnConnect} style={qcBtn}>
+          {skipSetupNext
+            ? "Return connect — Skip setup → Trader DNA"
+            : "Return connect — Enable trading (no referral)"}
+          <span
+            style={{
+              display: "block",
+              marginTop: 4,
+              fontSize: 11,
+              fontWeight: 500,
+              color: COLORS.white50,
+            }}
+          >
+            {skipSetupNext
+            ? "Remember me was on last time"
+            : "Figma 7526:83099 · no referral"}
+          </span>
+        </button>
+      </div>
     </div>
   );
 }

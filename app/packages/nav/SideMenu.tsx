@@ -41,11 +41,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "trade",
     label: "Trading",
     icon: NAV_ASSETS.menuTrading,
-    expandable: true,
-    children: [
-      { id: "perps", label: "Perps", page: "trade_perps" },
-      { id: "swap", label: "Swap", page: "trade_swap" },
-    ],
+    page: "trade_perps",
   },
   { id: "markets", label: "Markets", icon: NAV_ASSETS.menuMarkets, page: "markets" },
   { id: "portfolio", label: "Portfolio", icon: NAV_ASSETS.menuPortfolio, page: "portfolio" },
@@ -57,7 +53,10 @@ const NAV_ITEMS: NavItemConfig[] = [
     label: "More",
     icon: NAV_ASSETS.menuMoreDots,
     expandable: true,
-    children: [{ id: "docs", label: "Docs", external: true }],
+    children: [
+      { id: "swap", label: "Swap", page: "trade_swap" },
+      { id: "docs", label: "Docs", external: true },
+    ],
   },
   { id: "airdrop", label: "Airdrop", icon: NAV_ASSETS.dexlessLogo, airdrop: true, page: "airdrop" },
 ];
@@ -421,9 +420,7 @@ export function SideMenu({
             {NAV_ITEMS.map((item) => {
               const isOpen = !!expanded[item.id];
               const parentActive =
-                item.id === "trade"
-                  ? false
-                  : (!!item.page && activePage === item.page);
+                !!item.page && activePage === item.page;
               return (
                 <div key={item.id} style={{ width: "100%" }}>
                   <SideNavItem
@@ -456,9 +453,7 @@ export function SideMenu({
                           key={child.id}
                           label={child.label}
                           active={
-                            item.id === "trade"
-                              ? false
-                              : !!child.page && activePage === child.page
+                            !!child.page && activePage === child.page
                           }
                           enableHover={enableHover}
                           onClick={() => {

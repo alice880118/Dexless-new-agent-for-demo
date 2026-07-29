@@ -9,6 +9,7 @@ import {
 } from "./FloatingAgentIcon";
 import { TraderDnaBadge } from "./TraderDnaBadge";
 import type { Breakpoint } from "../nav/design-system";
+import type { SignalCardData } from "./SignalViews";
 
 const TOP_NAV_HEIGHT = 48;
 const BOTTOM_NAV_HEIGHT = 53;
@@ -22,6 +23,7 @@ type AgentOverlayProps = {
   onOpenChange?: (open: boolean) => void;
   /** Agent entry only after wallet connected */
   walletConnected?: boolean;
+  onTradeNow?: (signal: SignalCardData) => void;
 };
 
 /** Floating agent icon when bottom nav is shown (768 / 390); desktop uses Trader DNA badge */
@@ -35,6 +37,7 @@ export function AgentOverlay({
   isOpen: controlledOpen,
   onOpenChange,
   walletConnected = false,
+  onTradeNow,
 }: AgentOverlayProps) {
   const phoneMode = useFloatingAgentEntry(breakpoint);
   const bottomInset = showBottomNav ? BOTTOM_NAV_HEIGHT : 0;
@@ -136,6 +139,7 @@ export function AgentOverlay({
         <DesktopTraderDnaPanel
           isOpen={isChatOpen}
           onClose={() => setChatOpen(false)}
+          onTradeNow={onTradeNow}
         />
       </>
     );
@@ -175,8 +179,11 @@ export function AgentOverlay({
           onClose={handleCloseChat}
           width={viewport.width}
           height={viewport.height}
+          topInset={TOP_NAV_HEIGHT}
+          bottomInset={bottomInset}
           anchorX={agentAnchorX}
           anchorY={agentAnchorY}
+          onTradeNow={onTradeNow}
         />
       </div>
     </div>

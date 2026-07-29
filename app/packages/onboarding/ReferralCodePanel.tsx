@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { COLORS, FONT, isTabletNav } from "../nav/design-system";
+import { COLORS, FONT } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { ONBOARDING_ASSETS } from "./assets";
 import {
@@ -11,15 +11,20 @@ import {
 type ReferralCodePanelProps = {
   onApply?: (code: string) => void;
   onSkip?: () => void;
+  onClose?: () => void;
 };
 
-export function ReferralCodePanel({ onApply, onSkip }: ReferralCodePanelProps) {
+export function ReferralCodePanel({
+  onApply,
+  onSkip,
+  onClose,
+}: ReferralCodePanelProps) {
   const [code, setCode] = useState("");
   const canApply = code.trim().length > 0;
-  const isMobile = isTabletNav(useBreakpoint());
+  const isMobile = useBreakpoint() === "390";
 
   return (
-    <OnboardingShell stage="referral">
+    <OnboardingShell stage="referral" onClose={onClose}>
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <h2
@@ -133,6 +138,7 @@ export function ReferralCodePanel({ onApply, onSkip }: ReferralCodePanelProps) {
             value={code}
             placeholder="Enter your referral code..."
             onChange={(e) => setCode(e.target.value)}
+            className="referral-code-input"
             style={{
               width: "100%",
               height: 44,
@@ -143,6 +149,7 @@ export function ReferralCodePanel({ onApply, onSkip }: ReferralCodePanelProps) {
               color: "#ffffff",
               fontSize: 14,
               fontWeight: 600,
+              lineHeight: "18px",
               fontFamily: FONT,
               boxSizing: "border-box",
               outline: "none",

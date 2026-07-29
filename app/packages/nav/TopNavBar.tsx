@@ -7,7 +7,6 @@ import {
 } from "react";
 import { MoreMenu } from "./MoreMenu";
 import { SideMenu } from "./SideMenu";
-import { TradeMenu } from "./TradeMenu";
 import {
   COLORS,
   FONT,
@@ -29,7 +28,7 @@ import {
 } from "./navPages";
 
 export type WalletState = "unconnected" | "connected";
-export type OpenMenu = "trade" | "more" | null;
+export type OpenMenu = "more" | null;
 
 type TopNavBarProps = {
   breakpoint: Breakpoint;
@@ -166,16 +165,70 @@ function AirdropButton({ onClick }: { onClick?: () => void }) {
   return (
     <div
       style={{
-        padding: 1,
+        position: "relative",
         borderRadius: 999,
-        backgroundImage: GRADIENTS.airdropBorder,
+        padding: 1,
         flexShrink: 0,
+        overflow: "hidden",
+        isolation: "isolate",
       }}
     >
+      <style>{`
+        @keyframes airdropBorderSpin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+      {/* Soft glow behind spinning border */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: -4,
+          borderRadius: 999,
+          overflow: "hidden",
+          filter: "blur(6px)",
+          opacity: 0.55,
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: "-100%",
+            width: "300%",
+            height: "300%",
+            left: "-100%",
+            top: "-100%",
+            background:
+              "conic-gradient(from 0deg, transparent 0%, transparent 45%, #7053F3 55%, #85D7CD 70%, #E3FF94 85%, transparent 100%)",
+            animation: "airdropBorderSpin 3s linear infinite",
+          }}
+        />
+      </div>
+      {/* Spinning gradient border */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: "-100%",
+          width: "300%",
+          height: "300%",
+          left: "-100%",
+          top: "-100%",
+          background:
+            "conic-gradient(from 0deg, transparent 0%, transparent 45%, #7053F3 55%, #85D7CD 70%, #E3FF94 85%, transparent 100%)",
+          animation: "airdropBorderSpin 3s linear infinite",
+          pointerEvents: "none",
+          zIndex: 0,
+        }}
+      />
       <button
         type="button"
         onClick={onClick}
         style={{
+          position: "relative",
+          zIndex: 1,
           display: "flex",
           alignItems: "center",
           gap: 2,
@@ -326,17 +379,14 @@ export function TopNavBar({
     setSideMenuOpen(false);
   };
 
-  const tradeActive = isTradePage(activePage) || openMenu === "trade";
-  const moreActive = openMenu === "more";
-  const tradeLabel =
-    activePage === "trade_swap"
-      ? "Swap"
-      : activePage === "trade_perps"
-        ? "Perps"
-        : "Trade";
+  const tradeActive = isTradePage(activePage);
+  const moreActive = openMenu === "more" || activePage === "trade_swap";
 
   const barStyle: CSSProperties = {
-    position: "relative",
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
     zIndex: 200,
     display: "flex",
     alignItems: "center",
@@ -454,6 +504,7 @@ export function TopNavBar({
 
   return (
     <>
+      <div style={{ height: 48, flexShrink: 0 }} aria-hidden />
       <header ref={navRef} style={barStyle}>
         {/* Fixed-width left glow — same spacing on every RWD */}
         <span
@@ -579,30 +630,11 @@ export function TopNavBar({
               </span>
             </button>
 
-            <div style={{ position: "relative" }}>
-              <NavLink
-                label={tradeLabel}
-                hasChevron
-                active={tradeActive}
-                onClick={() => toggleMenu("trade")}
-              />
-              {openMenu === "trade" && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 12px)",
-                    left: 0,
-                    zIndex: 300,
-                  }}
-                >
-                  <TradeMenu
-                    onSelect={(id) =>
-                      goTo(id === "perps" ? "trade_perps" : "trade_swap")
-                    }
-                  />
-                </div>
-              )}
-            </div>
+            <NavLink
+              label="Trade"
+              active={tradeActive}
+              onClick={() => goTo("trade_perps")}
+            />
 
             <NavLink
               label="Markets"
@@ -647,9 +679,13 @@ export function TopNavBar({
                   }}
                 >
                   <MoreMenu
-                    onSelect={() => {
-                      window.open(DOCS_URL, "_blank", "noopener,noreferrer");
-                      setOpenMenu(null);
+                    onSelect={(id) => {
+                      if (id === "docs") {
+                        window.open(DOCS_URL, "_blank", "noopener,noreferrer");
+                        setOpenMenu(null);
+                        return;
+                      }
+                      goTo("trade_swap");
                     }}
                   />
                 </div>

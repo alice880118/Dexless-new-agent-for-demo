@@ -2,7 +2,25 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { AgentMascotLottie, AGENT_MASCOT_SIZE } from "./AgentMascotLottie";
 import { FlameIcon } from "./FlameIcon";
+import { AnalysisChipIcon, CryptoChipIcon } from "./ChipIcons";
 import { SuggestArrowIcon } from "./SuggestArrowIcon";
+import {
+  SignalDetailView,
+  SignalListView,
+  SignalMotionStyles,
+  getSignalAskPayload,
+  SIGNAL_CARDS,
+  type SignalAskSnapshot,
+  type SignalCardData,
+} from "./SignalViews";
+import { MoreView, RenameView } from "./MoreViews";
+import { AgentConversationView } from "./AgentConversationView";
+import { AskingBox } from "./AskingBox";
+import type { FileAttachment } from "./file-attachment";
+import { useAgentName } from "./useAgentName";
+import { DEFAULT_AGENT_NAME } from "./agent-name";
+
+type PanelView = "home" | "signals" | "detail" | "more" | "rename" | "chat";
 
 const PANEL_W = 375;
 const PANEL_H = 830;
@@ -10,7 +28,7 @@ const PANEL_H = 830;
 const ASSETS = {
   menu: "/trader-dna/menu.png",
   openInNew: "/trader-dna/open-in-new.png",
-  close: "/trader-dna/close.png",
+  close: "/trader-dna/close.svg",
   sparkle: "/trader-dna/sparkle.png",
   add: "/trader-dna/add.png",
   send: "/trader-dna/send.png",
@@ -23,24 +41,79 @@ const SUGGESTS = [
 ] as const;
 
 const CHIPS = [
-  { id: "trending", label: "Trending", color: COLORS.brandGreen },
-  { id: "crypto", label: "Crypto", color: "#c9bdff" },
-  { id: "analysis", label: "Analysis", color: "rgba(255,255,255,0.8)" },
+  {
+    id: "trending",
+    label: "Trending",
+    color: COLORS.brandGreen,
+    Icon: FlameIcon,
+  },
+  {
+    id: "crypto",
+    label: "Crypto",
+    color: "#c9bdff",
+    Icon: CryptoChipIcon,
+  },
+  {
+    id: "analysis",
+    label: "Analysis",
+    color: "rgba(255,255,255,0.8)",
+    Icon: AnalysisChipIcon,
+  },
 ] as const;
 
 type DesktopTraderDnaPanelProps = {
   isOpen: boolean;
   onClose: () => void;
+  onTradeNow?: (signal: SignalCardData) => void;
 };
 
-export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanelProps) {
+export function DesktopTraderDnaPanel({
+  isOpen,
+  onClose,
+  onTradeNow,
+}: DesktopTraderDnaPanelProps) {
   const [activeChip, setActiveChip] = useState<string | null>(null);
+  const [panelView, setPanelView] = useState<PanelView>("home");
+  const [signalId, setSignalId] = useState<string>("btc-1");
+  const [chatMessage, setChatMessage] = useState(
+    "I want to long BTC with 20U",
+  );
+  const [signalSnapshot, setSignalSnapshot] =
+    useState<SignalAskSnapshot | null>(null);
+  const [draft, setDraft] = useState("");
+  const [attachment, setAttachment] = useState<FileAttachment | null>(null);
+  const [chatAttachment, setChatAttachment] =
+    useState<FileAttachment | null>(null);
+  const [chatKey, setChatKey] = useState(0);
   const [visible, setVisible] = useState(false);
   const [entered, setEntered] = useState(false);
+  const { agentName, saveAgentName } = useAgentName();
+
+  const startChat = (
+    message?: string,
+    snapshot: SignalAskSnapshot | null = null,
+  ) => {
+    const next = (message ?? draft).trim();
+    if (!next && !attachment) return;
+    setChatMessage(next);
+    setSignalSnapshot(snapshot);
+    setChatAttachment(attachment);
+    setDraft("");
+    setAttachment(null);
+    setPanelView("chat");
+    setChatKey((k) => k + 1);
+  };
 
   useEffect(() => {
     if (isOpen) {
       setActiveChip(null);
+      setPanelView("home");
+      setSignalId("btc-1");
+      setChatMessage("I want to long BTC with 20U");
+      setSignalSnapshot(null);
+      setDraft("");
+      setAttachment(null);
+      setChatAttachment(null);
       setVisible(true);
       setEntered(false);
       const id = window.requestAnimationFrame(() => {
@@ -84,28 +157,86 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
       {/* Header */}
       <div
         style={{
-          display: "flex",
+          display: "grid",
+          gridTemplateColumns: "1fr auto 1fr",
           alignItems: "center",
-          justifyContent: "space-between",
+          columnGap: 8,
           padding: "16px 16px 8px",
           borderBottom: "1px solid rgba(103,103,103,0.4)",
           flexShrink: 0,
         }}
       >
-        <button
-          type="button"
-          aria-label="Menu"
+        <div
           style={{
-            width: 24,
-            height: 24,
-            padding: 0,
-            border: "none",
-            background: "transparent",
-            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            minWidth: 0,
           }}
         >
-          <img src={ASSETS.menu} alt="" width={24} height={24} style={{ display: "block", width: 24, height: 24 }} />
-        </button>
+          {panelView === "more" || panelView === "rename" ? (
+            <button
+              type="button"
+              aria-label="Back"
+              onClick={() =>
+                setPanelView(panelView === "rename" ? "more" : "home")
+              }
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                padding: 0,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                fontFamily: FONT,
+              }}
+            >
+              <img
+                src="/trader-dna/more/back-chevron.svg"
+                alt=""
+                width={18}
+                height={18}
+                style={{
+                  display: "block",
+                  transform: "rotate(-90deg) scaleY(-1)",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  lineHeight: "20px",
+                  color: "rgba(255,255,255,0.8)",
+                }}
+              >
+                {panelView === "rename" ? "Back More" : "More"}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-label="Menu"
+              onClick={() => setPanelView("more")}
+              style={{
+                width: 24,
+                height: 24,
+                padding: 0,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+              }}
+            >
+              <img
+                src={ASSETS.menu}
+                alt=""
+                width={24}
+                height={24}
+                style={{ display: "block", width: 24, height: 24 }}
+              />
+            </button>
+          )}
+        </div>
         <span
           style={{
             fontSize: 14,
@@ -115,14 +246,37 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             color: "transparent",
+            textAlign: "center",
+            whiteSpace: "nowrap",
+            visibility:
+              panelView === "more" || panelView === "rename"
+                ? "hidden"
+                : "visible",
           }}
         >
-          Trader DNA
+          {agentName}
         </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 8,
+            minWidth: 0,
+          }}
+        >
           <button
             type="button"
-            aria-label="Open in new"
+            aria-label="New chat"
+            onClick={() => {
+              setPanelView("home");
+              setChatMessage("I want to long BTC with 20U");
+              setSignalSnapshot(null);
+              setDraft("");
+              setAttachment(null);
+              setChatAttachment(null);
+              setActiveChip(null);
+            }}
             style={{
               width: 24,
               height: 24,
@@ -130,6 +284,10 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
               border: "none",
               background: "transparent",
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
             }}
           >
             <img
@@ -151,12 +309,43 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
               border: "none",
               background: "transparent",
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
             }}
           >
-            <img src={ASSETS.close} alt="" width={24} height={24} style={{ display: "block", width: 24, height: 24 }} />
+            <span
+              style={{
+                position: "relative",
+                display: "block",
+                width: 24,
+                height: 24,
+                overflow: "hidden",
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  inset: "16.27% 16.64% 17.01% 16.6%",
+                }}
+              >
+                <img
+                  src={ASSETS.close}
+                  alt=""
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                />
+              </span>
+            </span>
           </button>
         </div>
       </div>
+
+      <SignalMotionStyles />
 
       {/* Body */}
       <div
@@ -164,228 +353,299 @@ export function DesktopTraderDnaPanel({ isOpen, onClose }: DesktopTraderDnaPanel
           position: "relative",
           flex: 1,
           minHeight: 0,
-          overflow: "visible",
+          overflow: "hidden",
+          display: panelView === "home" ? "flex" : "block",
+          flexDirection: "column",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            left: 42,
-            right: 42,
-            top: "48%",
-            transform: "translateY(-50%)",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 0,
-          }}
-        >
-          <AgentMascotLottie size={AGENT_MASCOT_SIZE} />
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              marginTop: -24,
+        {panelView === "more" && (
+          <MoreView onRename={() => setPanelView("rename")} />
+        )}
+        {panelView === "rename" && (
+          <RenameView
+            initialName={agentName === DEFAULT_AGENT_NAME ? "" : agentName}
+            onSave={saveAgentName}
+            onBack={() => setPanelView("more")}
+            onCancel={() => setPanelView("more")}
+          />
+        )}
+        {panelView === "chat" && (
+          <AgentConversationView
+            key={chatKey}
+            userMessage={chatMessage}
+            agentName={agentName}
+            signalSnapshot={signalSnapshot}
+            fileAttachment={chatAttachment}
+          />
+        )}
+        {panelView === "signals" && (
+          <SignalListView
+            onBack={() => setPanelView("home")}
+            onViewMore={(id) => {
+              setSignalId(id);
+              setPanelView("detail");
             }}
-          >
-            <p
+            onAskAgent={(id) => {
+              const card =
+                SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
+              const payload = getSignalAskPayload(card);
+              setSignalId(id);
+              startChat(payload.message, payload.snapshot);
+            }}
+            onTradeNow={(id) => {
+              const card =
+                SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
+              onTradeNow?.(card);
+            }}
+          />
+        )}
+        {panelView === "detail" && (
+          <SignalDetailView
+            signalId={signalId}
+            onBack={() => setPanelView("signals")}
+            onAskAgent={() => {
+              const card =
+                SIGNAL_CARDS.find((c) => c.id === signalId) ??
+                SIGNAL_CARDS[0];
+              const payload = getSignalAskPayload(card);
+              startChat(payload.message, payload.snapshot);
+            }}
+            onTradeNow={() => {
+              const card =
+                SIGNAL_CARDS.find((c) => c.id === signalId) ??
+                SIGNAL_CARDS[0];
+              onTradeNow?.(card);
+            }}
+          />
+        )}
+        {panelView === "home" && (
+          <>
+            {/* Hero: lottie + prompt + CTA — upper area (Figma ~top 228) */}
+            <div
               style={{
-                margin: 0,
-                fontSize: 14,
-                fontWeight: 500,
-                lineHeight: "17px",
-                color: COLORS.white60,
-                textAlign: "center",
+                flex: 1,
+                minHeight: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 42px",
+                boxSizing: "border-box",
               }}
             >
-              Would you like to check out BTC or today&apos;s trending coins?
-            </p>
-
-          <button
-            type="button"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              padding: "8px 12px",
-              border: "none",
-              borderRadius: 12,
-              backgroundImage: GRADIENTS.connectBtn,
-              cursor: "pointer",
-              fontFamily: FONT,
-            }}
-          >
-            <img src={ASSETS.sparkle} alt="" width={18} height={18} style={{ display: "block", width: 18, height: 18 }} />
-            <span style={{ fontSize: 12, fontWeight: 600, lineHeight: "18px", color: "#ffffff" }}>
-              Create Custom Signal
-            </span>
-          </button>
-          </div>
-        </div>
-
-        <div
-          style={{
-            position: "absolute",
-            left: 16,
-            right: 16,
-            bottom: 48,
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-          }}
-        >
-          {activeChip === "trending" &&
-            SUGGESTS.map((text) => (
-              <button
-                key={text}
-                type="button"
+              <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
                   width: "100%",
-                  padding: "8px 12px",
-                  border: "none",
-                  borderRadius: 8,
-                  background: COLORS.menuHover,
-                  cursor: "pointer",
-                  fontFamily: FONT,
-                  boxSizing: "border-box",
+                  maxWidth: 291,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 15,
                 }}
               >
-                <span
+                <AgentMascotLottie size={AGENT_MASCOT_SIZE} />
+                <div
                   style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    lineHeight: "18px",
-                    color: COLORS.white70,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 12,
+                    width: "100%",
+                    marginTop: -24,
+                    transform: "translateY(-24px)",
                   }}
                 >
-                  {text}
-                </span>
-                <SuggestArrowIcon size={18} />
-              </button>
-            ))}
-        </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      lineHeight: "17px",
+                      color: COLORS.white60,
+                      textAlign: "center",
+                      width: "100%",
+                    }}
+                  >
+                    Would you like to check out BTC or today&apos;s trending
+                    coins?
+                  </p>
 
-        <div
-          style={{
-            position: "absolute",
-            left: 16,
-            bottom: 12,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          {CHIPS.map((chip) => {
-            const active = activeChip === chip.id;
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                onClick={() => setActiveChip(chip.id)}
+                  <button
+                    type="button"
+                    onClick={() => setPanelView("signals")}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "8px 12px",
+                      border: "none",
+                      borderRadius: 12,
+                      backgroundImage: GRADIENTS.connectBtn,
+                      cursor: "pointer",
+                      fontFamily: FONT,
+                    }}
+                  >
+                    <img
+                      src={ASSETS.sparkle}
+                      alt=""
+                      width={18}
+                      height={18}
+                      style={{ display: "block", width: 18, height: 18 }}
+                    />
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        lineHeight: "18px",
+                        color: "#ffffff",
+                      }}
+                    >
+                      View Signal
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Chips pinned to bottom; suggests overlay above so hero stays put */}
+            <div
+              style={{
+                position: "relative",
+                flexShrink: 0,
+                padding: "0 16px 5px",
+                boxSizing: "border-box",
+                width: "100%",
+              }}
+            >
+              {activeChip !== null && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    right: 16,
+                    bottom: "100%",
+                    marginBottom: 12,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    width: "auto",
+                    animation:
+                      "desktopChipSuggestIn 220ms cubic-bezier(0.22, 1, 0.36, 1) both",
+                  }}
+                >
+                  {SUGGESTS.map((text) => (
+                    <button
+                      key={text}
+                      type="button"
+                      onClick={() => startChat(text)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        width: "100%",
+                        padding: "8px 12px",
+                        border: "none",
+                        borderRadius: 8,
+                        background: COLORS.menuHover,
+                        cursor: "pointer",
+                        fontFamily: FONT,
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          lineHeight: "18px",
+                          color: COLORS.white70,
+                        }}
+                      >
+                        {text}
+                      </span>
+                      <SuggestArrowIcon size={18} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 2,
-                  padding: "8px 12px",
-                  borderRadius: 12,
-                  border: active
-                    ? "1px solid #ffffff"
-                    : "1px solid rgba(255,255,255,0.2)",
-                  background: "transparent",
-                  opacity: active ? 1 : 0.5,
-                  cursor: "pointer",
-                  fontFamily: FONT,
+                  gap: 8,
                 }}
               >
-                <FlameIcon color={chip.color} />
-                <span
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    lineHeight: "18px",
-                    color: chip.color,
-                  }}
-                >
-                  {chip.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                {CHIPS.map((chip) => {
+                  const active = activeChip === chip.id;
+                  const Icon = chip.Icon;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() =>
+                        setActiveChip((prev) =>
+                          prev === chip.id ? null : chip.id,
+                        )
+                      }
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 2,
+                        padding: "8px 12px",
+                        borderRadius: 12,
+                        border: active
+                          ? "none"
+                          : "1px solid rgba(255,255,255,0.2)",
+                        background: active
+                          ? "rgba(255,255,255,0.1)"
+                          : "transparent",
+                        cursor: "pointer",
+                        fontFamily: FONT,
+                      }}
+                    >
+                      <Icon color={chip.color} />
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          lineHeight: "18px",
+                          color: chip.color,
+                        }}
+                      >
+                        {chip.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <style>{`
+              @keyframes desktopChipSuggestIn {
+                from { opacity: 0; transform: translateY(8px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `}</style>
+          </>
+        )}
       </div>
 
       {/* Input */}
-      <div
-        style={{
-          padding: "10px 16px",
-          flexShrink: 0,
-        }}
-      >
+      {panelView !== "more" && panelView !== "rename" && (
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: 11,
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.2)",
-            boxSizing: "border-box",
+            padding: "10px 16px",
+            flexShrink: 0,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-            <img
-              src={ASSETS.add}
-              alt=""
-              width={27}
-              height={27}
-              style={{ display: "block", width: 27, height: 27, flexShrink: 0 }}
-            />
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 500,
-                lineHeight: "18px",
-                color: COLORS.white40,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              Tell me about your trading habits...
-            </span>
-          </div>
-          <button
-            type="button"
-            aria-label="Send"
-            style={{
-              width: 31,
-              height: 31,
-              padding: 0,
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <img
-              src={ASSETS.send}
-              alt=""
-              width={31}
-              height={31}
-              style={{ display: "block", width: 31, height: 31 }}
-            />
-          </button>
+          <AskingBox
+            value={draft}
+            onChange={setDraft}
+            onSend={() => startChat()}
+            attachment={attachment}
+            onAttachmentChange={setAttachment}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 }

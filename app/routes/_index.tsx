@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { AgentOverlay } from "../packages/agent";
+import { AgentOverlay, SignalTradeModal, type SignalCardData } from "../packages/agent";
 import { OnboardingDialog } from "../packages/onboarding";
 import {
   BottomNavBar,
   TopNavBar,
   SiteFooter,
   getNavPageLabel,
+  isTradePage,
   showBottomNav,
   showSiteFooter,
   FOOTER_HEIGHT,
@@ -22,6 +23,7 @@ export function IndexPage() {
   const [agentOpen, setAgentOpen] = useState(false);
   const [walletState, setWalletState] = useState<WalletState>("unconnected");
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [tradeSignal, setTradeSignal] = useState<SignalCardData | null>(null);
   const walletConnected = walletState === "connected";
   const bottomInset = showBottom ? 53 : showFooter ? FOOTER_HEIGHT : 0;
 
@@ -37,7 +39,10 @@ export function IndexPage() {
       <TopNavBar
         breakpoint={breakpoint}
         activePage={activePage}
-        onNavigate={setActivePage}
+        onNavigate={(page) => {
+          setActivePage(page);
+          if (!isTradePage(page)) setTradeSignal(null);
+        }}
         walletState={walletState}
         onWalletStateChange={(next) => {
           setWalletState(next);
@@ -61,7 +66,12 @@ export function IndexPage() {
           boxSizing: "border-box",
         }}
       >
-        {activePage ? (
+        {tradeSignal && isTradePage(activePage) ? (
+          <SignalTradeModal
+            data={tradeSignal}
+            onClose={() => setTradeSignal(null)}
+          />
+        ) : activePage ? (
           <p
             style={{
               margin: 0,
@@ -100,7 +110,7 @@ export function IndexPage() {
         <BottomNavBar
           breakpoint={breakpoint}
           activeId={
-            activePage === "trade_perps" || activePage === "trade_swap"
+            activePage === "trade_perps"
               ? "trading"
               : activePage === "dexless_ai"
                 ? "ai"
@@ -119,7 +129,10 @@ export function IndexPage() {
               ai: "dexless_ai",
             };
             const page = map[id];
-            if (page) setActivePage(page);
+            if (page) {
+              setActivePage(page);
+              if (!isTradePage(page)) setTradeSignal(null);
+            }
           }}
         />
       )}
@@ -133,6 +146,10 @@ export function IndexPage() {
         bottomInset={bottomInset}
         onConnectWallet={() => {
           setWalletState("connected");
+          setOnboardingOpen(false);
+        }}
+        onDisconnect={() => {
+          setWalletState("unconnected");
           setOnboardingOpen(false);
         }}
         onComplete={(options) => {
@@ -149,6 +166,11 @@ export function IndexPage() {
         isOpen={agentOpen}
         onOpenChange={setAgentOpen}
         walletConnected={walletConnected}
+        onTradeNow={(signal) => {
+          setTradeSignal(signal);
+          setActivePage("trade_perps");
+          setAgentOpen(false);
+        }}
       />
     </div>
   );

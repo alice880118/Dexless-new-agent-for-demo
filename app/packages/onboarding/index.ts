@@ -2,6 +2,7 @@ export { OnboardingDialog } from "./OnboardingDialog";
 export { EmailAuthModal } from "./EmailAuthModal";
 export { ReferralCodePanel } from "./ReferralCodePanel";
 export { SetupAccountPanel } from "./SetupAccountPanel";
+export { EnableTradingPanel } from "./EnableTradingPanel";
 export { SignMessageModal } from "./SignMessageModal";
 export { AddFundsPanel } from "./AddFundsPanel";
 export { TraderDnaLiveModal } from "./TraderDnaLiveModal";

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { COLORS, FONT, isTabletNav } from "../nav/design-system";
+import { COLORS, FONT } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
 
@@ -10,7 +10,42 @@ type StepState = "active" | "done" | "todo";
 type OnboardingShellProps = {
   stage: OnboardingStage;
   children: ReactNode;
+  onClose?: () => void;
 };
+
+function ShellCloseButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="Close"
+      onClick={onClick}
+      style={{
+        position: "absolute",
+        top: 12,
+        right: 12,
+        zIndex: 2,
+        width: 28,
+        height: 28,
+        borderRadius: 999,
+        border: "none",
+        background: "rgba(255,255,255,0.06)",
+        cursor: "pointer",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 0,
+      }}
+    >
+      <img
+        src={ONBOARDING_ASSETS.close}
+        alt=""
+        width={14}
+        height={14}
+        style={{ display: "block" }}
+      />
+    </button>
+  );
+}
 
 function stepState(stage: OnboardingStage, id: OnboardingStage): StepState {
   const order: OnboardingStage[] = ["referral", "setup", "funds"];
@@ -49,13 +84,11 @@ function StepItem({
   state,
   lineActive,
   showLine,
-  horizontal,
 }: {
   label: string;
   state: StepState;
   lineActive?: boolean;
   showLine: boolean;
-  horizontal?: boolean;
 }) {
   const icon =
     state === "done"
@@ -70,10 +103,8 @@ function StepItem({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: horizontal ? 6 : 8,
+          gap: 8,
           opacity: state === "todo" || state === "done" ? 0.5 : 1,
-          flexShrink: horizontal ? 1 : 0,
-          minWidth: 0,
         }}
       >
         <img
@@ -85,50 +116,163 @@ function StepItem({
         />
         <span
           style={{
-            fontSize: horizontal ? 12 : 14,
+            fontSize: 14,
             fontWeight: 600,
-            lineHeight: horizontal ? "16px" : "18px",
+            lineHeight: "18px",
             color: "rgba(255,255,255,0.8)",
-            whiteSpace: horizontal ? "normal" : "nowrap",
+            whiteSpace: "nowrap",
           }}
         >
           {label}
         </span>
       </div>
-      {showLine &&
-        (horizontal ? (
-          <div
+      {showLine && (
+        <div style={{ width: 12, height: 28, position: "relative" }}>
+          <img
+            src={
+              lineActive
+                ? ONBOARDING_ASSETS.stepLineActive
+                : ONBOARDING_ASSETS.stepLine
+            }
+            alt=""
             style={{
-              flex: 1,
-              minWidth: 8,
-              maxWidth: 20,
-              height: 0,
-              borderTop: `1.5px dashed ${
-                lineActive ? COLORS.brandGreen : "rgba(255,255,255,0.25)"
-              }`,
-              opacity: lineActive ? 0.9 : 0.5,
-              alignSelf: "center",
+              display: "block",
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
             }}
           />
-        ) : (
-          <div style={{ width: 12, height: 28, position: "relative" }}>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Mobile (<768): icons + parallel dashed lines on one axis; labels under icons */
+function MobileStepRail({
+  referral,
+  setup,
+  funds,
+}: {
+  referral: StepState;
+  setup: StepState;
+  funds: StepState;
+}) {
+  const steps: { label: string; state: StepState }[] = [
+    { label: "Referral code", state: referral },
+    { label: "Set up account", state: setup },
+    { label: "Add funds", state: funds },
+  ];
+  const linesActive = [referral === "done", setup === "done"];
+  const iconSize = 14;
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        boxSizing: "border-box",
+        paddingTop: 12,
+        paddingBottom: 12,
+      }}
+    >
+      {/* Icon row: equal columns; dashed lines vertically centered with dots */}
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          width: "100%",
+          height: iconSize,
+        }}
+      >
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: "16.666%",
+            right: "16.666%",
+            top: "50%",
+            transform: "translateY(-50%)",
+            display: "flex",
+            pointerEvents: "none",
+          }}
+        >
+          {linesActive.map((active, i) => (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                height: 0,
+                margin: `0 ${iconSize / 2 + 4}px`,
+                borderTop: `1.5px dashed ${
+                  active ? COLORS.brandGreen : "rgba(255,255,255,0.22)"
+                }`,
+              }}
+            />
+          ))}
+        </div>
+
+        {steps.map((step) => (
+          <div
+            key={step.label}
+            style={{
+              flex: 1,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minWidth: 0,
+            }}
+          >
             <img
               src={
-                lineActive
-                  ? ONBOARDING_ASSETS.stepLineActive
-                  : ONBOARDING_ASSETS.stepLine
+                step.state === "done"
+                  ? ONBOARDING_ASSETS.circleCheck
+                  : step.state === "active"
+                    ? ONBOARDING_ASSETS.stepActive
+                    : ONBOARDING_ASSETS.stepDefault
               }
               alt=""
+              width={iconSize}
+              height={iconSize}
               style={{
                 display: "block",
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
+                flexShrink: 0,
+                position: "relative",
+                zIndex: 1,
+                background: "#08080c",
               }}
             />
           </div>
         ))}
-    </>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          width: "100%",
+          marginTop: 8,
+        }}
+      >
+        {steps.map((step) => (
+          <span
+            key={step.label}
+            style={{
+              flex: 1,
+              fontSize: 11,
+              fontWeight: 600,
+              lineHeight: "14px",
+              textAlign: "center",
+              color:
+                step.state === "active"
+                  ? "#ffffff"
+                  : "rgba(255,255,255,0.4)",
+            }}
+          >
+            {step.label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -136,21 +280,17 @@ function StepList({
   referral,
   setup,
   funds,
-  horizontal,
 }: {
   referral: StepState;
   setup: StepState;
   funds: StepState;
-  horizontal?: boolean;
 }) {
   return (
     <div
       style={{
         display: "flex",
-        flexDirection: horizontal ? "row" : "column",
-        alignItems: horizontal ? "center" : "stretch",
-        gap: horizontal ? 4 : 2,
-        width: horizontal ? "100%" : undefined,
+        flexDirection: "column",
+        gap: 2,
       }}
     >
       <StepItem
@@ -158,28 +298,26 @@ function StepList({
         state={referral}
         showLine
         lineActive={referral === "done"}
-        horizontal={horizontal}
       />
       <StepItem
         label="Set up account"
         state={setup}
         showLine
         lineActive={setup === "done"}
-        horizontal={horizontal}
       />
-      <StepItem
-        label="Add funds"
-        state={funds}
-        showLine={false}
-        horizontal={horizontal}
-      />
+      <StepItem label="Add funds" state={funds} showLine={false} />
     </div>
   );
 }
 
-export function OnboardingShell({ stage, children }: OnboardingShellProps) {
+export function OnboardingShell({
+  stage,
+  children,
+  onClose,
+}: OnboardingShellProps) {
   const breakpoint = useBreakpoint();
-  const isMobile = isTabletNav(breakpoint);
+  /** <768 only */
+  const isMobile = breakpoint === "390";
   const referral = stepState(stage, "referral");
   const setup = stepState(stage, "setup");
   const funds = stepState(stage, "funds");
@@ -216,6 +354,7 @@ export function OnboardingShell({ stage, children }: OnboardingShellProps) {
   if (isMobile) {
     return (
       <div style={shellStyle} onClick={(e) => e.stopPropagation()}>
+        {onClose ? <ShellCloseButton onClick={onClose} /> : null}
         <div
           style={{
             display: "flex",
@@ -236,23 +375,11 @@ export function OnboardingShell({ stage, children }: OnboardingShellProps) {
               objectFit: "contain",
             }}
           />
-          <div
-            style={{
-              width: "100%",
-              padding: "12px 10px",
-              borderRadius: 10,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxSizing: "border-box",
-            }}
-          >
-            <StepList
-              referral={referral}
-              setup={setup}
-              funds={funds}
-              horizontal
-            />
-          </div>
+          <MobileStepRail
+            referral={referral}
+            setup={setup}
+            funds={funds}
+          />
         </div>
 
         <div
@@ -288,6 +415,7 @@ export function OnboardingShell({ stage, children }: OnboardingShellProps) {
 
   return (
     <div style={shellStyle} onClick={(e) => e.stopPropagation()}>
+      {onClose ? <ShellCloseButton onClick={onClose} /> : null}
       <aside
         style={{
           width: 210,
