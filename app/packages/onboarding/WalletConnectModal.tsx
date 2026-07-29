@@ -44,7 +44,6 @@ export function WalletConnectModal({
   onClose,
   onFirstConnect,
   onReturnConnect,
-  skipSetupNext = false,
 }: WalletConnectModalProps) {
   const copyLink = async () => {
     try {
