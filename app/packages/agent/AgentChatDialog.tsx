@@ -30,8 +30,6 @@ const DRAG_DISMISS_RANGE = 280;
 const ANIMATION_MS = 320;
 /** Figma minimized sheet height (7452:90298) */
 const MINIMIZED_HEIGHT = 390;
-/** Distance from viewport bottom; covers bottom nav */
-const SHEET_BOTTOM_PAD = 48;
 
 const ASSETS = {
   menu: "/trader-dna/mobile/menu.png",
@@ -40,6 +38,7 @@ const ASSETS = {
   maximize: "/trader-dna/mobile/maximize.png",
   sparkle: "/trader-dna/mobile/sparkle.png",
   chevron: "/trader-dna/mobile/chevron.png",
+  viewSignalChevron: "/trader-dna/mobile/view-signal-chevron.svg",
   add: "/trader-dna/mobile/add.png",
   send: "/trader-dna/mobile/send.png",
 } as const;
@@ -76,13 +75,14 @@ type AgentChatDialogProps = {
   onClose: () => void;
   width: number;
   height: number;
-  /** Leave bottom nav uncovered */
+  /** Leave bottom nav uncovered when minimized */
   bottomInset?: number;
   /** Leave top nav + extra clearance uncovered */
   topInset?: number;
   anchorX: number;
   anchorY: number;
   onTradeNow?: (signal: SignalCardData) => void;
+  onMinimizedChange?: (minimized: boolean) => void;
 };
 
 function IconBtn({
@@ -303,11 +303,12 @@ export function AgentChatDialog({
   onClose,
   width,
   height,
-  bottomInset: _bottomInset = 0,
+  bottomInset = 0,
   topInset = 48,
   anchorX,
   anchorY,
   onTradeNow,
+  onMinimizedChange,
 }: AgentChatDialogProps) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -401,6 +402,10 @@ export function AgentChatDialog({
       setMoreTab("history");
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    onMinimizedChange?.(isMinimized);
+  }, [isMinimized, onMinimizedChange]);
 
   const openSignals = useCallback(() => {
     setIsMinimized(false);
@@ -509,8 +514,8 @@ export function AgentChatDialog({
   }, []);
 
   const topSafe = topInset / 2;
-  /** Expanded: cover bottom nav (bottom 0). Minimized: reveal nav. */
-  const sheetBottom = isMinimized ? SHEET_BOTTOM_PAD : 0;
+  /** Expanded: cover bottom nav (bottom 0). Minimized: leave bottom nav clickable. */
+  const sheetBottom = isMinimized ? bottomInset : 0;
   const availableHeight = Math.max(280, height - topSafe - sheetBottom);
   const expandedHeight = availableHeight;
   const panelHeight = isMinimized
@@ -1132,7 +1137,7 @@ export function AgentChatDialog({
                     </span>
                   </span>
                   <img
-                    src={ASSETS.chevron}
+                    src={ASSETS.viewSignalChevron}
                     alt=""
                     width={16}
                     height={16}

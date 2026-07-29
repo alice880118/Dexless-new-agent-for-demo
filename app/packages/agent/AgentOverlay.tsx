@@ -50,6 +50,7 @@ export function AgentOverlay({
   }));
   const [internalOpen, setInternalOpen] = useState(false);
   const [isIconActive, setIsIconActive] = useState(false);
+  const [agentMinimized, setAgentMinimized] = useState(false);
   const [agentPosition, setAgentPosition] = useState<AgentIconPosition>(() =>
     getDefaultAgentPosition(viewport.width, viewport.height),
   );
@@ -117,10 +118,15 @@ export function AgentOverlay({
 
   const handleCloseChat = useCallback(() => {
     setChatOpen(false);
+    setAgentMinimized(false);
     window.setTimeout(() => {
       setIsIconActive(false);
     }, 320);
   }, [setChatOpen]);
+
+  useEffect(() => {
+    if (!isChatOpen) setAgentMinimized(false);
+  }, [isChatOpen]);
 
   const agentAnchorX = agentPosition.x + AGENT_ICON_SIZE / 2;
   const agentAnchorY = agentPosition.y + AGENT_ICON_SIZE / 2;
@@ -159,7 +165,11 @@ export function AgentOverlay({
           aria-hidden
           style={{
             position: "absolute",
-            inset: 0,
+            left: 0,
+            right: 0,
+            top: 0,
+            /* Minimized: leave bottom nav uncovered so tabs stay clickable */
+            bottom: agentMinimized ? bottomInset : 0,
             zIndex: 150,
             pointerEvents: "auto",
             touchAction: "none",
@@ -206,6 +216,7 @@ export function AgentOverlay({
           anchorX={agentAnchorX}
           anchorY={agentAnchorY}
           onTradeNow={onTradeNow}
+          onMinimizedChange={setAgentMinimized}
         />
       </div>
     </div>
