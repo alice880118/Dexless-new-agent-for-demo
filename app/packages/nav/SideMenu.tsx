@@ -311,112 +311,132 @@ export function SideMenu({
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 12,
-            padding: "0 12px 12px",
             flex: 1,
             minHeight: 0,
-            overflowY: "auto",
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
           }}
-          className="side-menu-scroll"
         >
           {walletConnected && (
             <div
               style={{
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: 12,
-                borderRadius: 8,
-                background: "rgba(255,255,255,0.05)",
-                marginTop: 12,
+                flexDirection: "column",
+                gap: 12,
+                padding: "12px 12px 12px",
+                flexShrink: 0,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <img
-                  src={NAV_ASSETS.menuAccount}
-                  alt=""
-                  style={{ width: 24, height: 24, display: "block", opacity: 0.8 }}
-                />
-                <div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 500,
-                      lineHeight: "20px",
-                      color: "#ffffff",
-                    }}
-                  >
-                    {walletAddress}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 500,
-                      lineHeight: "20px",
-                      color: COLORS.white50,
-                    }}
-                  >
-                    ID: 0x...5d68
-                  </div>
-                </div>
-              </div>
-              <img
-                src={NAV_ASSETS.menuSwapAccount}
-                alt=""
-                style={{ width: 15, height: 15, display: "block" }}
-              />
-            </div>
-          )}
-
-          {walletConnected && (
-            <button
-              type="button"
-              onClick={() => {
-                onOpenAgent?.();
-                onClose();
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 2,
-                width: "100%",
-                padding: "6px 8px",
-                borderRadius: 999,
-                border: "none",
-                cursor: "pointer",
-                backgroundImage: GRADIENTS.connectBtn,
-                fontFamily: FONT,
-              }}
-            >
-              <img
-                src={NAV_ASSETS.menuTradeDna}
-                alt=""
-                style={{ width: 18, height: 18, display: "block" }}
-              />
-              <span
+              <div
                 style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  lineHeight: "20px",
-                  color: "#ffffff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 12,
+                  borderRadius: 8,
+                  background: "rgba(255,255,255,0.05)",
                 }}
               >
-                Talk to Trade DNA
-              </span>
-            </button>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img
+                    src={NAV_ASSETS.menuAccount}
+                    alt=""
+                    style={{
+                      width: 24,
+                      height: 24,
+                      display: "block",
+                      opacity: 0.8,
+                    }}
+                  />
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        lineHeight: "20px",
+                        color: "#ffffff",
+                      }}
+                    >
+                      {walletAddress}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 500,
+                        lineHeight: "20px",
+                        color: COLORS.white50,
+                      }}
+                    >
+                      ID: 0x...5d68
+                    </div>
+                  </div>
+                </div>
+                <img
+                  src={NAV_ASSETS.menuSwapAccount}
+                  alt=""
+                  style={{ width: 16, height: 16, display: "block" }}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenAgent?.();
+                  onClose();
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 2,
+                  width: "100%",
+                  padding: "6px 8px",
+                  borderRadius: 999,
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundImage: GRADIENTS.connectBtn,
+                  fontFamily: FONT,
+                }}
+              >
+                <img
+                  src={NAV_ASSETS.menuTradeDna}
+                  alt=""
+                  style={{ width: 18, height: 18, display: "block" }}
+                />
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    lineHeight: "20px",
+                    color: "#ffffff",
+                  }}
+                >
+                  Talk to Trade DNA
+                </span>
+              </button>
+            </div>
           )}
 
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 8,
-              marginTop: walletConnected ? 0 : 12,
+              gap: 12,
+              padding: "0 12px 12px",
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
             }}
+            className="side-menu-scroll"
           >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                marginTop: walletConnected ? 0 : 12,
+              }}
+            >
             {NAV_ITEMS.map((item) => {
               const isOpen = !!expanded[item.id];
               const parentActive =
@@ -562,6 +582,7 @@ export function SideMenu({
               />
             </span>
           </button>
+          </div>
         </div>
 
         <div

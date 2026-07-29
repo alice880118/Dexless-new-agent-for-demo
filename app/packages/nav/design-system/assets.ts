@@ -28,7 +28,7 @@ export const NAV_ASSETS = {
   menuVaults: "/nav/menu-vaults.png",
   menuMoreDots: "/nav/menu-more-dots.png",
   menuSupport: "/nav/menu-support.png",
-  menuSwapAccount: "/nav/menu-swap-account.png",
+  menuSwapAccount: "/nav/menu-swap-account-new.png",
   menuAccount: "/nav/menu-account.png",
   bnTrading: "/nav/bn-trading.png",
   bnTradingActive: "/nav/bn-trading-active.png",

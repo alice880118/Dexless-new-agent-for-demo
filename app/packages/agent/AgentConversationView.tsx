@@ -3,8 +3,23 @@ import { FONT } from "../nav/design-system";
 import type { SignalAskSnapshot } from "./SignalViews";
 import type { FileAttachment } from "./file-attachment";
 import { FileAttachmentChip } from "./FileAttachmentChip";
+import { DraftOrderCard } from "./DraftOrderCard";
+import {
+  DRAFT_ORDER_REPLY,
+  NO_TPSL_DRAFT_ORDER,
+  NO_TPSL_DRAFT_REPLY,
+  PRIMARY_DRAFT_ORDER,
+  SUGGESTED_STOP_LOSS,
+  SUGGESTED_TAKE_PROFIT,
+  TPSL_ASK_MESSAGE,
+  TPSL_SUGGEST_REPLY,
+  isDraftOrderQuery,
+  isNoTpSlQuery,
+  type DraftOrder,
+} from "./draft-order";
 
 type ProcessPhase = "idle" | "planning" | "market" | "executing" | "complete";
+type TpSlSubFlow = "idle" | "analyzing" | "suggest" | "applied";
 
 const SNAPSHOT_ASSETS = {
   icon: "/trader-dna/chat/snapshot-icon.svg",
@@ -694,23 +709,249 @@ function SignalSnapshotCard({
   );
 }
 
+function DraftOrderResults({
+  reply,
+  order,
+  funded,
+  onDeposit,
+  onAddTakeProfit,
+  onAddStopLoss,
+}: {
+  reply: string;
+  order: DraftOrder;
+  funded?: boolean;
+  onDeposit?: () => void;
+  onAddTakeProfit?: () => void;
+  onAddStopLoss?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        gap: 12,
+        flexShrink: 0,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          padding: 8,
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontFamily: FONT,
+            fontWeight: 500,
+            fontSize: 13,
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
+          {reply}
+        </p>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <span
+            style={{
+              fontFamily: FONT,
+              fontWeight: 500,
+              fontSize: 12,
+              lineHeight: "18px",
+              color: "rgba(255,255,255,0.4)",
+            }}
+          >
+            Just now
+          </span>
+        </div>
+      </div>
+      <DraftOrderCard
+        order={order}
+        mode={funded ? "ready" : "deposit"}
+        onDeposit={onDeposit}
+        onSendOrder={() => undefined}
+        onModify={() => undefined}
+        onAddTakeProfit={onAddTakeProfit}
+        onAddStopLoss={onAddStopLoss}
+      />
+    </div>
+  );
+}
+
+function TpSlSuggestResults({
+  onApply,
+  onSkip,
+}: {
+  onApply: () => void;
+  onSkip: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        gap: 12,
+        flexShrink: 0,
+        padding: 8,
+        boxSizing: "border-box",
+      }}
+    >
+      <p
+        style={{
+          margin: 0,
+          fontFamily: FONT,
+          fontWeight: 500,
+          fontSize: 13,
+          lineHeight: "18px",
+          color: "rgba(255,255,255,0.8)",
+        }}
+      >
+        {TPSL_SUGGEST_REPLY}
+      </p>
+      <div style={{ display: "flex", gap: 8, width: "100%" }}>
+        <button
+          type="button"
+          onClick={onApply}
+          style={{
+            flex: 1,
+            height: 32,
+            border: "none",
+            borderRadius: 999,
+            backgroundImage:
+              "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
+            color: "#ffffff",
+            fontFamily: FONT,
+            fontWeight: 600,
+            fontSize: 11,
+            cursor: "pointer",
+          }}
+        >
+          Yes
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          style={{
+            flex: 1,
+            height: 32,
+            border: "1px solid rgba(255,255,255,0.2)",
+            borderRadius: 999,
+            background: "transparent",
+            color: "#ffffff",
+            fontFamily: FONT,
+            fontWeight: 600,
+            fontSize: 11,
+            cursor: "pointer",
+          }}
+        >
+          No
+        </button>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <span
+          style={{
+            fontFamily: FONT,
+            fontWeight: 500,
+            fontSize: 12,
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.4)",
+          }}
+        >
+          Just now
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function UserBubble({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        paddingLeft: 40,
+        width: "100%",
+        boxSizing: "border-box",
+        gap: 2,
+        flexShrink: 0,
+      }}
+    >
+      <div
+        style={{
+          background: "rgba(255,255,255,0.05)",
+          padding: "8px 12px",
+          borderRadius: "16px 16px 2px 16px",
+          maxWidth: 292,
+          boxSizing: "border-box",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontFamily: FONT,
+            fontWeight: 500,
+            fontSize: 13,
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.9)",
+          }}
+        >
+          {text}
+        </p>
+      </div>
+      <span
+        style={{
+          fontFamily: FONT,
+          fontWeight: 500,
+          fontSize: 12,
+          lineHeight: "18px",
+          color: "rgba(255,255,255,0.4)",
+        }}
+      >
+        Just now
+      </span>
+    </div>
+  );
+}
+
 export function AgentConversationView({
   userMessage = "I want to long BTC with 20U",
   agentName = "Trader DNA",
   signalSnapshot,
   fileAttachment,
+  onDraftDeposit,
+  draftFunded = false,
 }: {
   userMessage?: string;
   agentName?: string;
   signalSnapshot?: SignalAskSnapshot | null;
   fileAttachment?: FileAttachment | null;
+  onDraftDeposit?: () => void;
+  draftFunded?: boolean;
 }) {
+  const isNoTpSl = isNoTpSlQuery(userMessage);
+  const isDraftFlow = isDraftOrderQuery(userMessage);
   const [phase, setPhase] = useState<ProcessPhase>("planning");
   const [phaseSteps, setPhaseSteps] = useState(0);
+  const [hasInitialResult, setHasInitialResult] = useState(false);
+  const [draftOrder, setDraftOrder] = useState<DraftOrder>(() =>
+    isNoTpSl ? NO_TPSL_DRAFT_ORDER : PRIMARY_DRAFT_ORDER,
+  );
+  const [tpSlFlow, setTpSlFlow] = useState<TpSlSubFlow>("idle");
+  const [askMessage, setAskMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setPhase("planning");
     setPhaseSteps(0);
+    setHasInitialResult(false);
+    setTpSlFlow("idle");
+    setAskMessage(null);
+    setDraftOrder(isNoTpSlQuery(userMessage) ? NO_TPSL_DRAFT_ORDER : PRIMARY_DRAFT_ORDER);
   }, [userMessage, signalSnapshot, fileAttachment]);
 
   useEffect(() => {
@@ -741,10 +982,47 @@ export function AgentConversationView({
       later(() => {
         setPhase("complete");
         setPhaseSteps(0);
+        setHasInitialResult(true);
+        setTpSlFlow((prev) => (prev === "analyzing" ? "suggest" : prev));
       }, 2450);
     }
     return () => ts.forEach((id) => window.clearTimeout(id));
   }, [phase]);
+
+  const startTpSlAsk = () => {
+    if (tpSlFlow !== "idle") return;
+    setAskMessage(TPSL_ASK_MESSAGE);
+    setTpSlFlow("analyzing");
+    setPhase("planning");
+    setPhaseSteps(0);
+  };
+
+  const applyTpSl = () => {
+    setDraftOrder((prev) => ({
+      ...prev,
+      takeProfit: SUGGESTED_TAKE_PROFIT,
+      stopLoss: SUGGESTED_STOP_LOSS,
+    }));
+    setTpSlFlow("applied");
+  };
+
+  const skipTpSl = () => {
+    setTpSlFlow("idle");
+    setAskMessage(null);
+  };
+
+  const showAskTurn =
+    Boolean(askMessage) &&
+    (tpSlFlow === "analyzing" ||
+      tpSlFlow === "suggest" ||
+      tpSlFlow === "applied");
+  const analyzingAsk = tpSlFlow === "analyzing" && phase !== "complete";
+  const showSuggest = tpSlFlow === "suggest" && phase === "complete";
+  const canAddTpSl =
+    isNoTpSl && tpSlFlow === "idle" && !draftOrder.takeProfit && !draftOrder.stopLoss;
+  const draftReply =
+    isNoTpSl && !draftOrder.takeProfit ? NO_TPSL_DRAFT_REPLY : DRAFT_ORDER_REPLY;
+  const showInitialProcess = !hasInitialResult;
 
   return (
     <div
@@ -839,7 +1117,7 @@ export function AgentConversationView({
         </div>
       </div>
 
-      {phase === "planning" && (
+      {showInitialProcess && phase === "planning" && (
         <>
           <PlanningStepsCard
             label="Planning..."
@@ -856,7 +1134,7 @@ export function AgentConversationView({
         </>
       )}
 
-      {(phase === "market" || phase === "executing") && (
+      {showInitialProcess && (phase === "market" || phase === "executing") && (
         <>
           <CollapsedProcessCard label="Plan" />
           <PlanningStepsCard
@@ -874,12 +1152,64 @@ export function AgentConversationView({
         </>
       )}
 
-      {phase === "complete" && (
+      {hasInitialResult && (
         <>
           <CollapsedProcessCard label="Plan" />
           <CollapsedProcessCard label="Market Analysis" />
-          <AnalysisResults />
+          {isDraftFlow ? (
+            <DraftOrderResults
+              reply={draftReply}
+              order={draftOrder}
+              funded={draftFunded}
+              onDeposit={onDraftDeposit}
+              onAddTakeProfit={canAddTpSl ? startTpSlAsk : undefined}
+              onAddStopLoss={canAddTpSl ? startTpSlAsk : undefined}
+            />
+          ) : (
+            <AnalysisResults />
+          )}
         </>
+      )}
+
+      {showAskTurn && askMessage ? <UserBubble text={askMessage} /> : null}
+
+      {analyzingAsk && phase === "planning" && (
+        <>
+          <PlanningStepsCard
+            label="Planning..."
+            phaseSteps={phaseSteps}
+            steps={[
+              "Reviewing draft order risk...",
+              "Estimating Take Profit levels...",
+              "Estimating Stop Loss levels...",
+            ]}
+          />
+          <div style={{ paddingRight: 64 }}>
+            <ThinkingBubble name={agentName} />
+          </div>
+        </>
+      )}
+
+      {analyzingAsk && (phase === "market" || phase === "executing") && (
+        <>
+          <CollapsedProcessCard label="Plan" />
+          <PlanningStepsCard
+            label="Risk Analysis..."
+            phaseSteps={phase === "executing" ? 3 : phaseSteps}
+            steps={[
+              "Review draft order risk",
+              "Estimate Take Profit levels",
+              "Estimate Stop Loss levels",
+            ]}
+          />
+          <div style={{ paddingRight: 64 }}>
+            <ThinkingBubble name={agentName} />
+          </div>
+        </>
+      )}
+
+      {showSuggest && (
+        <TpSlSuggestResults onApply={applyTpSl} onSkip={skipTpSl} />
       )}
     </div>
   );

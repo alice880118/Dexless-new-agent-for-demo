@@ -103,8 +103,8 @@ export function SignMessageModal({ onClose, onSign }: SignMessageModalProps) {
           <img
             src={ONBOARDING_ASSETS.signIcon}
             alt=""
-            width={22}
-            height={22}
+            width={24}
+            height={24}
             style={{ display: "block" }}
           />
         </div>

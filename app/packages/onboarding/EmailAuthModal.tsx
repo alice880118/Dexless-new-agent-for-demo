@@ -346,10 +346,11 @@ export function EmailAuthModal({
   const emailMsg = emailStatusMessage(emailStatus);
   const codeMsg = codeStatusMessage(codeStatus, countdown);
   const isSuccess = codeStatus === "success";
+  const shellStyle = modalShell;
 
   if (step === "email") {
     return (
-      <div style={modalShell} onClick={(e) => e.stopPropagation()}>
+      <div style={shellStyle} onClick={(e) => e.stopPropagation()}>
         <CloseButton onClick={onClose} />
         <div
           style={{
@@ -483,7 +484,7 @@ export function EmailAuthModal({
   }
 
   return (
-    <div style={modalShell} onClick={(e) => e.stopPropagation()}>
+    <div style={shellStyle} onClick={(e) => e.stopPropagation()}>
       <BackButton
         onClick={() => {
           onBack();

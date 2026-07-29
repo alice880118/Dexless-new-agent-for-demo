@@ -25,7 +25,17 @@ export function IndexPage() {
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [tradeSignal, setTradeSignal] = useState<SignalCardData | null>(null);
   const walletConnected = walletState === "connected";
-  const bottomInset = showBottom ? 53 : showFooter ? FOOTER_HEIGHT : 0;
+  const isMobile = breakpoint === "390";
+  /** Mobile onboarding is full-page and covers bottom nav */
+  const hideBottomForOnboarding = isMobile && onboardingOpen;
+  const bottomInset =
+    hideBottomForOnboarding
+      ? 0
+      : showBottom
+        ? 53
+        : showFooter
+          ? FOOTER_HEIGHT
+          : 0;
 
   return (
     <div
@@ -56,7 +66,13 @@ export function IndexPage() {
 
       <main
         style={{
-          height: `calc(100vh - 48px${showBottom ? " - 53px" : showFooter ? ` - ${FOOTER_HEIGHT}px` : ""})`,
+          height: `calc(100vh - 48px${
+            showBottom && !hideBottomForOnboarding
+              ? " - 53px"
+              : showFooter
+                ? ` - ${FOOTER_HEIGHT}px`
+                : ""
+          })`,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -106,7 +122,7 @@ export function IndexPage() {
         )}
       </main>
 
-      {showBottom && (
+      {showBottom && !hideBottomForOnboarding && (
         <BottomNavBar
           breakpoint={breakpoint}
           activeId={

@@ -2,7 +2,7 @@
 export const ONBOARDING_ASSETS = {
   info: "/onboarding/info.png",
   /** Sign In hero for <768 mobile layout */
-  infoMobile: "/onboarding/info-mobile.png",
+  infoMobile: "/onboarding/sign-in-hero-mobile.png",
   logo: "/nav/logo.png",
   logoWordmark: "/nav/logo.png",
   logoMark: "/onboarding/logo-mark.png",
@@ -10,9 +10,9 @@ export const ONBOARDING_ASSETS = {
   stepDefault: "/onboarding/step-default.png",
   stepLine: "/onboarding/step-line.png",
   stepLineActive: "/onboarding/step-line-active.png",
-  circleCheck: "/onboarding/circle-check.png",
+  circleCheck: "/onboarding/circle-check.svg",
   circleCheckGreen: "/onboarding/circle-check-green.svg",
-  walletIcon: "/onboarding/wallet-icon.png",
+  walletIcon: "/onboarding/wallet-icon.svg",
   arrowRight: "/onboarding/arrow-right.png",
   checkbox: "/onboarding/checkbox.png",
   checkboxOn: "/onboarding/checkbox-checked.png",

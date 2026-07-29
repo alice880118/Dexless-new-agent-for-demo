@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { FONT, GRADIENTS } from "../nav/design-system";
+import { DraftOrderCard } from "./DraftOrderCard";
+import { DEMO_DRAFT_ORDERS, type DraftOrder } from "./draft-order";
 
 const ASSETS = {
   search: "/trader-dna/more/search.svg",
@@ -9,6 +11,8 @@ const ASSETS = {
 } as const;
 
 const SWIPE_DELETE_W = 72;
+
+type MoreTab = "history" | "drafts";
 
 type ConversationItem = {
   id: string;
@@ -253,10 +257,16 @@ function SwipeDeleteRow({
 
 export function MoreView({
   onRename,
+  initialTab = "history",
+  onAskAgent,
 }: {
   onRename: () => void;
+  initialTab?: MoreTab;
+  onAskAgent?: (order: DraftOrder) => void;
 }) {
   const isNarrow = useIsNarrow();
+  const [tab, setTab] = useState<MoreTab>(initialTab);
+  const [selectedDraft, setSelectedDraft] = useState<DraftOrder | null>(null);
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [searching, setSearching] = useState(false);
@@ -264,6 +274,11 @@ export function MoreView({
   const [menuId, setMenuId] = useState<string | null>(null);
   const [swipeId, setSwipeId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTab(initialTab);
+    if (initialTab === "drafts") setSelectedDraft(null);
+  }, [initialTab]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -284,6 +299,17 @@ export function MoreView({
     const q = debounced.toLowerCase();
     return items.filter((c) => c.title.toLowerCase().includes(q));
   }, [items, debounced]);
+
+  const filteredDrafts = useMemo(() => {
+    if (!debounced) return DEMO_DRAFT_ORDERS;
+    const q = debounced.toLowerCase();
+    return DEMO_DRAFT_ORDERS.filter(
+      (d) =>
+        d.title.toLowerCase().includes(q) ||
+        d.listSummary.toLowerCase().includes(q) ||
+        d.market.toLowerCase().includes(q),
+    );
+  }, [debounced]);
 
   const grouped = useMemo(() => {
     return GROUP_ORDER.map((group) => ({
@@ -345,7 +371,7 @@ export function MoreView({
             fontFamily: FONT,
             boxSizing: "border-box",
             textAlign: "left",
-            marginBottom: 16,
+            marginBottom: 20,
           }}
         >
           <span style={{ flex: 1, minWidth: 0 }}>
@@ -385,248 +411,480 @@ export function MoreView({
           />
         </button>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            height: 34,
-            padding: "0 12px",
-            borderRadius: 8,
-            background: "rgba(255,255,255,0.05)",
-            boxSizing: "border-box",
-            marginBottom: 16,
-            gap: 6,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <img
-            src={ASSETS.search}
-            alt=""
-            width={16}
-            height={16}
-            style={{ display: "block", flexShrink: 0 }}
-          />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search conversations..."
-            style={{
-              flex: 1,
-              minWidth: 0,
-              border: "none",
-              outline: "none",
-              background: "transparent",
-              color: "rgba(255,255,255,0.8)",
-              fontSize: 12,
-              fontWeight: 600,
-              lineHeight: "18px",
-              fontFamily: FONT,
-            }}
-          />
-          {searching && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: "rgba(255,255,255,0.4)",
-                flexShrink: 0,
-                animation: "moreSearchPulse 900ms ease-in-out infinite",
-              }}
-            >
-              Searching…
-            </span>
-          )}
-          {query.length > 0 && !searching && (
+        {selectedDraft ? (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: 16 }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
-              aria-label="Clear search"
-              onClick={() => {
-                setQuery("");
-                inputRef.current?.focus();
-              }}
+              aria-label="Back"
+              onClick={() => setSelectedDraft(null)}
               style={{
-                width: 13,
-                height: 13,
+                width: 18,
+                height: 18,
                 padding: 0,
                 border: "none",
                 background: "transparent",
                 cursor: "pointer",
                 display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <img
-                src={ASSETS.clear}
-                alt=""
-                width={13}
-                height={13}
-                style={{ display: "block" }}
-              />
+              <svg
+                width={18}
+                height={18}
+                viewBox="0 0 18 18"
+                fill="none"
+                aria-hidden
+                style={{ display: "block", flexShrink: 0 }}
+              >
+                <path
+                  d="M11.25 4.5L6.75 9l4.5 4.5"
+                  stroke="#ffffff"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </button>
-          )}
-        </div>
-
-        {grouped.length === 0 && (
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12,
-              fontWeight: 500,
-              color: "rgba(255,255,255,0.4)",
-              textAlign: "center",
-              paddingTop: 24,
-            }}
-          >
-            No conversations found
-          </p>
-        )}
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {grouped.map(({ group, rows }) => (
+            <DraftOrderCard
+              order={selectedDraft}
+              mode="actions"
+              onAskAgent={() => onAskAgent?.(selectedDraft)}
+              onSendOrder={() => undefined}
+            />
+          </div>
+        ) : (
+          <>
             <div
-              key={group}
-              style={{ display: "flex", flexDirection: "column", gap: 10 }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 24,
+                marginBottom: 16,
+              }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <span
+              {(
+                [
+                  { id: "history" as const, label: "History" },
+                  { id: "drafts" as const, label: "Draft Orders" },
+                ] as const
+              ).map((t) => {
+                const active = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setTab(t.id);
+                      setQuery("");
+                    }}
+                    style={{
+                      position: "relative",
+                      margin: 0,
+                      padding: "0 0 8px",
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      fontFamily: FONT,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      lineHeight: "18px",
+                      color: active
+                        ? "#ffffff"
+                        : "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    {t.label}
+                    {active && (
+                      <span
+                        style={{
+                          position: "absolute",
+                          left: "50%",
+                          bottom: 0,
+                          transform: "translateX(-50%)",
+                          width: 40,
+                          height: 2,
+                          borderRadius: 1,
+                          background: "#dbfd5c",
+                        }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                height: 34,
+                padding: "0 12px",
+                borderRadius: 8,
+                background: "rgba(255,255,255,0.05)",
+                boxSizing: "border-box",
+                marginBottom: 16,
+                gap: 6,
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={ASSETS.search}
+                alt=""
+                width={16}
+                height={16}
+                style={{ display: "block", flexShrink: 0 }}
+              />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={
+                  tab === "drafts"
+                    ? "Search Orders..."
+                    : "Search conversations..."
+                }
                 style={{
-                  fontSize: 13,
+                  flex: 1,
+                  minWidth: 0,
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: 12,
                   fontWeight: 600,
                   lineHeight: "18px",
-                  color: "rgba(255,255,255,0.5)",
+                  fontFamily: FONT,
                 }}
-              >
-                {group}
-              </span>
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: 8 }}
-              >
-                {rows.map((row) =>
-                  isNarrow && !row.active ? (
-                    <div
-                      key={row.id}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <SwipeDeleteRow
-                        row={row}
-                        open={swipeId === row.id}
-                        onOpen={() => setSwipeId(row.id)}
-                        onClose={() =>
-                          setSwipeId((prev) =>
-                            prev === row.id ? null : prev,
-                          )
-                        }
-                        onDelete={() => deleteConversation(row.id)}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      key={row.id}
+              />
+              {searching && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: "rgba(255,255,255,0.4)",
+                    flexShrink: 0,
+                    animation:
+                      "moreSearchPulse 900ms ease-in-out infinite",
+                  }}
+                >
+                  Searching…
+                </span>
+              )}
+              {query.length > 0 && !searching && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    setQuery("");
+                    inputRef.current?.focus();
+                  }}
+                  style={{
+                    width: 13,
+                    height: 13,
+                    padding: 0,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    flexShrink: 0,
+                  }}
+                >
+                  <img
+                    src={ASSETS.clear}
+                    alt=""
+                    width={13}
+                    height={13}
+                    style={{ display: "block" }}
+                  />
+                </button>
+              )}
+            </div>
+
+            {tab === "drafts" ? (
+              <>
+                {filteredDrafts.length === 0 && (
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "rgba(255,255,255,0.4)",
+                      textAlign: "center",
+                      paddingTop: 24,
+                    }}
+                  >
+                    No orders found
+                  </p>
+                )}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  {filteredDrafts.map((draft) => (
+                    <button
+                      key={draft.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDraft(draft);
+                      }}
                       style={{
-                        position: "relative",
                         display: "flex",
-                        alignItems: "center",
-                        gap: 6,
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: 2,
+                        width: "100%",
                         minHeight: 60,
                         padding: 12,
                         borderRadius: 8,
                         border: "1px solid rgba(255,255,255,0.05)",
+                        background: "transparent",
                         boxSizing: "border-box",
+                        cursor: "pointer",
+                        fontFamily: FONT,
+                        textAlign: "left",
                       }}
-                      onClick={(e) => e.stopPropagation()}
                     >
-                      <ConversationBody row={row} />
-                      {row.active ? (
-                        <span
-                          style={{
-                            padding: "2px 8px",
-                            borderRadius: 8,
-                            border: "1px solid #00ffab",
-                            color: "#00ffab",
-                            fontSize: 12,
-                            fontWeight: 600,
-                            lineHeight: "18px",
-                            flexShrink: 0,
-                          }}
-                        >
-                          Active
-                        </span>
-                      ) : (
-                        !isNarrow && (
-                          <button
-                            type="button"
-                            aria-label="More actions"
-                            onClick={() =>
-                              setMenuId((prev) =>
-                                prev === row.id ? null : row.id,
-                              )
-                            }
-                            style={{
-                              width: 20,
-                              height: 20,
-                              padding: 0,
-                              border: "none",
-                              background: "transparent",
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <img
-                              src={ASSETS.moreDots}
-                              alt=""
-                              width={15}
-                              height={3}
-                              style={{ display: "block" }}
-                            />
-                          </button>
-                        )
-                      )}
-                      {!isNarrow && menuId === row.id && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            right: 12,
-                            top: 44,
-                            zIndex: 5,
-                            width: "fit-content",
-                            borderRadius: 8,
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            background: "#232323",
-                            overflow: "hidden",
-                            boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => deleteConversation(row.id)}
-                            style={{
-                              width: "fit-content",
-                              padding: "10px 12px",
-                              border: "none",
-                              background: "transparent",
-                              color: "#ff41a3",
-                              fontSize: 12,
-                              fontWeight: 600,
-                              fontFamily: FONT,
-                              cursor: "pointer",
-                              textAlign: "left",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ),
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          lineHeight: "18px",
+                          color: "rgba(255,255,255,0.8)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          width: "100%",
+                        }}
+                      >
+                        {draft.title}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          lineHeight: "18px",
+                          color: "rgba(255,255,255,0.5)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          width: "100%",
+                        }}
+                      >
+                        {draft.listSummary}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 500,
+                          lineHeight: "18px",
+                          color: "rgba(255,255,255,0.5)",
+                        }}
+                      >
+                        {draft.time}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                {grouped.length === 0 && (
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "rgba(255,255,255,0.4)",
+                      textAlign: "center",
+                      paddingTop: 24,
+                    }}
+                  >
+                    No conversations found
+                  </p>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                  }}
+                >
+                  {grouped.map(({ group, rows }) => (
+                    <div
+                      key={group}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          lineHeight: "18px",
+                          color: "rgba(255,255,255,0.5)",
+                        }}
+                      >
+                        {group}
+                      </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        {rows.map((row) =>
+                          isNarrow && !row.active ? (
+                            <div
+                              key={row.id}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <SwipeDeleteRow
+                                row={row}
+                                open={swipeId === row.id}
+                                onOpen={() => setSwipeId(row.id)}
+                                onClose={() =>
+                                  setSwipeId((prev) =>
+                                    prev === row.id ? null : prev,
+                                  )
+                                }
+                                onDelete={() =>
+                                  deleteConversation(row.id)
+                                }
+                              />
+                            </div>
+                          ) : (
+                            <div
+                              key={row.id}
+                              style={{
+                                position: "relative",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                minHeight: 60,
+                                padding: 12,
+                                borderRadius: 8,
+                                border:
+                                  "1px solid rgba(255,255,255,0.05)",
+                                boxSizing: "border-box",
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ConversationBody row={row} />
+                              {row.active ? (
+                                <span
+                                  style={{
+                                    padding: "2px 8px",
+                                    borderRadius: 8,
+                                    border: "1px solid #00ffab",
+                                    color: "#00ffab",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    lineHeight: "18px",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  Active
+                                </span>
+                              ) : (
+                                !isNarrow && (
+                                  <button
+                                    type="button"
+                                    aria-label="More actions"
+                                    onClick={() =>
+                                      setMenuId((prev) =>
+                                        prev === row.id
+                                          ? null
+                                          : row.id,
+                                      )
+                                    }
+                                    style={{
+                                      width: 20,
+                                      height: 20,
+                                      padding: 0,
+                                      border: "none",
+                                      background: "transparent",
+                                      cursor: "pointer",
+                                      display: "inline-flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <img
+                                      src={ASSETS.moreDots}
+                                      alt=""
+                                      width={15}
+                                      height={3}
+                                      style={{ display: "block" }}
+                                    />
+                                  </button>
+                                )
+                              )}
+                              {!isNarrow && menuId === row.id && (
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    right: 12,
+                                    top: 44,
+                                    zIndex: 5,
+                                    width: "fit-content",
+                                    borderRadius: 8,
+                                    border:
+                                      "1px solid rgba(255,255,255,0.1)",
+                                    background: "#232323",
+                                    overflow: "hidden",
+                                    boxShadow:
+                                      "0 8px 24px rgba(0,0,0,0.35)",
+                                  }}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      deleteConversation(row.id)
+                                    }
+                                    style={{
+                                      width: "fit-content",
+                                      padding: "10px 12px",
+                                      border: "none",
+                                      background: "transparent",
+                                      color: "#ff41a3",
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      fontFamily: FONT,
+                                      cursor: "pointer",
+                                      textAlign: "left",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
 
       <style>{`

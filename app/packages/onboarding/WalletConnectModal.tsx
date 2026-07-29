@@ -12,7 +12,7 @@ type WalletConnectModalProps = {
   skipSetupNext?: boolean;
 };
 
-const shell: CSSProperties = {
+const modalShell: CSSProperties = {
   position: "relative",
   width: "100%",
   maxWidth: 360,
@@ -55,7 +55,7 @@ export function WalletConnectModal({
   };
 
   return (
-    <div style={shell} onClick={(e) => e.stopPropagation()}>
+    <div style={modalShell} onClick={(e) => e.stopPropagation()}>
       <div
         style={{
           display: "flex",
@@ -115,6 +115,7 @@ export function WalletConnectModal({
           style={{
             width: 240,
             height: 240,
+            aspectRatio: "1 / 1",
             borderRadius: 16,
             background: "#ffffff",
             padding: 12,
@@ -247,36 +248,10 @@ export function WalletConnectModal({
           QC preview
         </p>
         <button type="button" onClick={onFirstConnect} style={qcBtn}>
-          First connect — Referral → Setup → Add funds
-          <span
-            style={{
-              display: "block",
-              marginTop: 4,
-              fontSize: 11,
-              fontWeight: 500,
-              color: COLORS.white50,
-            }}
-          >
-            Skips signature popups
-          </span>
+          &gt;new user
         </button>
         <button type="button" onClick={onReturnConnect} style={qcBtn}>
-          {skipSetupNext
-            ? "Return connect — Skip setup → Trader DNA"
-            : "Return connect — Enable trading (no referral)"}
-          <span
-            style={{
-              display: "block",
-              marginTop: 4,
-              fontSize: 11,
-              fontWeight: 500,
-              color: COLORS.white50,
-            }}
-          >
-            {skipSetupNext
-            ? "Remember me was on last time"
-            : "Figma 7526:83099 · no referral"}
-          </span>
+          old user
         </button>
       </div>
     </div>

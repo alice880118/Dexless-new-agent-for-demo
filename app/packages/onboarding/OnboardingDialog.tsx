@@ -1,4 +1,5 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
@@ -23,6 +24,28 @@ type FlowStep =
   | "funds"
   | "trader-dna-live";
 
+/** Steps that remain overlay modals (mobile portal + desktop card) */
+type ModalFlowStep =
+  | "email"
+  | "code"
+  | "wallet-connect"
+  | "sign"
+  | "enable-trading"
+  | "trader-dna-live";
+
+type PageFlowStep = Exclude<FlowStep, ModalFlowStep>;
+
+function isModalFlowStep(step: FlowStep): step is ModalFlowStep {
+  return (
+    step === "email" ||
+    step === "code" ||
+    step === "wallet-connect" ||
+    step === "sign" ||
+    step === "enable-trading" ||
+    step === "trader-dna-live"
+  );
+}
+
 type OnboardingDialogProps = {
   open: boolean;
   onClose: () => void;
@@ -44,7 +67,7 @@ const orLineStyle: CSSProperties = {
   background: "rgba(255,255,255,0.15)",
 };
 
-const overlayStyle: CSSProperties = {
+const overlayStyleDesktop: CSSProperties = {
   position: "fixed",
   left: 0,
   right: 0,
@@ -62,6 +85,37 @@ const overlayStyle: CSSProperties = {
   overscrollBehavior: "contain",
 };
 
+const pageStyleMobile: CSSProperties = {
+  position: "fixed",
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 250,
+  display: "flex",
+  flexDirection: "column",
+  padding: 0,
+  boxSizing: "border-box",
+  background: "#0a0b0d",
+  fontFamily: FONT,
+  overflow: "hidden",
+  overscrollBehavior: "contain",
+};
+
+const modalOverlayStyle: CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 400,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: 16,
+  boxSizing: "border-box",
+  background: "rgba(0,0,0,0.55)",
+  backdropFilter: "blur(6px)",
+  WebkitBackdropFilter: "blur(6px)",
+  fontFamily: FONT,
+};
+
 export function OnboardingDialog({
   open,
   onClose,
@@ -75,6 +129,8 @@ export function OnboardingDialog({
   /** <768 only — 390 breakpoint */
   const isMobile = breakpoint === "390";
   const [step, setStep] = useState<FlowStep>("sign-in");
+  /** Last non-modal page step — shown under sign / enable-trading on mobile */
+  const [lastPageStep, setLastPageStep] = useState<PageFlowStep>("sign-in");
   const [email, setEmail] = useState("");
   const [setupPhase, setSetupPhase] = useState<1 | 2>(1);
   const [waitingSig, setWaitingSig] = useState(false);
@@ -84,20 +140,29 @@ export function OnboardingDialog({
   /** Wallet return visit: after enable → trader-dna (no add funds) */
   const [walletReturnVisit, setWalletReturnVisit] = useState(false);
   const [skipSetupNext, setSkipSetupNext] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   useEffect(() => {
     if (!open) {
       setStep("sign-in");
+      setLastPageStep("sign-in");
       setEmail("");
       setSetupPhase(1);
       setWaitingSig(false);
       setSignRound(1);
       setSkipSignatures(false);
       setWalletReturnVisit(false);
+      setKeyboardOffset(0);
       // Keep skipSetupNext in memory for same-session return visit;
       // full page refresh resets to default.
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!isModalFlowStep(step)) {
+      setLastPageStep(step);
+    }
+  }, [step]);
 
   useEffect(() => {
     try {
@@ -106,6 +171,26 @@ export function OnboardingDialog({
       // ignore
     }
   }, []);
+
+  useEffect(() => {
+    if (!open || !isMobile) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const covered = Math.max(
+        0,
+        window.innerHeight - vv.height - vv.offsetTop,
+      );
+      setKeyboardOffset(covered > 80 ? covered : 0);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [open, isMobile]);
 
   const persistSkipSetupNext = (value: boolean) => {
     setSkipSetupNext(value);
@@ -152,6 +237,11 @@ export function OnboardingDialog({
     onClose();
   };
 
+  const goTraderDnaLive = () => {
+    onComplete?.({ openAgent: false });
+    setStep("trader-dna-live");
+  };
+
   const goSetup = () => {
     setSetupPhase(1);
     setWaitingSig(false);
@@ -173,7 +263,7 @@ export function OnboardingDialog({
     if (skipSetupNext) {
       setSkipSignatures(false);
       setWalletReturnVisit(false);
-      setStep("trader-dna-live");
+      goTraderDnaLive();
       return;
     }
     setWaitingSig(false);
@@ -191,7 +281,7 @@ export function OnboardingDialog({
   const finishSetupAfterEnable = () => {
     setWaitingSig(false);
     if (walletReturnVisit) {
-      setStep("trader-dna-live");
+      goTraderDnaLive();
       return;
     }
     setStep("funds");
@@ -203,7 +293,7 @@ export function OnboardingDialog({
     setWaitingSig(true);
     window.setTimeout(() => {
       setWaitingSig(false);
-      setStep("trader-dna-live");
+      goTraderDnaLive();
     }, 2000);
   };
 
@@ -262,542 +352,550 @@ export function OnboardingDialog({
     step === "wallet-connect" ||
     step === "trader-dna-live";
 
-  const panelKey =
-    step === "setup"
-      ? `setup-${setupPhase}`
-      : step === "sign"
-        ? `sign-${signRound}`
-        : step;
-
-  let panel = null;
-  if (step === "sign-in") {
-    const authActions = (
-      <>
-        <div
+  const renderSignIn = (): ReactNode => {
+    const authButtons = (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          width: "100%",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setStep("wallet-connect")}
           style={{
             display: "flex",
-            flexDirection: "column",
-            gap: 8,
+            alignItems: "center",
+            justifyContent: "center",
             width: "100%",
+            height: 44,
+            padding: "6px 12px",
+            border: "none",
+            borderRadius: 999,
+            cursor: "pointer",
+            backgroundImage: GRADIENTS.connectBtn,
+            fontFamily: FONT,
+            boxSizing: "border-box",
           }}
         >
-          <p
+          <span
             style={{
-              margin: 0,
-              fontSize: isMobile ? 18 : 20,
+              fontSize: 14,
               fontWeight: 600,
-              lineHeight: "20px",
+              lineHeight: "18px",
               color: "#ffffff",
             }}
           >
-            Sign In
-          </p>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 14,
-              fontWeight: 500,
-              lineHeight: "20px",
-              color: COLORS.white60,
-            }}
-          >
-            Choose one to continue. You can link both methods later.
-          </p>
-        </div>
+            Connect Wallet
+          </span>
+        </button>
 
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            gap: 4,
+            alignItems: "center",
+            gap: 7,
+            height: 40,
             width: "100%",
           }}
         >
-          <button
-            type="button"
-            onClick={() => setStep("wallet-connect")}
+          <span style={orLineStyle} />
+          <span
             style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              height: 44,
-              padding: "6px 12px",
-              border: "none",
-              borderRadius: 999,
-              cursor: "pointer",
-              backgroundImage: GRADIENTS.connectBtn,
-              fontFamily: FONT,
-              boxSizing: "border-box",
+              fontSize: 12,
+              fontWeight: 600,
+              lineHeight: "18px",
+              color: COLORS.white50,
+              flexShrink: 0,
             }}
           >
-            <span
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                lineHeight: "18px",
-                color: "#ffffff",
-              }}
-            >
-              Connect Wallet
-            </span>
-          </button>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              height: isMobile ? 36 : 40,
-              width: "100%",
-            }}
-          >
-            <span style={orLineStyle} />
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                lineHeight: "18px",
-                color: COLORS.white50,
-                flexShrink: 0,
-              }}
-            >
-              Or
-            </span>
-            <span style={orLineStyle} />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setStep("email")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "100%",
-              height: 44,
-              padding: "6px 12px",
-              border: "none",
-              borderRadius: 999,
-              cursor: "pointer",
-              background: "rgba(255,255,255,0.8)",
-              fontFamily: FONT,
-              boxSizing: "border-box",
-            }}
-          >
-            <span
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                lineHeight: "18px",
-                color: "#000000",
-              }}
-            >
-              Continue with Email
-            </span>
-          </button>
+            Or
+          </span>
+          <span style={orLineStyle} />
         </div>
 
-        <p
+        <button
+          type="button"
+          onClick={() => setStep("email")}
           style={{
-            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             width: "100%",
-            fontSize: isMobile ? 12 : 13,
-            fontWeight: 500,
-            lineHeight: isMobile ? "16px" : "18px",
-            color: COLORS.white40,
+            height: 44,
+            padding: "6px 12px",
+            border: "none",
+            borderRadius: 999,
+            cursor: "pointer",
+            background: "rgba(255,255,255,0.8)",
+            fontFamily: FONT,
+            boxSizing: "border-box",
           }}
         >
-          By continuing, you agree to the Terms of Service and Risk Disclosure.
-        </p>
-      </>
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              lineHeight: "18px",
+              color: "#000000",
+            }}
+          >
+            Continue with Email
+          </span>
+        </button>
+      </div>
+    );
+
+    const legalText = (
+      <p
+        style={{
+          margin: 0,
+          width: "100%",
+          fontSize: 13,
+          fontWeight: 500,
+          lineHeight: "18px",
+          color: COLORS.white40,
+          textAlign: isMobile ? "center" : "left",
+        }}
+      >
+        By continuing, you agree to the Terms of Service and Risk Disclosure.
+      </p>
     );
 
     if (isMobile) {
-      panel = (
+      return (
         <div
           style={{
             position: "relative",
             display: "flex",
             flexDirection: "column",
             width: "100%",
-            maxWidth: 360,
-            maxHeight: "100%",
-            borderRadius: 12,
+            height: "100%",
+            minHeight: 0,
             overflow: "hidden",
-            background: "#08080c",
+            background: "#000000",
             boxSizing: "border-box",
-            border: "1px solid #424242",
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            style={{
-              position: "absolute",
-              top: 12,
-              right: 12,
-              zIndex: 3,
-              width: 28,
-              height: 28,
-              borderRadius: 999,
-              border: "none",
-              background: "rgba(255,255,255,0.06)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-          >
-            <img
-              src={ONBOARDING_ASSETS.close}
-              alt=""
-              width={14}
-              height={14}
-              style={{ display: "block" }}
-            />
-          </button>
           <div
             style={{
-              position: "relative",
-              flexShrink: 0,
-              height: 168,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              padding: "20px 20px 16px",
-              boxSizing: "border-box",
-              overflow: "hidden",
-            }}
-          >
-            <img
-              src={ONBOARDING_ASSETS.infoMobile}
-              alt=""
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition: "center right",
-                pointerEvents: "none",
-              }}
-            />
-            <img
-              src={ONBOARDING_ASSETS.logo}
-              alt="DEXLESS"
-              style={{
-                position: "relative",
-                zIndex: 1,
-                display: "block",
-                width: LOGO_WIDTH,
-                height: "auto",
-                objectFit: "contain",
-              }}
-            />
-            <div
-              style={{
-                position: "relative",
-                zIndex: 1,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-                width: "100%",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 16,
-                  fontWeight: 600,
-                  lineHeight: "20px",
-                  color: "rgba(255,255,255,0.64)",
-                }}
-              >
-                Trade Smarter with Dexless AI
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 11,
-                  fontWeight: 500,
-                  lineHeight: "16px",
-                  color: "rgba(255,255,255,0.376)",
-                }}
-              >
-                Understands your trading behavior
-              </p>
-            </div>
-          </div>
-
-          <div
-            style={{
-              flex: "1 1 auto",
+              flex: 1,
               minHeight: 0,
               display: "flex",
               flexDirection: "column",
-              gap: 20,
-              padding: "20px 20px 16px",
-              boxSizing: "border-box",
-              background: "#08080c",
+              gap: 32,
               overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
             }}
           >
-            {authActions}
-          </div>
-        </div>
-      );
-    } else {
-      panel = (
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            flexWrap: "wrap",
-            width: "100%",
-            maxWidth: 800,
-            minHeight: panelHeight,
-            borderRadius: 12,
-            overflow: "hidden",
-            background: "#08080c",
-            boxSizing: "border-box",
-            border: "1px solid #424242",
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={onClose}
-            style={{
-              position: "absolute",
-              top: 12,
-              right: 12,
-              zIndex: 3,
-              width: 28,
-              height: 28,
-              borderRadius: 999,
-              border: "none",
-              background: "rgba(255,255,255,0.06)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-          >
-            <img
-              src={ONBOARDING_ASSETS.close}
-              alt=""
-              width={14}
-              height={14}
-              style={{ display: "block" }}
-            />
-          </button>
-          <div
-            style={{
-              position: "relative",
-              flex: "1 0 0",
-              minWidth: 280,
-              minHeight: panelHeight,
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-              padding: "40px 24px",
-              boxSizing: "border-box",
-              overflow: "hidden",
-            }}
-          >
-            <img
-              src={ONBOARDING_ASSETS.info}
-              alt=""
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                pointerEvents: "none",
-              }}
-            />
-            <img
-              src={ONBOARDING_ASSETS.logo}
-              alt="DEXLESS"
-              style={{
-                position: "relative",
-                zIndex: 1,
-                display: "block",
-                width: LOGO_WIDTH,
-                height: "auto",
-                objectFit: "contain",
-              }}
-            />
             <div
               style={{
-                position: "relative",
-                zIndex: 1,
                 display: "flex",
                 flexDirection: "column",
-                gap: 16,
-                maxWidth: 248,
+                alignItems: "center",
                 width: "100%",
+                flexShrink: 0,
+                background: "#000000",
               }}
             >
-              <p
+              <div
                 style={{
-                  margin: 0,
-                  fontSize: 24,
-                  fontWeight: 600,
-                  lineHeight: "28px",
-                  color: "rgba(255,255,255,0.8)",
+                  position: "relative",
+                  width: "100%",
+                  height: 300,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
                 }}
               >
-                Trade Smarter with Dexless AI
-              </p>
-              <p
+                <img
+                  src={ONBOARDING_ASSETS.infoMobile}
+                  alt=""
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    objectPosition: "center center",
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
+              <div
                 style={{
-                  margin: 0,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  lineHeight: "20px",
-                  color: "rgba(255,255,255,0.47)",
+                  width: 248,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 16,
+                  textAlign: "center",
+                  boxSizing: "border-box",
                 }}
               >
-                Understands your trading behavior
-              </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 20,
+                    fontWeight: 600,
+                    lineHeight: "24px",
+                    color: "#ffffff",
+                  }}
+                >
+                  Trade Smarter with Dexless AI
+                </p>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    lineHeight: "20px",
+                    color: "rgba(255,255,255,0.47)",
+                  }}
+                >
+                  Understands your trading behavior
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div
-            style={{
-              flex: "1 0 0",
-              minWidth: 280,
-              minHeight: panelHeight,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 24,
-              padding: "0 24px",
-              boxSizing: "border-box",
-              background: "#08080c",
-            }}
-          >
-            {authActions}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 31,
+                width: "100%",
+                maxWidth: 342,
+                margin: "0 auto",
+                padding: "0 24px 24px",
+                boxSizing: "border-box",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 21,
+                  width: "100%",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    width: "100%",
+                    fontSize: 18,
+                    fontWeight: 600,
+                    lineHeight: "20px",
+                    color: "#ffffff",
+                    textAlign: "center",
+                  }}
+                >
+                  Sign In
+                </p>
+                {authButtons}
+              </div>
+              {legalText}
+            </div>
           </div>
         </div>
       );
     }
-  } else if (step === "email" || step === "code") {
-    panel = (
-      <EmailAuthModal
-        step={step}
-        email={email}
-        onEmailChange={setEmail}
-        onBack={() => setStep("email")}
-        onClose={onClose}
-        onGoToCode={(nextEmail) => {
-          setEmail(nextEmail);
-          setStep("code");
-        }}
-        onCodeVerified={(kind) => {
-          if (kind === "old") {
-            setWaitingSig(false);
-            setSkipSignatures(true);
-            setWalletReturnVisit(true);
-            setStep("enable-trading");
-            return;
-          }
-          setStep("referral");
-        }}
-      />
-    );
-  } else if (step === "wallet-connect") {
-    panel = (
-      <WalletConnectModal
-        onClose={onClose}
-        skipSetupNext={skipSetupNext}
-        onFirstConnect={goWalletFirstConnect}
-        onReturnConnect={goWalletReturnConnect}
-      />
-    );
-  } else if (step === "referral") {
-    panel = (
-      <ReferralCodePanel
-        onApply={goSetup}
-        onSkip={goSetup}
-        onClose={onClose}
-      />
-    );
-  } else if (step === "setup") {
-    panel = (
-      <SetupAccountPanel
-        phase={setupPhase}
-        waiting={waitingSig}
-        skipNext={skipSetupNext}
-        onSkipNextChange={persistSkipSetupNext}
-        onBack={() => setStep("referral")}
-        onContinue={handleSetupContinue}
-        onDisconnect={handleSetupDisconnect}
-        onClose={onClose}
-      />
-    );
-  } else if (step === "enable-trading") {
-    panel = (
-      <EnableTradingPanel
-        waiting={waitingSig}
-        rememberMe={skipSetupNext}
-        onRememberMeChange={persistSkipSetupNext}
-        onClose={onClose}
-        onDisconnect={handleSetupDisconnect}
-        onContinue={handleEnableTradingCta}
-      />
-    );
-  } else if (step === "sign") {
-    panel = (
-      <SignMessageModal
-        onClose={onClose}
-        onSign={handleSigned}
-      />
-    );
-  } else if (step === "funds") {
-    panel = (
-      <AddFundsPanel
-        onDone={() => setStep("trader-dna-live")}
-        onClose={onClose}
-      />
-    );
-  } else if (step === "trader-dna-live") {
-    panel = (
-      <TraderDnaLiveModal
-        onExplore={() => finish(true)}
-        onClose={onClose}
-      />
-    );
-  }
 
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Onboarding"
-      style={{
-        ...overlayStyle,
-        top: topInset,
-        bottom: bottomInset,
-        alignItems: "center",
-        justifyContent: "center",
-        animation: "onboardingOverlayIn 0.22s ease-out both",
-      }}
-      className="onboarding-dialog"
-      onClick={() => {
-        if (!lockedSteps) onClose();
-      }}
-    >
-      <style>{`
+    return (
+      <div
+        style={{
+          position: "relative",
+          display: "flex",
+          flexWrap: "wrap",
+          width: "100%",
+          maxWidth: 800,
+          minHeight: panelHeight,
+          borderRadius: 12,
+          overflow: "hidden",
+          background: "#08080c",
+          boxSizing: "border-box",
+          border: "1px solid #424242",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: 12,
+            right: 12,
+            zIndex: 3,
+            width: 28,
+            height: 28,
+            borderRadius: 999,
+            border: "none",
+            background: "rgba(255,255,255,0.06)",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+          }}
+        >
+          <img
+            src={ONBOARDING_ASSETS.close}
+            alt=""
+            width={14}
+            height={14}
+            style={{ display: "block" }}
+          />
+        </button>
+        <div
+          style={{
+            position: "relative",
+            flex: "1 0 0",
+            minWidth: 280,
+            minHeight: panelHeight,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            padding: "40px 24px",
+            boxSizing: "border-box",
+            overflow: "hidden",
+          }}
+        >
+          <img
+            src={ONBOARDING_ASSETS.info}
+            alt=""
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              pointerEvents: "none",
+            }}
+          />
+          <img
+            src={ONBOARDING_ASSETS.logo}
+            alt="DEXLESS"
+            style={{
+              position: "relative",
+              zIndex: 1,
+              display: "block",
+              width: LOGO_WIDTH,
+              height: "auto",
+              objectFit: "contain",
+            }}
+          />
+          <div
+            style={{
+              position: "relative",
+              zIndex: 1,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              maxWidth: 248,
+              width: "100%",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 24,
+                fontWeight: 600,
+                lineHeight: "28px",
+                color: "rgba(255,255,255,0.8)",
+              }}
+            >
+              Trade Smarter with Dexless AI
+            </p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 14,
+                fontWeight: 500,
+                lineHeight: "20px",
+                color: "rgba(255,255,255,0.47)",
+              }}
+            >
+              Understands your trading behavior
+            </p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            flex: "1 0 0",
+            minWidth: 280,
+            minHeight: panelHeight,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 24,
+            padding: "0 24px",
+            boxSizing: "border-box",
+            background: "#08080c",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              width: "100%",
+              maxWidth: 342,
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: 20,
+                fontWeight: 600,
+                lineHeight: "20px",
+                color: "#ffffff",
+              }}
+            >
+              Sign In
+            </p>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 14,
+                fontWeight: 500,
+                lineHeight: "20px",
+                color: COLORS.white60,
+              }}
+            >
+              Choose one to continue. You can link both methods later.
+            </p>
+          </div>
+          <div style={{ width: "100%", maxWidth: 342 }}>{authButtons}</div>
+          <div style={{ width: "100%", maxWidth: 342 }}>{legalText}</div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPageStep = (pageStep: PageFlowStep): ReactNode => {
+    if (pageStep === "sign-in") return renderSignIn();
+    if (pageStep === "referral") {
+      return (
+        <ReferralCodePanel
+          onApply={goSetup}
+          onSkip={goSetup}
+          onClose={onClose}
+        />
+      );
+    }
+    if (pageStep === "setup") {
+      return (
+        <SetupAccountPanel
+          phase={setupPhase}
+          waiting={waitingSig}
+          skipNext={skipSetupNext}
+          onSkipNextChange={persistSkipSetupNext}
+          onBack={() => setStep("referral")}
+          onContinue={handleSetupContinue}
+          onDisconnect={handleSetupDisconnect}
+          onClose={onClose}
+        />
+      );
+    }
+    return (
+      <AddFundsPanel
+        onDone={goTraderDnaLive}
+        onClose={onClose}
+      />
+    );
+  };
+
+  const renderModalStep = (modalStep: ModalFlowStep): ReactNode => {
+    if (modalStep === "email" || modalStep === "code") {
+      return (
+        <EmailAuthModal
+          step={modalStep}
+          email={email}
+          onEmailChange={setEmail}
+          onBack={() => setStep("email")}
+          onClose={onClose}
+          onGoToCode={(nextEmail) => {
+            setEmail(nextEmail);
+            setStep("code");
+          }}
+          onCodeVerified={(kind) => {
+            if (kind === "old") {
+              setWaitingSig(false);
+              setSkipSignatures(true);
+              setWalletReturnVisit(true);
+              setStep("enable-trading");
+              return;
+            }
+            setStep("referral");
+          }}
+        />
+      );
+    }
+    if (modalStep === "wallet-connect") {
+      return (
+        <WalletConnectModal
+          onClose={onClose}
+          skipSetupNext={skipSetupNext}
+          onFirstConnect={goWalletFirstConnect}
+          onReturnConnect={goWalletReturnConnect}
+        />
+      );
+    }
+    if (modalStep === "enable-trading") {
+      return (
+        <EnableTradingPanel
+          waiting={waitingSig}
+          rememberMe={skipSetupNext}
+          onRememberMeChange={persistSkipSetupNext}
+          onClose={onClose}
+          onDisconnect={handleSetupDisconnect}
+          onContinue={handleEnableTradingCta}
+        />
+      );
+    }
+    if (modalStep === "trader-dna-live") {
+      return (
+        <TraderDnaLiveModal
+          onExplore={() => finish(true)}
+          onClose={onClose}
+        />
+      );
+    }
+    return (
+      <SignMessageModal onClose={onClose} onSign={handleSigned} />
+    );
+  };
+
+  const showMobileModal = isMobile && isModalFlowStep(step);
+  const pageStepForRender: PageFlowStep = showMobileModal
+    ? lastPageStep
+    : isModalFlowStep(step)
+      ? "sign-in"
+      : step;
+
+  const panelKey =
+    pageStepForRender === "setup"
+      ? `setup-${setupPhase}`
+      : showMobileModal
+        ? `page-${pageStepForRender}`
+        : step === "sign"
+          ? `sign-${signRound}`
+          : step;
+
+  const pagePanel = showMobileModal
+    ? renderPageStep(lastPageStep)
+    : isModalFlowStep(step)
+      ? renderModalStep(step)
+      : renderPageStep(step);
+
+  const motionCss = `
         ${ONBOARDING_MOTION_CSS}
         .sign-payload-scroll {
           scrollbar-width: none;
@@ -819,12 +917,111 @@ export function OnboardingDialog({
             font-size: 14px !important;
           }
         }
-      `}</style>
+      `;
+
+  const mobileModalPortal =
+    showMobileModal &&
+    typeof document !== "undefined" &&
+    createPortal(
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={
+          step === "sign"
+            ? "Sign message"
+            : step === "enable-trading"
+              ? "Enable trading"
+              : step === "trader-dna-live"
+                ? "Trader DNA is Live"
+                : step === "wallet-connect"
+                  ? "WalletConnect"
+                  : step === "code"
+                    ? "Enter verification code"
+                    : "Log in or sign up"
+        }
+        className="onboarding-dialog"
+        style={modalOverlayStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <style>{motionCss}</style>
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 360,
+            maxHeight: "100%",
+            overflow: "auto",
+          }}
+        >
+          {renderModalStep(step)}
+        </div>
+      </div>,
+      document.body,
+    );
+
+  if (isMobile) {
+    if (step === "trader-dna-live") {
+      return <>{mobileModalPortal}</>;
+    }
+    return (
+      <>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Onboarding"
+          style={{
+            ...pageStyleMobile,
+            top: topInset,
+            paddingBottom: keyboardOffset > 0 ? keyboardOffset : 0,
+          }}
+          className="onboarding-dialog"
+        >
+          <style>{motionCss}</style>
+          <FadePanel
+            panelKey={panelKey}
+            style={{
+              width: "100%",
+              height: "100%",
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              boxSizing: "border-box",
+            }}
+          >
+            {pagePanel}
+          </FadePanel>
+        </div>
+        {mobileModalPortal}
+      </>
+    );
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Onboarding"
+      style={{
+        ...overlayStyleDesktop,
+        top: topInset,
+        bottom: bottomInset,
+        alignItems: keyboardOffset > 0 ? "flex-start" : "center",
+        justifyContent: "center",
+        paddingTop: keyboardOffset > 0 ? 8 : 16,
+        paddingBottom:
+          keyboardOffset > 0 ? Math.max(8, keyboardOffset - bottomInset) : 16,
+        animation: "onboardingOverlayIn 0.22s ease-out both",
+      }}
+      className="onboarding-dialog"
+      onClick={() => {
+        if (!lockedSteps) onClose();
+      }}
+    >
+      <style>{motionCss}</style>
       <FadePanel
         panelKey={panelKey}
         style={{
           width: "100%",
-          maxWidth: isMobile ? 360 : undefined,
           maxHeight: "100%",
           minHeight: 0,
           display: "flex",
@@ -832,7 +1029,7 @@ export function OnboardingDialog({
           boxSizing: "border-box",
         }}
       >
-        {panel}
+        {pagePanel}
       </FadePanel>
     </div>
   );

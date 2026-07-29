@@ -1,9 +1,10 @@
 import { FONT } from "../nav/design-system";
+import { useSignalCountdown } from "./signal-countdown";
 import type { SignalCardData } from "./SignalViews";
 
 const ASSETS = {
   close: "/trader-dna/signal/trade-close.svg",
-  clock: "/trader-dna/signal/clock.png",
+  clock: "/trader-dna/signal/clock-time.png",
 } as const;
 
 /** Figma 7452:138834 — Signal summary card on Trade page center. */
@@ -14,6 +15,7 @@ export function SignalTradeModal({
   data: SignalCardData;
   onClose: () => void;
 }) {
+  const timerLabel = useSignalCountdown(data.id, data.timer);
   return (
     <div
       role="dialog"
@@ -184,11 +186,11 @@ export function SignalTradeModal({
               <img
                 src={ASSETS.clock}
                 alt=""
-                width={13}
-                height={13}
+                width={14}
+                height={14}
                 style={{ display: "block" }}
               />
-              {data.timer}
+              {timerLabel}
             </span>
             <span
               style={{

@@ -148,129 +148,63 @@ function StepItem({
   );
 }
 
-/** Mobile (<768): icons + parallel dashed lines on one axis; labels under icons */
-function MobileStepRail({
-  referral,
-  setup,
-  funds,
-}: {
-  referral: StepState;
-  setup: StepState;
-  funds: StepState;
-}) {
-  const steps: { label: string; state: StepState }[] = [
-    { label: "Referral code", state: referral },
-    { label: "Set up account", state: setup },
-    { label: "Add funds", state: funds },
+/** Mobile (<768): Figma progress — labels + continuous track with green fill */
+function MobileStepProgress({ stage }: { stage: OnboardingStage }) {
+  const steps: { id: OnboardingStage; label: string; align: "left" | "center" | "right" }[] = [
+    { id: "referral", label: "Referral code", align: "left" },
+    { id: "setup", label: "Set up account", align: "center" },
+    { id: "funds", label: "Add funds", align: "right" },
   ];
-  const linesActive = [referral === "done", setup === "done"];
-  const iconSize = 14;
+  const activeIndex = steps.findIndex((s) => s.id === stage);
+  const progressPct = ((activeIndex + 1) / steps.length) * 100;
 
   return (
-    <div
-      style={{
-        width: "100%",
-        boxSizing: "border-box",
-        paddingTop: 12,
-        paddingBottom: 12,
-      }}
-    >
-      {/* Icon row: equal columns; dashed lines vertically centered with dots */}
-      <div
-        style={{
-          position: "relative",
-          display: "flex",
-          alignItems: "center",
-          width: "100%",
-          height: iconSize,
-        }}
-      >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: "16.666%",
-            right: "16.666%",
-            top: "50%",
-            transform: "translateY(-50%)",
-            display: "flex",
-            pointerEvents: "none",
-          }}
-        >
-          {linesActive.map((active, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1,
-                height: 0,
-                margin: `0 ${iconSize / 2 + 4}px`,
-                borderTop: `1.5px dashed ${
-                  active ? COLORS.brandGreen : "rgba(255,255,255,0.22)"
-                }`,
-              }}
-            />
-          ))}
-        </div>
-
-        {steps.map((step) => (
-          <div
-            key={step.label}
-            style={{
-              flex: 1,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              minWidth: 0,
-            }}
-          >
-            <img
-              src={
-                step.state === "done"
-                  ? ONBOARDING_ASSETS.circleCheck
-                  : step.state === "active"
-                    ? ONBOARDING_ASSETS.stepActive
-                    : ONBOARDING_ASSETS.stepDefault
-              }
-              alt=""
-              width={iconSize}
-              height={iconSize}
-              style={{
-                display: "block",
-                flexShrink: 0,
-                position: "relative",
-                zIndex: 1,
-                background: "#08080c",
-              }}
-            />
-          </div>
-        ))}
-      </div>
-
+    <div style={{ width: "100%", boxSizing: "border-box" }}>
       <div
         style={{
           display: "flex",
           width: "100%",
-          marginTop: 8,
+          marginBottom: 9,
         }}
       >
-        {steps.map((step) => (
+        {steps.map((step, i) => (
           <span
-            key={step.label}
+            key={step.id}
             style={{
               flex: 1,
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 600,
-              lineHeight: "14px",
-              textAlign: "center",
-              color:
-                step.state === "active"
-                  ? "#ffffff"
-                  : "rgba(255,255,255,0.4)",
+              lineHeight: "18px",
+              textAlign: step.align,
+              color: "rgba(255,255,255,0.8)",
+              opacity: i === activeIndex ? 1 : 0.5,
             }}
           >
             {step.label}
           </span>
         ))}
+      </div>
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          height: 4,
+          borderRadius: 999,
+          background: "rgba(255,255,255,0.3)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            height: "100%",
+            width: `${progressPct}%`,
+            borderRadius: 999,
+            background: COLORS.brandGreen,
+          }}
+        />
       </div>
     </div>
   );
@@ -328,12 +262,10 @@ export function OnboardingShell({
         display: "flex",
         flexDirection: "column",
         width: "100%",
-        maxWidth: 360,
+        height: "100%",
         minHeight: 0,
-        borderRadius: 12,
         overflow: "hidden",
-        border: "1px solid #424242",
-        backgroundImage: "linear-gradient(180deg, #010101 0%, #252931 100%)",
+        background: "#0a0b0d",
         boxSizing: "border-box",
         fontFamily: FONT,
       }
@@ -354,58 +286,35 @@ export function OnboardingShell({
   if (isMobile) {
     return (
       <div style={shellStyle} onClick={(e) => e.stopPropagation()}>
-        {onClose ? <ShellCloseButton onClick={onClose} /> : null}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 16,
-            padding: "20px 20px 0",
-            boxSizing: "border-box",
-          }}
-        >
-          <img
-            src={ONBOARDING_ASSETS.logoWordmark}
-            alt="DEXLESS"
-            style={{
-              display: "block",
-              width: LOGO_WIDTH,
-              height: "auto",
-              objectFit: "contain",
-            }}
-          />
-          <MobileStepRail
-            referral={referral}
-            setup={setup}
-            funds={funds}
-          />
-        </div>
-
         <div
           style={{
             flex: 1,
             minWidth: 0,
+            minHeight: 0,
             display: "flex",
             flexDirection: "column",
-            padding: "20px 20px 16px",
+            gap: stage === "setup" ? 60 : 16,
+            padding: "70px 24px 16px",
             boxSizing: "border-box",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
           }}
         >
+          <MobileStepProgress stage={stage} />
           <div
             style={{
               width: "100%",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
-              gap: 24,
+              gap: 28,
               flex: 1,
               minHeight: 320,
             }}
           >
             {children}
           </div>
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 8 }}>
             <HelpLink />
           </div>
         </div>

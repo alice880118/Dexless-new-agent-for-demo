@@ -19,8 +19,11 @@ import { AskingBox } from "./AskingBox";
 import type { FileAttachment } from "./file-attachment";
 import { useAgentName } from "./useAgentName";
 import { DEFAULT_AGENT_NAME } from "./agent-name";
+import { DepositSelectModal } from "./DepositSelectModal";
+import type { DraftOrder } from "./draft-order";
 
 type PanelView = "home" | "signals" | "detail" | "more" | "rename" | "chat";
+type MoreTab = "history" | "drafts";
 
 const PANEL_W = 375;
 const PANEL_H = 830;
@@ -85,9 +88,18 @@ export function DesktopTraderDnaPanel({
   const [chatAttachment, setChatAttachment] =
     useState<FileAttachment | null>(null);
   const [chatKey, setChatKey] = useState(0);
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
+  const [draftFunded, setDraftFunded] = useState(false);
+  const [moreTab, setMoreTab] = useState<MoreTab>("history");
   const [visible, setVisible] = useState(false);
   const [entered, setEntered] = useState(false);
   const { agentName, saveAgentName } = useAgentName();
+
+  const openMore = (tab: MoreTab = "history") => {
+    setMoreTab(tab);
+    setPanelView("more");
+  };
 
   const startChat = (
     message?: string,
@@ -104,6 +116,17 @@ export function DesktopTraderDnaPanel({
     setChatKey((k) => k + 1);
   };
 
+  const handleDraftDepositApprove = () => {
+    setDepositOpen(false);
+    setShowDraftBanner(true);
+    setDraftFunded(true);
+    setPanelView("home");
+  };
+
+  const handleDraftAskAgent = (order: DraftOrder) => {
+    startChat(`Review my ${order.title} draft order`);
+  };
+
   useEffect(() => {
     if (isOpen) {
       setActiveChip(null);
@@ -114,6 +137,10 @@ export function DesktopTraderDnaPanel({
       setDraft("");
       setAttachment(null);
       setChatAttachment(null);
+      setDepositOpen(false);
+      setShowDraftBanner(false);
+      setDraftFunded(false);
+      setMoreTab("history");
       setVisible(true);
       setEntered(false);
       const id = window.requestAnimationFrame(() => {
@@ -217,7 +244,7 @@ export function DesktopTraderDnaPanel({
             <button
               type="button"
               aria-label="Menu"
-              onClick={() => setPanelView("more")}
+              onClick={() => openMore()}
               style={{
                 width: 24,
                 height: 24,
@@ -359,7 +386,11 @@ export function DesktopTraderDnaPanel({
         }}
       >
         {panelView === "more" && (
-          <MoreView onRename={() => setPanelView("rename")} />
+          <MoreView
+            onRename={() => setPanelView("rename")}
+            initialTab={moreTab}
+            onAskAgent={handleDraftAskAgent}
+          />
         )}
         {panelView === "rename" && (
           <RenameView
@@ -376,6 +407,8 @@ export function DesktopTraderDnaPanel({
             agentName={agentName}
             signalSnapshot={signalSnapshot}
             fileAttachment={chatAttachment}
+            onDraftDeposit={() => setDepositOpen(true)}
+            draftFunded={draftFunded}
           />
         )}
         {panelView === "signals" && (
@@ -431,8 +464,98 @@ export function DesktopTraderDnaPanel({
                 justifyContent: "center",
                 padding: "0 42px",
                 boxSizing: "border-box",
+                position: "relative",
+                overflow: "hidden",
               }}
             >
+              {showDraftBanner && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 16,
+                    left: 16,
+                    right: 16,
+                    zIndex: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    padding: 8,
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    background: "rgba(255,255,255,0.05)",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: FONT,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      lineHeight: "17px",
+                      color: "rgba(255,255,255,0.8)",
+                    }}
+                  >
+                    You have 2 draft orders
+                  </span>
+                  <span
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => openMore("drafts")}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        padding: 0,
+                        cursor: "pointer",
+                        fontFamily: FONT,
+                        fontWeight: 500,
+                        fontSize: 13,
+                        lineHeight: "17px",
+                        color: "rgba(255,255,255,0.6)",
+                      }}
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Dismiss draft orders banner"
+                      onClick={() => setShowDraftBanner(false)}
+                      style={{
+                        width: 15,
+                        height: 15,
+                        border: "none",
+                        background: "transparent",
+                        padding: 0,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src="/trader-dna/close.svg"
+                        alt=""
+                        width={15}
+                        height={15}
+                        style={{
+                          display: "block",
+                          width: 15,
+                          height: 15,
+                          opacity: 0.7,
+                        }}
+                      />
+                    </button>
+                  </span>
+                </div>
+              )}
               <div
                 style={{
                   width: "100%",
@@ -646,6 +769,11 @@ export function DesktopTraderDnaPanel({
           />
         </div>
       )}
+      <DepositSelectModal
+        open={depositOpen}
+        onClose={() => setDepositOpen(false)}
+        onApprove={handleDraftDepositApprove}
+      />
     </div>
   );
 }

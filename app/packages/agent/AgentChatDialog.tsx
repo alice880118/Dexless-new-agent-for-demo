@@ -19,18 +19,19 @@ import { AskingBox } from "./AskingBox";
 import type { FileAttachment } from "./file-attachment";
 import { useAgentName } from "./useAgentName";
 import { DEFAULT_AGENT_NAME } from "./agent-name";
+import { DepositSelectModal } from "./DepositSelectModal";
+import type { DraftOrder } from "./draft-order";
 
 type PanelView = "home" | "signals" | "detail" | "more" | "rename" | "chat";
+type MoreTab = "history" | "drafts";
 
 const DRAG_CLOSE_THRESHOLD = 100;
 const DRAG_SCALE_RANGE = 280;
 const ANIMATION_MS = 320;
 /** Figma minimized sheet height (7452:90298) */
 const MINIMIZED_HEIGHT = 390;
-/** Mobile expanded max height */
-const MAX_EXPANDED_HEIGHT = 758;
-/** Extra clearance below top nav so sheet does not collide with it */
-const TOP_EXTRA_CLEARANCE = 24;
+/** Distance from viewport bottom; covers bottom nav */
+const SHEET_BOTTOM_PAD = 48;
 
 const ASSETS = {
   menu: "/trader-dna/mobile/menu.png",
@@ -284,7 +285,7 @@ function SuggestDrawer({
           bottom: 0,
           padding: "12px 16px 16px",
           boxSizing: "border-box",
-          background: "linear-gradient(180deg, #2a2a2a 0%, #121419 100%)",
+          background: "linear-gradient(180deg, #2a2a2a 0%, #131519 100%)",
           borderTopLeftRadius: 12,
           borderTopRightRadius: 12,
           borderTop: "1px solid rgba(255,255,255,0.1)",
@@ -307,7 +308,7 @@ export function AgentChatDialog({
   onClose,
   width,
   height,
-  bottomInset = 0,
+  bottomInset: _bottomInset = 0,
   topInset = 48,
   anchorX,
   anchorY,
@@ -329,6 +330,10 @@ export function AgentChatDialog({
   const [chatAttachment, setChatAttachment] =
     useState<FileAttachment | null>(null);
   const [chatKey, setChatKey] = useState(0);
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
+  const [draftFunded, setDraftFunded] = useState(false);
+  const [moreTab, setMoreTab] = useState<MoreTab>("history");
   const { agentName, saveAgentName } = useAgentName();
   const pointerStartYRef = useRef(0);
 
@@ -345,6 +350,10 @@ export function AgentChatDialog({
       setDraft("");
       setAttachment(null);
       setChatAttachment(null);
+      setDepositOpen(false);
+      setShowDraftBanner(false);
+      setDraftFunded(false);
+      setMoreTab("history");
     }
   }, [isOpen]);
 
@@ -353,8 +362,9 @@ export function AgentChatDialog({
     setPanelView("signals");
   }, []);
 
-  const openMore = useCallback(() => {
+  const openMore = useCallback((tab: MoreTab = "history") => {
     setIsMinimized(false);
+    setMoreTab(tab);
     setPanelView("more");
   }, []);
 
@@ -372,6 +382,18 @@ export function AgentChatDialog({
     },
     [draft, attachment],
   );
+
+  const handleDraftDepositApprove = useCallback(() => {
+    setDepositOpen(false);
+    setShowDraftBanner(true);
+    setDraftFunded(true);
+    setPanelView("home");
+    setIsMinimized(false);
+  }, []);
+
+  const handleDraftAskAgent = useCallback((order: DraftOrder) => {
+    startChat(`Review my ${order.title} draft order`);
+  }, [startChat]);
 
   const startNewChat = useCallback(() => {
     setPanelView("home");
@@ -427,15 +449,17 @@ export function AgentChatDialog({
     setDragY(0);
   }, []);
 
-  const topSafe = topInset + TOP_EXTRA_CLEARANCE;
-  const availableHeight = Math.max(280, height - topSafe - bottomInset);
-  const expandedHeight = Math.min(availableHeight, MAX_EXPANDED_HEIGHT);
+  const topSafe = topInset / 2;
+  /** Expanded: cover bottom nav (bottom 0). Minimized: reveal nav. */
+  const sheetBottom = isMinimized ? SHEET_BOTTOM_PAD : 0;
+  const availableHeight = Math.max(280, height - topSafe - sheetBottom);
+  const expandedHeight = availableHeight;
   const panelHeight = isMinimized
     ? Math.min(MINIMIZED_HEIGHT, availableHeight)
     : expandedHeight;
   const dragScale = isOpen ? getDragScale(dragY) : 0;
   const opacity = isOpen ? Math.min(1, dragScale + 0.08) : 0;
-  const dialogTop = height - bottomInset - panelHeight;
+  const dialogTop = height - sheetBottom - panelHeight;
   const originX = Math.min(Math.max(anchorX, 0), width);
   const originY = Math.min(Math.max(anchorY - dialogTop, 0), panelHeight);
 
@@ -444,30 +468,17 @@ export function AgentChatDialog({
       aria-hidden={!isOpen}
       role="dialog"
       aria-label="Trader DNA"
-      onPointerDown={(event) => {
-        if (
-          (event.target as HTMLElement).closest(
-            "button, a, input, textarea, [data-chat-hit]",
-          )
-        ) {
-          return;
-        }
-        handleDragPointerDown(event);
-      }}
-      onPointerMove={handleDragPointerMove}
-      onPointerUp={finishDrag}
-      onPointerCancel={finishDrag}
       style={{
         position: "absolute",
         left: 0,
         right: 0,
-        bottom: bottomInset,
+        bottom: sheetBottom,
         height: panelHeight,
         maxHeight: availableHeight,
         zIndex: 200,
         background: isMinimized
-          ? "linear-gradient(180deg, #313030 0%, #121419 100%)"
-          : "#1b1b1b",
+          ? "linear-gradient(180deg, #313030 0%, #131519 100%)"
+          : "linear-gradient(180deg, #1b1b1b 0%, #131519 100%)",
         borderTopLeftRadius: 8,
         borderTopRightRadius: 8,
         transform: `scale(${dragScale})`,
@@ -478,22 +489,29 @@ export function AgentChatDialog({
           : `transform ${ANIMATION_MS}ms cubic-bezier(0.34, 1.2, 0.64, 1), opacity 220ms ease, height ${ANIMATION_MS}ms cubic-bezier(0.34, 1.2, 0.64, 1)`,
         pointerEvents: isOpen ? "auto" : "none",
         overflow: "hidden",
-        touchAction: "none",
-        cursor: isDragging ? "grabbing" : "default",
+        touchAction: "pan-y",
+        cursor: "default",
         display: "flex",
         flexDirection: "column",
         fontFamily: FONT,
         boxSizing: "border-box",
       }}
     >
-      {/* Drag handle */}
+      {/* Drag handle — only this area can drag-minimize */}
       <div
+        data-chat-hit="drag-handle"
+        onPointerDown={handleDragPointerDown}
+        onPointerMove={handleDragPointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
         style={{
           height: 20,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
+          touchAction: "none",
+          cursor: isDragging ? "grabbing" : "grab",
         }}
       >
         <div
@@ -572,7 +590,7 @@ export function AgentChatDialog({
                 ariaLabel="Menu"
                 hitId="menu"
                 src={ASSETS.menu}
-                onClick={openMore}
+                onClick={() => openMore()}
               />
             ))}
           {isMinimized && (
@@ -663,7 +681,11 @@ export function AgentChatDialog({
           }}
         >
           {panelView === "more" && (
-            <MoreView onRename={() => setPanelView("rename")} />
+            <MoreView
+              onRename={() => setPanelView("rename")}
+              initialTab={moreTab}
+              onAskAgent={handleDraftAskAgent}
+            />
           )}
           {panelView === "rename" && (
             <RenameView
@@ -682,6 +704,8 @@ export function AgentChatDialog({
               agentName={agentName}
               signalSnapshot={signalSnapshot}
               fileAttachment={chatAttachment}
+              onDraftDeposit={() => setDepositOpen(true)}
+              draftFunded={draftFunded}
             />
           )}
           {panelView === "signals" && (
@@ -737,8 +761,97 @@ export function AgentChatDialog({
                   padding: "8px 16px 0",
                   boxSizing: "border-box",
                   overflow: "hidden",
+                  position: "relative",
                 }}
               >
+                {showDraftBanner && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 16,
+                      left: 16,
+                      right: 16,
+                      zIndex: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 8,
+                      padding: 8,
+                      borderRadius: 12,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(255,255,255,0.05)",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: FONT,
+                        fontWeight: 600,
+                        fontSize: 13,
+                        lineHeight: "17px",
+                        color: "rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      You have 2 draft orders
+                    </span>
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => openMore("drafts")}
+                        style={{
+                          border: "none",
+                          background: "transparent",
+                          padding: 0,
+                          cursor: "pointer",
+                          fontFamily: FONT,
+                          fontWeight: 500,
+                          fontSize: 13,
+                          lineHeight: "17px",
+                          color: "rgba(255,255,255,0.6)",
+                        }}
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Dismiss draft orders banner"
+                        onClick={() => setShowDraftBanner(false)}
+                        style={{
+                          width: 15,
+                          height: 15,
+                          border: "none",
+                          background: "transparent",
+                          padding: 0,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src="/trader-dna/close.svg"
+                          alt=""
+                          width={15}
+                          height={15}
+                          style={{
+                            display: "block",
+                            width: 15,
+                            height: 15,
+                            opacity: 0.7,
+                          }}
+                        />
+                      </button>
+                    </span>
+                  </div>
+                )}
                 <div
                   style={{
                     width: "100%",
@@ -855,6 +968,8 @@ export function AgentChatDialog({
               agentName={agentName}
               signalSnapshot={signalSnapshot}
               fileAttachment={chatAttachment}
+              onDraftDeposit={() => setDepositOpen(true)}
+              draftFunded={draftFunded}
             />
           ) : (
             <div
@@ -978,7 +1093,7 @@ export function AgentChatDialog({
       {!( !isMinimized && (panelView === "more" || panelView === "rename") ) && (
         <div
           style={{
-            padding: isMinimized ? "10px 16px 48px" : "0 16px 24px",
+            padding: isMinimized ? "10px 16px 16px" : "0 16px 24px",
             flexShrink: 0,
           }}
         >
@@ -991,6 +1106,11 @@ export function AgentChatDialog({
           />
         </div>
       )}
+      <DepositSelectModal
+        open={depositOpen}
+        onClose={() => setDepositOpen(false)}
+        onApprove={handleDraftDepositApprove}
+      />
       <style>{`
         .agent-minimized-scroll::-webkit-scrollbar {
           display: none;

@@ -575,11 +575,7 @@ export function TopNavBar({
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 16,
-              marginLeft: 60,
-              position: "relative",
-              zIndex: 1,
-              flex: 1,
+              gap: 18,
             }}
           >
             <button

@@ -39,14 +39,233 @@ export function SetupAccountPanel({
   const createActive = phase === 1 && !waiting;
   const enableActive = phase === 2 || waiting;
   const isMobile = useBreakpoint() === "390";
-  const cardPad = isMobile ? "8px 8px" : "8px 12px";
-  const titleSize = isMobile ? 13 : 14;
-  const bodySize = isMobile ? 12 : 13;
+  const cardPad = "8px 12px";
+  const titleSize = 14;
+  const bodySize = 13;
+
+  const stepCards = isMobile ? (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        width: "100%",
+        padding: 8,
+        borderRadius: 12,
+        border: "1px solid rgba(255,255,255,0.1)",
+        boxSizing: "border-box",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          padding: "8px 12px",
+          borderRadius: 8,
+          background: createActive ? "rgba(255,255,255,0.1)" : "transparent",
+          opacity: createActive ? 1 : 0.5,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: titleSize,
+            fontWeight: 600,
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
+          Create account
+        </p>
+        <p
+          style={{
+            margin: 0,
+            fontSize: bodySize,
+            fontWeight: 500,
+            lineHeight: "18px",
+            color: COLORS.white50,
+          }}
+        >
+          Prove you own this wallet
+        </p>
+      </div>
+      <img
+        src="/onboarding/arrow-down.svg"
+        alt=""
+        width={24}
+        height={24}
+        style={{
+          display: "block",
+          flexShrink: 0,
+          width: 24,
+          height: 24,
+          objectFit: "contain",
+          transform: "rotate(90deg)",
+        }}
+      />
+      <div
+        style={{
+          width: "100%",
+          padding: "8px 12px",
+          borderRadius: 8,
+          background: enableActive ? "rgba(255,255,255,0.1)" : "transparent",
+          opacity: enableActive ? 1 : 0.5,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: titleSize,
+            fontWeight: 600,
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
+          Enable trading
+        </p>
+        <p
+          style={{
+            margin: 0,
+            fontSize: bodySize,
+            fontWeight: 500,
+            lineHeight: "18px",
+            color: COLORS.white50,
+          }}
+        >
+          View positions and submit approved orders.
+        </p>
+      </div>
+    </div>
+  ) : (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "stretch",
+        gap: 8,
+        width: "100%",
+        padding: 8,
+        borderRadius: 12,
+        border: "1px solid rgba(255,255,255,0.15)",
+        boxSizing: "border-box",
+      }}
+    >
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          padding: cardPad,
+          borderRadius: 8,
+          background: createActive ? "rgba(255,255,255,0.05)" : "transparent",
+          opacity: createActive ? 1 : 0.5,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          alignSelf: "stretch",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: titleSize,
+            fontWeight: 600,
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
+          Create account
+        </p>
+        <p
+          style={{
+            margin: 0,
+            fontSize: bodySize,
+            fontWeight: 500,
+            lineHeight: "16px",
+            color: COLORS.white50,
+            flex: 1,
+          }}
+        >
+          Prove you own this wallet
+        </p>
+      </div>
+      <img
+        src={ONBOARDING_ASSETS.arrowRight}
+        alt=""
+        width={24}
+        height={24}
+        style={{
+          display: "block",
+          flexShrink: 0,
+          width: 24,
+          height: 24,
+          objectFit: "contain",
+          alignSelf: "center",
+        }}
+      />
+      <div
+        style={{
+          flex: 1,
+          minWidth: 0,
+          padding: cardPad,
+          borderRadius: 8,
+          background: enableActive ? "rgba(255,255,255,0.05)" : "transparent",
+          opacity: enableActive ? 1 : 0.5,
+          boxSizing: "border-box",
+          display: "flex",
+          flexDirection: "column",
+          alignSelf: "stretch",
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: titleSize,
+            fontWeight: 600,
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.8)",
+          }}
+        >
+          Enable trading
+        </p>
+        <p
+          style={{
+            margin: 0,
+            fontSize: bodySize,
+            fontWeight: 500,
+            lineHeight: "16px",
+            color: COLORS.white50,
+            flex: 1,
+          }}
+        >
+          View positions and submit approved orders.
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <OnboardingShell stage="setup" onClose={onClose ?? onDisconnect}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: isMobile ? 28 : 24,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: isMobile ? 28 : 16,
+          }}
+        >
           {phase === 1 && !waiting && (
             <button
               type="button"
@@ -107,100 +326,7 @@ export function SetupAccountPanel({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: isMobile ? 4 : 8,
-              width: "100%",
-              padding: isMobile ? 6 : 8,
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxSizing: "border-box",
-            }}
-          >
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                padding: cardPad,
-                borderRadius: 8,
-                background: createActive
-                  ? "rgba(255,255,255,0.05)"
-                  : "transparent",
-                opacity: createActive ? 1 : 0.5,
-                boxSizing: "border-box",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: titleSize,
-                  fontWeight: 600,
-                  lineHeight: "18px",
-                  color: "rgba(255,255,255,0.8)",
-                }}
-              >
-                Create account
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: bodySize,
-                  fontWeight: 500,
-                  lineHeight: "16px",
-                  color: COLORS.white50,
-                  minHeight: isMobile ? 32 : 36,
-                }}
-              >
-                Prove you own this wallet
-              </p>
-            </div>
-            <img
-              src={ONBOARDING_ASSETS.arrowRight}
-              alt=""
-              width={isMobile ? 18 : 24}
-              height={isMobile ? 18 : 24}
-              style={{ display: "block", flexShrink: 0 }}
-            />
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                padding: cardPad,
-                borderRadius: 8,
-                background: enableActive
-                  ? "rgba(255,255,255,0.05)"
-                  : "transparent",
-                opacity: enableActive ? 1 : 0.5,
-                boxSizing: "border-box",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: titleSize,
-                  fontWeight: 600,
-                  lineHeight: "18px",
-                  color: "rgba(255,255,255,0.8)",
-                }}
-              >
-                Enable trading
-              </p>
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: bodySize,
-                  fontWeight: 500,
-                  lineHeight: "16px",
-                  color: COLORS.white50,
-                  minHeight: isMobile ? 32 : 36,
-                }}
-              >
-                View positions and submit approved orders.
-              </p>
-            </div>
-          </div>
+          {stepCards}
 
           <button
             type="button"
@@ -244,11 +370,7 @@ export function SetupAccountPanel({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <PrimaryButton
-          label={
-            waiting
-              ? ""
-              : `Continue — Step ${phase} of 2`
-          }
+          label={waiting ? "" : `Continue — Step ${phase} of 2`}
           loading={waiting}
           onClick={waiting ? undefined : onContinue}
         />

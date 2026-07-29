@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { COLORS, FONT } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import {
@@ -121,50 +122,12 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
         flexDirection: "column",
         alignItems: "center",
         width: "100%",
-        maxWidth: isMobile ? 360 : 820,
+        height: isMobile ? "100%" : undefined,
+        maxWidth: isMobile ? undefined : 820,
+        flex: isMobile ? 1 : undefined,
+        minHeight: isMobile ? 0 : undefined,
       }}
     >
-      {copiedTip && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "100%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            marginBottom: 10,
-            zIndex: 40,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 12px",
-            borderRadius: 8,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            boxSizing: "border-box",
-            whiteSpace: "nowrap",
-            pointerEvents: "none",
-          }}
-        >
-          <img
-            src={ONBOARDING_ASSETS.copyCheck}
-            alt=""
-            width={16}
-            height={16}
-            style={{ display: "block", flexShrink: 0 }}
-          />
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              lineHeight: "18px",
-              color: "#ffffff",
-            }}
-          >
-            Address copied successfully
-          </span>
-        </div>
-      )}
-
       <OnboardingShell stage="funds" onClose={onClose}>
         <style>{`
           .chain-menu-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
@@ -177,7 +140,13 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
             to { opacity: 1; }
           }
         `}</style>
-        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: isMobile ? 28 : 24,
+          }}
+        >
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <h2
               style={{
@@ -204,7 +173,7 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
             </p>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 32 : 24 }}>
             <div
               ref={menuRef}
               style={{
@@ -217,9 +186,9 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
               <span
                 style={{
                   fontSize: 14,
-                  fontWeight: 500,
+                  fontWeight: 600,
                   lineHeight: "18px",
-                  color: "rgba(255,255,255,0.7)",
+                  color: "rgba(255,255,255,0.9)",
                 }}
               >
                 Deposit Network
@@ -234,9 +203,9 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
                   width: "100%",
                   height: 44,
                   padding: "4px 12px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  background: "rgba(255,255,255,0.05)",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "rgba(255,255,255,0.1)",
                   boxSizing: "border-box",
                   cursor: "pointer",
                   fontFamily: FONT,
@@ -332,9 +301,9 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
               <span
                 style={{
                   fontSize: 14,
-                  fontWeight: 500,
+                  fontWeight: 600,
                   lineHeight: "18px",
-                  color: "rgba(255,255,255,0.7)",
+                  color: "rgba(255,255,255,0.9)",
                 }}
               >
                 Deposit Address
@@ -346,8 +315,8 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
                   gap: 4,
                   height: 44,
                   padding: "6px 12px",
-                  borderRadius: 12,
-                  background: "rgba(255,255,255,0.05)",
+                  borderRadius: 6,
+                  background: "rgba(255,255,255,0.1)",
                   boxSizing: "border-box",
                 }}
               >
@@ -386,6 +355,44 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
                   />
                 </button>
               </div>
+              {copiedTip && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    boxSizing: "border-box",
+                    alignSelf: "center",
+                    width: "fit-content",
+                    maxWidth: "100%",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <img
+                    src={ONBOARDING_ASSETS.copyCheck}
+                    alt=""
+                    width={16}
+                    height={16}
+                    style={{ display: "block", flexShrink: 0 }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      lineHeight: "18px",
+                      color: "#ffffff",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Address copied successfully
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -393,87 +400,103 @@ export function AddFundsPanel({ onDone, onClose }: AddFundsPanelProps) {
         <PrimaryButton label="Done" onClick={onDone} />
       </OnboardingShell>
 
-      {menuOpen && isMobile && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 300,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-          }}
-        >
-          <button
-            type="button"
-            aria-label="Close chain menu"
-            onClick={() => setMenuOpen(false)}
-            style={{
-              position: "absolute",
-              inset: 0,
-              margin: 0,
-              padding: 0,
-              border: "none",
-              background: "rgba(0,0,0,0.55)",
-              cursor: "pointer",
-              animation: "chainDrawerBackdropIn 0.22s ease-out both",
-            }}
-          />
+      {menuOpen &&
+        isMobile &&
+        typeof document !== "undefined" &&
+        createPortal(
           <div
-            role="dialog"
-            aria-label="Select chain"
             style={{
-              position: "relative",
-              width: "100%",
-              maxHeight: "70vh",
-              background: "#121419",
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              borderTop: "1px solid #424242",
-              boxSizing: "border-box",
-              padding: "12px 12px 24px",
+              position: "fixed",
+              inset: 0,
+              zIndex: 4000,
               display: "flex",
               flexDirection: "column",
-              gap: 8,
-              animation:
-                "chainDrawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both",
+              justifyContent: "flex-end",
             }}
           >
-            <div
+            <style>{`
+              @keyframes chainDrawerIn {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+              }
+              @keyframes chainDrawerBackdropIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+              .chain-menu-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+            `}</style>
+            <button
+              type="button"
+              aria-label="Close chain menu"
+              onClick={() => setMenuOpen(false)}
               style={{
-                width: 36,
-                height: 4,
-                borderRadius: 999,
-                background: "rgba(255,255,255,0.2)",
-                alignSelf: "center",
-                marginBottom: 4,
+                position: "absolute",
+                inset: 0,
+                margin: 0,
+                padding: 0,
+                border: "none",
+                background: "rgba(0,0,0,0.55)",
+                cursor: "pointer",
+                animation: "chainDrawerBackdropIn 0.22s ease-out both",
               }}
             />
-            <p
-              style={{
-                margin: "0 4px 4px",
-                fontSize: 14,
-                fontWeight: 600,
-                lineHeight: "20px",
-                color: "#ffffff",
-              }}
-            >
-              Select network
-            </p>
             <div
-              className="chain-menu-scroll"
+              role="dialog"
+              aria-label="Select chain"
               style={{
-                overflowY: "auto",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-                maxHeight: "calc(70vh - 80px)",
+                position: "relative",
+                width: "100%",
+                maxHeight: "85vh",
+                background: "#121419",
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+                borderTop: "1px solid #424242",
+                boxSizing: "border-box",
+                padding: "12px 12px calc(24px + env(safe-area-inset-bottom, 0px))",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                animation:
+                  "chainDrawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both",
               }}
             >
-              <ChainList chainId={chainId} onSelect={selectChain} />
+              <div
+                style={{
+                  width: 36,
+                  height: 4,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.2)",
+                  alignSelf: "center",
+                  marginBottom: 4,
+                }}
+              />
+              <p
+                style={{
+                  margin: "0 4px 4px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  lineHeight: "20px",
+                  color: "#ffffff",
+                  fontFamily: FONT,
+                }}
+              >
+                Select network
+              </p>
+              <div
+                className="chain-menu-scroll"
+                style={{
+                  overflowY: "auto",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  maxHeight: "calc(85vh - 80px)",
+                }}
+              >
+                <ChainList chainId={chainId} onSelect={selectChain} />
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

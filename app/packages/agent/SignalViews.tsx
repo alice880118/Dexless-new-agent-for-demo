@@ -1,8 +1,9 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { FONT, GRADIENTS } from "../nav/design-system";
+import { useSignalCountdown } from "./signal-countdown";
 
 const ASSETS = {
-  clock: "/trader-dna/signal/clock.png",
+  clock: "/trader-dna/signal/clock-time.png",
   chevron: "/trader-dna/signal/chevron-right.png",
   signalBars: "/trader-dna/signal/signal-bars.png",
   tickSl: "/trader-dna/signal/ps-tick-sl.svg",
@@ -213,6 +214,7 @@ function SignalCard({
   onTradeNow: () => void;
 }) {
   const sideColor = data.side === "SHORT" ? "#ff41a3" : "#00ffab";
+  const timerLabel = useSignalCountdown(data.id, data.timer);
   return (
     <div
       style={{
@@ -281,11 +283,11 @@ function SignalCard({
             <img
               src={ASSETS.clock}
               alt=""
-              width={13}
-              height={13}
+              width={14}
+              height={14}
               style={{ display: "block" }}
             />
-            {data.timer}
+            {timerLabel}
           </span>
           <span
             style={{
@@ -653,6 +655,7 @@ export function SignalDetailView({
 }) {
   const data =
     SIGNAL_CARDS.find((c) => c.id === signalId) ?? SIGNAL_CARDS[0];
+  const timerLabel = useSignalCountdown(data.id, data.timer);
 
   return (
     <div
@@ -765,11 +768,11 @@ export function SignalDetailView({
                 <img
                   src={ASSETS.clock}
                   alt=""
-                  width={13}
-                  height={13}
+                  width={14}
+                  height={14}
                   style={{ display: "block" }}
                 />
-                {data.timer}
+                {timerLabel}
               </span>
             </div>
 
