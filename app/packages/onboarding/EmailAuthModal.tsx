@@ -49,12 +49,25 @@ type CodeStatus =
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function normalizeEmail(value: string): string {
-  return value.trim().toLowerCase();
+  return value
+    .trim()
+    .toLowerCase()
+    // Mobile keyboards / paste can insert invisible chars
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/\s+/g, "");
+}
+
+/** Demo accounts are bare tokens `new` / `old` (also accept local-part before @). */
+function resolveDemoUserKind(email: string): EmailUserKind | null {
+  const e = normalizeEmail(email);
+  const local = e.includes("@") ? e.slice(0, e.indexOf("@")) : e;
+  if (local === OLD_USER_EMAIL) return "old";
+  if (local === NEW_USER_EMAIL) return "new";
+  return null;
 }
 
 function isDemoEmail(value: string): boolean {
-  const v = normalizeEmail(value);
-  return v === NEW_USER_EMAIL || v === OLD_USER_EMAIL;
+  return resolveDemoUserKind(value) !== null;
 }
 
 function isValidEmailInput(value: string): boolean {
@@ -227,6 +240,8 @@ export function EmailAuthModal({
   const [countdown, setCountdown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const verifyLock = useRef(false);
+  /** Snapshot at code-step entry — avoids mobile input mutation losing `old`/`new`. */
+  const emailAtCodeRef = useRef(email);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -236,6 +251,7 @@ export function EmailAuthModal({
 
   useEffect(() => {
     if (step === "code") {
+      emailAtCodeRef.current = email;
       setDigits(["", "", "", "", "", ""]);
       setCodeStatus("idle");
       setCountdown(RESEND_COOLDOWN_SEC);
@@ -258,7 +274,7 @@ export function EmailAuthModal({
       setEmailStatus("rate_limit");
       return;
     }
-    if (value.toLowerCase() === "fail@test.com") {
+    if (normalizeEmail(value) === "fail@test.com") {
       setEmailStatus("sending");
       window.setTimeout(() => setEmailStatus("send_fail"), 800);
       setSendCount((n) => n + 1);
@@ -266,9 +282,12 @@ export function EmailAuthModal({
     }
     setEmailStatus("sending");
     setSendCount((n) => n + 1);
+    const normalized = normalizeEmail(value);
+    emailAtCodeRef.current = normalized;
     window.setTimeout(() => {
       setEmailStatus("idle");
-      onGoToCode(value);
+      onEmailChange(normalized);
+      onGoToCode(normalized);
     }, 800);
   };
 
@@ -277,12 +296,14 @@ export function EmailAuthModal({
     verifyLock.current = true;
     setCodeStatus("verifying");
     window.setTimeout(() => {
-      const e = normalizeEmail(email);
-      const isNew = e === NEW_USER_EMAIL && code === NEW_USER_CODE;
-      const isOld = e === OLD_USER_EMAIL && code === OLD_USER_CODE;
-      if (isNew || isOld) {
+      const kind =
+        resolveDemoUserKind(emailAtCodeRef.current) ??
+        resolveDemoUserKind(email);
+      const codeOk =
+        code === NEW_USER_CODE || code === OLD_USER_CODE;
+      if (kind && codeOk) {
         setCodeStatus("success");
-        window.setTimeout(() => onCodeVerified(isOld ? "old" : "new"), 700);
+        window.setTimeout(() => onCodeVerified(kind), 700);
         return;
       }
       if (code === "000000") {
@@ -415,7 +436,12 @@ export function EmailAuthModal({
                 <img src={ONBOARDING_ASSETS.mail} alt="" width={14} height={14} />
               </span>
               <input
-                type="email"
+                type="text"
+                inputMode="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="username"
+                spellCheck={false}
                 value={email}
                 placeholder="Enter your email"
                 disabled={emailStatus === "sending"}
@@ -440,27 +466,48 @@ export function EmailAuthModal({
                   fontFamily: FONT,
                 }}
               />
-              <button
-                type="button"
-                onClick={() => {
-                  onEmailChange(NEW_USER_EMAIL);
-                  submitEmail(NEW_USER_EMAIL);
-                }}
-                style={{
-                  border: "none",
-                  borderRadius: 6,
-                  padding: "4px 8px",
-                  background: "rgba(255,255,255,0.08)",
-                  color: COLORS.white50,
-                  fontSize: 12,
-                  fontWeight: 500,
-                  fontFamily: FONT,
-                  cursor: "pointer",
-                  flexShrink: 0,
-                }}
-              >
-                Recent
-              </button>
+              <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onEmailChange(OLD_USER_EMAIL);
+                    submitEmail(OLD_USER_EMAIL);
+                  }}
+                  style={{
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "4px 8px",
+                    background: "rgba(255,255,255,0.08)",
+                    color: COLORS.white50,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    fontFamily: FONT,
+                    cursor: "pointer",
+                  }}
+                >
+                  old
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onEmailChange(NEW_USER_EMAIL);
+                    submitEmail(NEW_USER_EMAIL);
+                  }}
+                  style={{
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "4px 8px",
+                    background: "rgba(255,255,255,0.08)",
+                    color: COLORS.white50,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    fontFamily: FONT,
+                    cursor: "pointer",
+                  }}
+                >
+                  new
+                </button>
+              </div>
             </div>
             {emailMsg && (
               <p

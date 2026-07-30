@@ -20,6 +20,8 @@ import type { FileAttachment } from "./file-attachment";
 import { useAgentName } from "./useAgentName";
 import { DEFAULT_AGENT_NAME } from "./agent-name";
 import { DepositSelectModal } from "./DepositSelectModal";
+import { DepositSuccessToast } from "./DepositSuccessToast";
+import { ConfirmSendOrderModal } from "./ConfirmSendOrderModal";
 import type { DraftOrder } from "./draft-order";
 
 type PanelView = "home" | "signals" | "detail" | "more" | "rename" | "chat";
@@ -328,11 +330,16 @@ export function AgentChatDialog({
   const [chatKey, setChatKey] = useState(0);
   const [depositOpen, setDepositOpen] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const [draftFunded, setDraftFunded] = useState(false);
+  const [draftDepositPhase, setDraftDepositPhase] = useState<
+    "idle" | "confirming" | "ready" | "submitted"
+  >("idle");
+  const [showDepositSuccess, setShowDepositSuccess] = useState(false);
+  const [confirmOrder, setConfirmOrder] = useState<DraftOrder | null>(null);
   const [moreTab, setMoreTab] = useState<MoreTab>("history");
   const { agentName, saveAgentName } = useAgentName();
   const pointerStartYRef = useRef(0);
   const isDraggingRef = useRef(false);
+  const depositTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -398,10 +405,20 @@ export function AgentChatDialog({
       setChatAttachment(null);
       setDepositOpen(false);
       setShowDraftBanner(false);
-      setDraftFunded(false);
+      setDraftDepositPhase("idle");
+      setShowDepositSuccess(false);
+      setConfirmOrder(null);
       setMoreTab("history");
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (depositTimerRef.current) {
+        window.clearTimeout(depositTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     onMinimizedChange?.(isMinimized);
@@ -435,10 +452,20 @@ export function AgentChatDialog({
 
   const handleDraftDepositApprove = useCallback(() => {
     setDepositOpen(false);
-    setShowDraftBanner(true);
-    setDraftFunded(true);
-    setPanelView("home");
-    setIsMinimized(false);
+    setDraftDepositPhase("confirming");
+    setShowDepositSuccess(false);
+    if (depositTimerRef.current) {
+      window.clearTimeout(depositTimerRef.current);
+    }
+    depositTimerRef.current = window.setTimeout(() => {
+      setDraftDepositPhase("ready");
+      setShowDepositSuccess(true);
+      setShowDraftBanner(true);
+      depositTimerRef.current = window.setTimeout(() => {
+        setShowDepositSuccess(false);
+        depositTimerRef.current = null;
+      }, 3200);
+    }, 3000);
   }, []);
 
   const handleDraftAskAgent = useCallback((order: DraftOrder) => {
@@ -753,6 +780,7 @@ export function AgentChatDialog({
             overflow: "hidden",
           }}
         >
+          {showDepositSuccess ? <DepositSuccessToast /> : null}
           {panelView === "more" && (
             <MoreView
               onRename={() => setPanelView("rename")}
@@ -778,7 +806,16 @@ export function AgentChatDialog({
               signalSnapshot={signalSnapshot}
               fileAttachment={chatAttachment}
               onDraftDeposit={() => setDepositOpen(true)}
-              draftFunded={draftFunded}
+              onSendOrder={(order) => setConfirmOrder(order)}
+              onPlaceAnother={() => {
+                setDraftDepositPhase("idle");
+                startChat("I want to long BTC with 20U");
+              }}
+              onAdjustTpSl={() => {
+                setDraftDepositPhase("idle");
+                startChat("Adjust my take profit and stop loss");
+              }}
+              draftDepositPhase={draftDepositPhase}
             />
           )}
           {panelView === "signals" && (
@@ -1042,7 +1079,16 @@ export function AgentChatDialog({
               signalSnapshot={signalSnapshot}
               fileAttachment={chatAttachment}
               onDraftDeposit={() => setDepositOpen(true)}
-              draftFunded={draftFunded}
+              onSendOrder={(order) => setConfirmOrder(order)}
+              onPlaceAnother={() => {
+                setDraftDepositPhase("idle");
+                startChat("I want to long BTC with 20U");
+              }}
+              onAdjustTpSl={() => {
+                setDraftDepositPhase("idle");
+                startChat("Adjust my take profit and stop loss");
+              }}
+              draftDepositPhase={draftDepositPhase}
             />
           ) : (
             <div
@@ -1184,6 +1230,20 @@ export function AgentChatDialog({
         onClose={() => setDepositOpen(false)}
         onApprove={handleDraftDepositApprove}
       />
+      <ConfirmSendOrderModal
+        open={confirmOrder !== null}
+        order={confirmOrder}
+        onClose={() => setConfirmOrder(null)}
+        onAdjust={() => setConfirmOrder(null)}
+        onConfirm={() => {
+          setConfirmOrder(null);
+          setDraftDepositPhase("submitted");
+          setShowDraftBanner(false);
+        }}
+      />
+      {showDepositSuccess ? (
+        <DepositSuccessToast pageLevel top={topInset + 12} />
+      ) : null}
       <style>{`
         .agent-minimized-scroll::-webkit-scrollbar {
           display: none;

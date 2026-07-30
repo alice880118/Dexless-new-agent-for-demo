@@ -14,7 +14,7 @@ export const NAV_ASSETS = {
   menuPerps: "/nav/menu-perps.png",
   menuSwap: "/nav/menu-swap.png",
   menuDocs: "/nav/menu-docs.png",
-  chevronRight: "/nav/chevron-right.png",
+  chevronRight: "/nav/chevron-right.svg",
   externalLink: "/nav/external-link.png",
   menu: "/nav/menu-hamburger.png",
   menuClose: "/nav/menu-close.png",

@@ -12,14 +12,30 @@ export const ONBOARDING_ASSETS = {
   stepLineActive: "/onboarding/step-line-active.png",
   circleCheck: "/onboarding/circle-check.svg",
   circleCheckGreen: "/onboarding/circle-check-green.svg",
+  circleCheckReady: "/onboarding/circle-check-ready.png",
+  circleCheckTeal: "/onboarding/circle-check-teal.png",
+  progressCheck: "/onboarding/progress-check.svg",
+  stepDoneCheck: "/onboarding/step-done-check.svg",
+  stepConnector: "/onboarding/step-connector.svg",
+  stepConnectorDone: "/onboarding/step-connector-done.svg",
+  depositQr: "/onboarding/deposit-qr.png",
+  evmNetworkIcons: [
+    "/onboarding/evm-icons/1.png",
+    "/onboarding/evm-icons/2.png",
+    "/onboarding/evm-icons/3.png",
+    "/onboarding/evm-icons/4.png",
+    "/onboarding/evm-icons/5.png",
+  ] as const,
   walletIcon: "/onboarding/wallet-icon.svg",
   arrowRight: "/onboarding/arrow-right.png",
   checkbox: "/onboarding/checkbox.png",
   checkboxOn: "/onboarding/checkbox-checked.png",
   spinner: "/onboarding/spinner.png",
   copy: "/onboarding/copy.png",
+  copy20: "/onboarding/copy-20.svg",
   copyCheck: "/onboarding/copy-check.png",
   traderDnaLive: "/onboarding/trader-dna-live.png",
+  accountLiveHero: "/onboarding/account-live-hero.png",
   signIcon: "/onboarding/sign-icon.svg",
   close: "/onboarding/close.svg",
   back: "/onboarding/back.svg",
@@ -82,4 +98,40 @@ export const CHAINS = [
 ] as const;
 
 export type ChainId = (typeof CHAINS)[number]["id"];
+
+/** Wallet Add funds — deposit token picker */
+export const DEPOSIT_TOKENS = [
+  {
+    id: "usdc",
+    label: "USDC",
+    icon: "/onboarding/tokens/usdc.png",
+    balance: "0.000000",
+  },
+  {
+    id: "usdt",
+    label: "USDT",
+    icon: "/onboarding/tokens/usdt.png",
+    balance: "0.000000",
+  },
+  {
+    id: "yusd",
+    label: "YUSD",
+    icon: "/onboarding/tokens/yusd.png",
+    balance: "0.00000000",
+  },
+  {
+    id: "bnb",
+    label: "BNB",
+    icon: "/onboarding/tokens/bnb.png",
+    balance: "0.00000000",
+  },
+  {
+    id: "usd1",
+    label: "USD1",
+    icon: "/onboarding/tokens/usd1.png",
+    balance: "0.00000000",
+  },
+] as const;
+
+export type DepositTokenId = (typeof DEPOSIT_TOKENS)[number]["id"];
 

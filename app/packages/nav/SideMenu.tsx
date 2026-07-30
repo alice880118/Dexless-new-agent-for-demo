@@ -506,32 +506,34 @@ export function SideMenu({
             }}
           />
 
-          <button
-            type="button"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              width: "100%",
-              padding: "6px 10px",
-              border: "none",
-              borderRadius: 4,
-              background: "transparent",
-              cursor: "pointer",
-              fontFamily: FONT,
-              textAlign: "left",
-            }}
-          >
-            <span
+          {walletConnected ? (
+            <button
+              type="button"
               style={{
-                fontSize: 14,
-                fontWeight: 600,
-                lineHeight: "20px",
-                color: COLORS.white70,
+                display: "flex",
+                alignItems: "center",
+                width: "100%",
+                padding: "6px 10px",
+                border: "none",
+                borderRadius: 4,
+                background: "transparent",
+                cursor: "pointer",
+                fontFamily: FONT,
+                textAlign: "left",
               }}
             >
-              Dexless Support
-            </span>
-          </button>
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  lineHeight: "20px",
+                  color: COLORS.white70,
+                }}
+              >
+                Dexless Support
+              </span>
+            </button>
+          ) : null}
 
           <button
             type="button"

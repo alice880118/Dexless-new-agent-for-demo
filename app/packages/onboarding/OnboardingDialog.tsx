@@ -30,8 +30,7 @@ type ModalFlowStep =
   | "code"
   | "wallet-connect"
   | "sign"
-  | "enable-trading"
-  | "trader-dna-live";
+  | "enable-trading";
 
 type PageFlowStep = Exclude<FlowStep, ModalFlowStep>;
 
@@ -41,8 +40,7 @@ function isModalFlowStep(step: FlowStep): step is ModalFlowStep {
     step === "code" ||
     step === "wallet-connect" ||
     step === "sign" ||
-    step === "enable-trading" ||
-    step === "trader-dna-live"
+    step === "enable-trading"
   );
 }
 
@@ -124,6 +122,10 @@ export function OnboardingDialog({
   const [skipSignatures, setSkipSignatures] = useState(false);
   /** Wallet return visit: after enable → trader-dna (no add funds) */
   const [walletReturnVisit, setWalletReturnVisit] = useState(false);
+  /** New-user auth path — drives Add funds desktop variant */
+  const [authMethod, setAuthMethod] = useState<"wallet" | "email">("email");
+  /** Old / return user: account-live as compact popup (not onboarding shell) */
+  const [liveAsPopup, setLiveAsPopup] = useState(false);
   const [skipSetupNext, setSkipSetupNext] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
@@ -137,6 +139,8 @@ export function OnboardingDialog({
       setSignRound(1);
       setSkipSignatures(false);
       setWalletReturnVisit(false);
+      setAuthMethod("email");
+      setLiveAsPopup(false);
       setKeyboardOffset(0);
       // Keep skipSetupNext in memory for same-session return visit;
       // full page refresh resets to default.
@@ -271,8 +275,10 @@ export function OnboardingDialog({
     onClose();
   };
 
-  const goTraderDnaLive = () => {
+  const goTraderDnaLive = (asPopup = false) => {
     onComplete?.({ openAgent: false });
+    setLiveAsPopup(asPopup);
+    setLastPageStep("trader-dna-live");
     setStep("trader-dna-live");
   };
 
@@ -290,6 +296,7 @@ export function OnboardingDialog({
     setSignRound(1);
     setSkipSignatures(true);
     setWalletReturnVisit(false);
+    setAuthMethod("wallet");
     setStep("referral");
   };
 
@@ -297,7 +304,7 @@ export function OnboardingDialog({
     if (skipSetupNext) {
       setSkipSignatures(false);
       setWalletReturnVisit(false);
-      goTraderDnaLive();
+      goTraderDnaLive(true);
       return;
     }
     setWaitingSig(false);
@@ -315,7 +322,7 @@ export function OnboardingDialog({
   const finishSetupAfterEnable = () => {
     setWaitingSig(false);
     if (walletReturnVisit) {
-      goTraderDnaLive();
+      goTraderDnaLive(true);
       return;
     }
     setStep("funds");
@@ -327,7 +334,7 @@ export function OnboardingDialog({
     setWaitingSig(true);
     window.setTimeout(() => {
       setWaitingSig(false);
-      goTraderDnaLive();
+      goTraderDnaLive(true);
     }, 2000);
   };
 
@@ -452,7 +459,10 @@ export function OnboardingDialog({
 
         <button
           type="button"
-          onClick={() => setStep("email")}
+          onClick={() => {
+            setAuthMethod("email");
+            setStep("email");
+          }}
           style={{
             display: "flex",
             alignItems: "center",
@@ -511,6 +521,8 @@ export function OnboardingDialog({
             overflow: "hidden",
             background: "#000000",
             boxSizing: "border-box",
+            paddingTop: 16,
+            paddingBottom: 0,
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -520,9 +532,10 @@ export function OnboardingDialog({
               minHeight: 0,
               display: "flex",
               flexDirection: "column",
-              gap: 32,
               overflowY: "auto",
               WebkitOverflowScrolling: "touch",
+              padding: "0 24px",
+              boxSizing: "border-box",
             }}
           >
             <div
@@ -533,13 +546,16 @@ export function OnboardingDialog({
                 width: "100%",
                 flexShrink: 0,
                 background: "#000000",
+                gap: 16,
               }}
             >
               <div
                 style={{
                   position: "relative",
                   width: "100%",
-                  height: 300,
+                  maxWidth: 342,
+                  height: "min(220px, 34vh)",
+                  minHeight: 160,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -600,12 +616,16 @@ export function OnboardingDialog({
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 31,
+                gap: 16,
                 width: "100%",
                 maxWidth: 342,
-                margin: "0 auto",
-                padding: "0 24px 24px",
+                marginLeft: "auto",
+                marginRight: "auto",
+                marginTop: "auto",
+                paddingTop: 24,
+                paddingBottom: 48,
                 boxSizing: "border-box",
+                flexShrink: 0,
               }}
             >
               <div
@@ -613,7 +633,7 @@ export function OnboardingDialog({
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  gap: 21,
+                  gap: 16,
                   width: "100%",
                 }}
               >
@@ -838,9 +858,19 @@ export function OnboardingDialog({
         />
       );
     }
+    if (pageStep === "trader-dna-live") {
+      return (
+        <TraderDnaLiveModal
+          presentation={liveAsPopup ? "popup" : "flow"}
+          onMeetAgent={() => finish(true)}
+          onClose={onClose}
+        />
+      );
+    }
     return (
       <AddFundsPanel
-        onDone={goTraderDnaLive}
+        variant={authMethod}
+        onDone={() => goTraderDnaLive(false)}
         onClose={onClose}
       />
     );
@@ -867,6 +897,7 @@ export function OnboardingDialog({
               setStep("enable-trading");
               return;
             }
+            setAuthMethod("email");
             setStep("referral");
           }}
         />
@@ -894,20 +925,14 @@ export function OnboardingDialog({
         />
       );
     }
-    if (modalStep === "trader-dna-live") {
-      return (
-        <TraderDnaLiveModal
-          onExplore={() => finish(true)}
-          onClose={onClose}
-        />
-      );
-    }
     return (
       <SignMessageModal onClose={onClose} onSign={handleSigned} />
     );
   };
 
   const showMobileModal = isMobile && isModalFlowStep(step);
+  const showLivePopupMobile =
+    isMobile && step === "trader-dna-live" && liveAsPopup;
   const pageStepForRender: PageFlowStep = showMobileModal
     ? lastPageStep
     : isModalFlowStep(step)
@@ -950,6 +975,10 @@ export function OnboardingDialog({
           .onboarding-dialog input.referral-code-input {
             font-size: 16px !important;
           }
+          .onboarding-dialog input.referral-code-input::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+            opacity: 1;
+          }
           .onboarding-dialog input.otp-digit-input {
             font-size: 16px !important;
           }
@@ -968,13 +997,11 @@ export function OnboardingDialog({
             ? "Sign message"
             : step === "enable-trading"
               ? "Enable trading"
-              : step === "trader-dna-live"
-                ? "Trader DNA is Live"
-                : step === "wallet-connect"
-                  ? "WalletConnect"
-                  : step === "code"
-                    ? "Enter verification code"
-                    : "Log in or sign up"
+              : step === "wallet-connect"
+                ? "WalletConnect"
+                : step === "code"
+                  ? "Enter verification code"
+                  : "Log in or sign up"
         }
         className="onboarding-dialog"
         style={{
@@ -1016,18 +1043,73 @@ export function OnboardingDialog({
       document.body,
     );
 
+  const livePopupPortal =
+    showLivePopupMobile &&
+    typeof document !== "undefined" &&
+    createPortal(
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Your account is live"
+        className="onboarding-dialog"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1100,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+          boxSizing: "border-box",
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+          fontFamily: FONT,
+          overflow: "hidden",
+          overscrollBehavior: "contain",
+          touchAction: "manipulation",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <style>{motionCss}</style>
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 360,
+            maxHeight: "100%",
+            overflow: "auto",
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <TraderDnaLiveModal
+            presentation="popup"
+            onMeetAgent={() => finish(true)}
+            onClose={onClose}
+          />
+        </div>
+      </div>,
+      document.body,
+    );
+
   if (isMobile) {
-    if (step === "trader-dna-live") {
-      return <>{mobileModalPortal}</>;
+    if (showLivePopupMobile) {
+      return <>{livePopupPortal}</>;
     }
     return (
       <>
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Onboarding"
+          aria-label={
+            step === "trader-dna-live"
+              ? "Your account is live"
+              : "Onboarding"
+          }
           style={{
             ...pageStyleMobile,
+            /* Above floating agent (zIndex 1000) so banner is not covered */
+            zIndex: step === "trader-dna-live" ? 1100 : 250,
             top: topInset,
             paddingBottom: keyboardOffset > 0 ? keyboardOffset : 0,
           }}
@@ -1061,6 +1143,7 @@ export function OnboardingDialog({
       aria-label="Onboarding"
       style={{
         ...overlayStyleDesktop,
+        zIndex: step === "trader-dna-live" ? 1100 : 150,
         top: topInset,
         bottom: bottomInset,
         alignItems: keyboardOffset > 0 ? "flex-start" : "center",

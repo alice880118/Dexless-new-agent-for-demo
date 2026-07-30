@@ -175,9 +175,9 @@ export function DepositSelectModal({
           style={{
             margin: 0,
             fontWeight: 700,
-            fontSize: 16,
-            lineHeight: "20px",
-            letterSpacing: "0.16px",
+            fontSize: 14,
+            lineHeight: "18px",
+            letterSpacing: "0.14px",
             color: "#ffffff",
           }}
         >
@@ -188,21 +188,22 @@ export function DepositSelectModal({
           aria-label="Close"
           onClick={onClose}
           style={{
-            width: 20,
-            height: 20,
+            width: 16,
+            height: 16,
             border: "none",
             background: "transparent",
             padding: 0,
             cursor: "pointer",
             display: "inline-flex",
+            flexShrink: 0,
           }}
         >
           <img
             src="/trader-dna/close.svg"
             alt=""
-            width={20}
-            height={20}
-            style={{ display: "block" }}
+            width={16}
+            height={16}
+            style={{ display: "block", width: 16, height: 16 }}
           />
         </button>
       </div>
@@ -257,7 +258,10 @@ export function DepositSelectModal({
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
-          padding: "16px 20px 48px",
+          WebkitOverflowScrolling: "touch",
+          padding: isMobile
+            ? "16px 20px calc(56px + env(safe-area-inset-bottom, 0px))"
+            : "16px 20px 48px",
           display: "flex",
           flexDirection: "column",
           gap: 16,

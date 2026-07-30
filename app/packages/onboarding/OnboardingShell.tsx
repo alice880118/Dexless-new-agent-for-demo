@@ -3,12 +3,14 @@ import { COLORS, FONT } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
 
-export type OnboardingStage = "referral" | "setup" | "funds";
+export type OnboardingStage = "referral" | "setup" | "funds" | "complete";
 
 type StepState = "active" | "done" | "todo";
 
 type OnboardingShellProps = {
   stage: OnboardingStage;
+  /** Setup sub-step: 1 = create account, 2 = enable trading */
+  setupPhase?: 1 | 2;
   children: ReactNode;
   onClose?: () => void;
 };
@@ -48,15 +50,17 @@ function ShellCloseButton({ onClick }: { onClick: () => void }) {
 }
 
 function stepState(stage: OnboardingStage, id: OnboardingStage): StepState {
+  if (stage === "complete") return "done";
   const order: OnboardingStage[] = ["referral", "setup", "funds"];
   const current = order.indexOf(stage);
   const target = order.indexOf(id);
+  if (target < 0 || current < 0) return "todo";
   if (target < current) return "done";
   if (target === current) return "active";
   return "todo";
 }
 
-function HelpLink() {
+function HelpLink({ centered = false }: { centered?: boolean }) {
   return (
     <button
       type="button"
@@ -64,7 +68,9 @@ function HelpLink() {
         border: "none",
         background: "transparent",
         padding: 0,
-        textAlign: "left",
+        display: centered ? "block" : undefined,
+        width: centered ? "100%" : undefined,
+        textAlign: centered ? "center" : "left",
         fontSize: 13,
         fontWeight: 500,
         lineHeight: "20px",
@@ -148,63 +154,173 @@ function StepItem({
   );
 }
 
-/** Mobile (<768): Figma progress — labels + continuous track with green fill */
-function MobileStepProgress({ stage }: { stage: OnboardingStage }) {
-  const steps: { id: OnboardingStage; label: string; align: "left" | "center" | "right" }[] = [
-    { id: "referral", label: "Referral code", align: "left" },
-    { id: "setup", label: "Set up account", align: "center" },
-    { id: "funds", label: "Add funds", align: "right" },
+const BAR_TRACK = "rgba(255,255,255,0.2)";
+const BAR_REFERRAL =
+  "linear-gradient(90deg, #7053f3 0%, #76bab2 96.35%)";
+const BAR_REFERRAL_DONE =
+  "linear-gradient(90deg, rgba(112,83,243,0.5) 0%, rgba(118,186,178,0.5) 96.35%)";
+const BAR_SETUP =
+  "linear-gradient(90deg, #76bab2 0%, #e3ff94 98.52%)";
+const BAR_SETUP_DONE =
+  "linear-gradient(90deg, rgba(118,186,178,0.5) 0%, rgba(227,255,148,0.5) 98.52%)";
+const BAR_FUNDS =
+  "linear-gradient(90deg, #e3ff94 0%, #dbfd5c 98.52%)";
+
+/** Mobile (<768): Figma — 3 segmented step bars */
+function MobileStepProgress({
+  stage,
+  setupPhase = 1,
+}: {
+  stage: OnboardingStage;
+  setupPhase?: 1 | 2;
+}) {
+  const steps: { id: OnboardingStage; label: string }[] = [
+    { id: "referral", label: "Referral code" },
+    { id: "setup", label: "Set up account" },
+    { id: "funds", label: "Add funds" },
   ];
-  const activeIndex = steps.findIndex((s) => s.id === stage);
-  const progressPct = ((activeIndex + 1) / steps.length) * 100;
+  const activeIndex =
+    stage === "complete" ? 3 : steps.findIndex((s) => s.id === stage);
+
+  const barFill = (i: number): { full?: string; partial?: string; opacity?: number } => {
+    if (stage === "complete") {
+      if (i === 0) return { full: BAR_REFERRAL_DONE };
+      if (i === 1) return { full: BAR_SETUP_DONE };
+      return { full: BAR_FUNDS, opacity: 0.5 };
+    }
+    if (stage === "referral") {
+      if (i === 0) return { full: BAR_REFERRAL };
+      return {};
+    }
+    if (stage === "setup") {
+      if (i === 0) return { full: BAR_REFERRAL_DONE };
+      if (i === 1) {
+        return setupPhase === 2
+          ? { full: BAR_SETUP }
+          : { partial: BAR_SETUP };
+      }
+      return {};
+    }
+    // funds
+    if (i === 0) return { full: BAR_REFERRAL_DONE };
+    if (i === 1) return { full: BAR_SETUP_DONE };
+    return { full: BAR_FUNDS };
+  };
 
   return (
-    <div style={{ width: "100%", boxSizing: "border-box" }}>
+    <div
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        boxSizing: "border-box",
+      }}
+    >
       <div
         style={{
           display: "flex",
           width: "100%",
-          marginBottom: 9,
+          justifyContent: "space-between",
+          gap: 4,
         }}
       >
-        {steps.map((step, i) => (
-          <span
-            key={step.id}
-            style={{
-              flex: 1,
-              fontSize: 12,
-              fontWeight: 600,
-              lineHeight: "18px",
-              textAlign: step.align,
-              color: "rgba(255,255,255,0.8)",
-              opacity: i === activeIndex ? 1 : 0.5,
-            }}
-          >
-            {step.label}
-          </span>
-        ))}
+        {steps.map((step, i) => {
+          const active = i === activeIndex;
+          const done = i < activeIndex;
+          return (
+            <div
+              key={step.id}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: done || stage === "complete" ? "flex-start" : "center",
+                gap: 4,
+                minWidth: 0,
+                opacity: active ? 1 : 0.5,
+              }}
+            >
+              {done || stage === "complete" ? (
+                <img
+                  src={ONBOARDING_ASSETS.progressCheck}
+                  alt=""
+                  width={11}
+                  height={11}
+                  style={{
+                    display: "block",
+                    width: 11,
+                    height: 11,
+                    flexShrink: 0,
+                  }}
+                />
+              ) : null}
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  lineHeight: "18px",
+                  color: active
+                    ? "rgba(255,255,255,0.8)"
+                    : "rgba(255,255,255,0.6)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
       <div
         style={{
-          position: "relative",
+          display: "flex",
           width: "100%",
-          height: 4,
-          borderRadius: 999,
-          background: "rgba(255,255,255,0.3)",
-          overflow: "hidden",
+          justifyContent: "space-between",
+          gap: 4,
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            height: "100%",
-            width: `${progressPct}%`,
-            borderRadius: 999,
-            background: COLORS.brandGreen,
-          }}
-        />
+        {steps.map((step, i) => {
+          const fill = barFill(i);
+          return (
+            <div
+              key={step.id}
+              style={{
+                flex: 1,
+                height: 4,
+                borderRadius: 999,
+                background: BAR_TRACK,
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {fill.full ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: 999,
+                    backgroundImage: fill.full,
+                    opacity: fill.opacity ?? 1,
+                  }}
+                />
+              ) : null}
+              {fill.partial ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    width: "52%",
+                    borderRadius: 999,
+                    backgroundImage: fill.partial,
+                  }}
+                />
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -246,6 +362,7 @@ function StepList({
 
 export function OnboardingShell({
   stage,
+  setupPhase = 1,
   children,
   onClose,
 }: OnboardingShellProps) {
@@ -255,6 +372,10 @@ export function OnboardingShell({
   const referral = stepState(stage, "referral");
   const setup = stepState(stage, "setup");
   const funds = stepState(stage, "funds");
+  /** Desktop: hide close from Referral → Add funds */
+  const showClose =
+    Boolean(onClose) &&
+    (isMobile || stage === "complete");
 
   const shellStyle: CSSProperties = isMobile
     ? {
@@ -293,14 +414,19 @@ export function OnboardingShell({
             minHeight: 0,
             display: "flex",
             flexDirection: "column",
-            gap: stage === "setup" ? 60 : 16,
-            padding: "70px 24px 16px",
+            gap: 40,
+            paddingTop: 55,
+            paddingLeft: 24,
+            paddingRight: 24,
+            paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
             boxSizing: "border-box",
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
+            scrollPaddingBottom:
+              "calc(24px + env(safe-area-inset-bottom, 0px))",
           }}
         >
-          <MobileStepProgress stage={stage} />
+          <MobileStepProgress stage={stage} setupPhase={setupPhase} />
           <div
             style={{
               width: "100%",
@@ -309,13 +435,23 @@ export function OnboardingShell({
               justifyContent: "space-between",
               gap: 28,
               flex: 1,
-              minHeight: 320,
+              minHeight: 0,
             }}
           >
             {children}
           </div>
-          <div style={{ marginTop: 8 }}>
-            <HelpLink />
+          <div
+            style={{
+              marginTop: 8,
+              flexShrink: 0,
+              paddingBottom: 4,
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <HelpLink centered />
           </div>
         </div>
       </div>
@@ -324,7 +460,7 @@ export function OnboardingShell({
 
   return (
     <div style={shellStyle} onClick={(e) => e.stopPropagation()}>
-      {onClose ? <ShellCloseButton onClick={onClose} /> : null}
+      {showClose && onClose ? <ShellCloseButton onClick={onClose} /> : null}
       <aside
         style={{
           width: 210,

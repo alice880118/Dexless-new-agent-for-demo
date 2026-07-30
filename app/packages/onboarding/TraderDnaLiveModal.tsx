@@ -1,38 +1,170 @@
-import type { CSSProperties } from "react";
-import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
+import { COLORS, FONT } from "../nav/design-system";
+import { useBreakpoint } from "../nav/useBreakpoint";
 import { ONBOARDING_ASSETS } from "./assets";
-
-const ASSETS = {
-  preview: "/onboarding/trader-dna-live.png",
-} as const;
+import {
+  OnboardingShell,
+  PrimaryButton,
+} from "./OnboardingShell";
 
 type TraderDnaLiveModalProps = {
-  onExplore?: () => void;
+  /** flow = mobile full-page onboarding shell; popup = compact dialog card */
+  presentation?: "flow" | "popup";
+  onMeetAgent?: () => void;
   onClose?: () => void;
 };
 
-const shell: CSSProperties = {
-  width: "100%",
-  maxWidth: 360,
-  background: "#0c0d10",
-  border: "1px solid #424242",
-  borderRadius: 8,
-  overflow: "hidden",
-  boxSizing: "border-box",
-  fontFamily: FONT,
-};
-
 export function TraderDnaLiveModal({
-  onExplore,
+  presentation,
+  onMeetAgent,
   onClose,
 }: TraderDnaLiveModalProps) {
+  const isMobile = useBreakpoint() === "390";
+  /** Compact card unless mobile new-user flow shell */
+  const asFlow = presentation === "flow" && isMobile;
+
+  const titleBlock = (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        width: "100%",
+        alignItems: "flex-start",
+        textAlign: "left",
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          fontSize: 18,
+          fontWeight: 600,
+          lineHeight: "20px",
+          color: "#ffffff",
+          width: "100%",
+          textAlign: "left",
+        }}
+      >
+        Your account is live
+      </h2>
+      <p
+        style={{
+          margin: 0,
+          fontSize: 14,
+          fontWeight: 500,
+          lineHeight: "20px",
+          color: COLORS.white60,
+          width: "100%",
+          textAlign: "left",
+        }}
+      >
+        Your agent is ready to walk you through your first trade.
+      </p>
+    </div>
+  );
+
+  const hero = (
+    <div
+      style={{
+        width: "100%",
+        height: asFlow && isMobile ? 278 : 200,
+        borderRadius: asFlow && isMobile ? 0 : 8,
+        overflow: "hidden",
+        background: asFlow ? "#000000" : "#0c0d10",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        boxSizing: "border-box",
+      }}
+    >
+      <img
+        src={ONBOARDING_ASSETS.accountLiveHero}
+        alt=""
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          objectPosition: "center",
+        }}
+      />
+    </div>
+  );
+
+  const actions = (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
+      <PrimaryButton label="Meet your agent" onClick={onMeetAgent} />
+    </div>
+  );
+
+  if (asFlow) {
+    return (
+      <OnboardingShell stage="complete" onClose={onClose}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            gap: 24,
+            flex: 1,
+            minHeight: 0,
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 24,
+              width: "100%",
+            }}
+          >
+            <div
+              aria-hidden
+              style={{
+                height: 18,
+                width: 1,
+                opacity: 0,
+                pointerEvents: "none",
+                flexShrink: 0,
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 32,
+                width: "100%",
+              }}
+            >
+              {titleBlock}
+              {hero}
+            </div>
+          </div>
+          {actions}
+        </div>
+      </OnboardingShell>
+    );
+  }
+
   return (
-    <div style={shell} onClick={(e) => e.stopPropagation()}>
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 360,
+        background: "#0c0d10",
+        border: "1px solid #424242",
+        borderRadius: 8,
+        overflow: "hidden",
+        boxSizing: "border-box",
+        fontFamily: FONT,
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
+          justifyContent: "flex-start",
           padding: "14px 20px",
           borderBottom: "1px solid #424242",
           position: "relative",
@@ -46,10 +178,12 @@ export function TraderDnaLiveModal({
             lineHeight: "20px",
             letterSpacing: "0.16px",
             color: "#ffffff",
-            textAlign: "center",
+            textAlign: "left",
+            width: "100%",
+            paddingRight: onClose ? 28 : 0,
           }}
         >
-          Trader DNA is Live!
+          Your account is live
         </h2>
         {onClose ? (
           <button
@@ -87,98 +221,26 @@ export function TraderDnaLiveModal({
         style={{
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
+          alignItems: "stretch",
           gap: 24,
           padding: "16px 20px 20px",
           boxSizing: "border-box",
         }}
       >
-        <div
+        {hero}
+        <p
           style={{
-            position: "relative",
-            width: "100%",
-            height: 147,
-            borderRadius: 8,
-            overflow: "hidden",
-            background: "#000000",
+            margin: 0,
+            fontSize: 14,
+            fontWeight: 500,
+            lineHeight: "18px",
+            color: COLORS.white60,
+            textAlign: "left",
           }}
         >
-          <img
-            src={ASSETS.preview}
-            alt=""
-            style={{
-              display: "block",
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              objectPosition: "center bottom",
-            }}
-          />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            width: "100%",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontSize: 14,
-              fontWeight: 700,
-              lineHeight: "20px",
-              letterSpacing: "0.14px",
-              color: "#ffffff",
-            }}
-          >
-            Meet Your AI Trading Agent
-          </p>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 14,
-              fontWeight: 500,
-              lineHeight: "18px",
-              color: COLORS.white60,
-            }}
-          >
-            Understand your trading habits, performance, and risk through
-            personalized analysis.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={onExplore}
-          style={{
-            width: "100%",
-            height: 40,
-            padding: "0 16px",
-            border: "none",
-            borderRadius: 999,
-            cursor: "pointer",
-            backgroundImage: GRADIENTS.connectBtn,
-            fontFamily: FONT,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxSizing: "border-box",
-          }}
-        >
-          <span
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              lineHeight: "20px",
-              color: "#ffffff",
-            }}
-          >
-            Explore Now
-          </span>
-        </button>
+          Your agent is ready to walk you through your first trade.
+        </p>
+        {actions}
       </div>
     </div>
   );

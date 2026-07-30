@@ -11,18 +11,18 @@ const ASSETS = {
   tickTp: "/trader-dna/signal/ps-tick-tp.svg",
 } as const;
 
-function BackIcon({ size = 18 }: { size?: number }) {
+function BackIcon({ size = 16 }: { size?: number }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 18 18"
+      viewBox="0 0 16 16"
       fill="none"
       aria-hidden
       style={{ display: "block", flexShrink: 0 }}
     >
       <path
-        d="M11.25 4.5L6.75 9l4.5 4.5"
+        d="M10 3.333L5.333 8 10 12.667"
         stroke="#ffffff"
         strokeWidth="1.5"
         strokeLinecap="round"
@@ -39,8 +39,8 @@ function BackButton({ onClick }: { onClick: () => void }) {
       aria-label="Back"
       onClick={onClick}
       style={{
-        width: 18,
-        height: 18,
+        width: 16,
+        height: 16,
         padding: 0,
         border: "none",
         background: "transparent",
@@ -51,7 +51,7 @@ function BackButton({ onClick }: { onClick: () => void }) {
         flexShrink: 0,
       }}
     >
-      <BackIcon size={18} />
+      <BackIcon size={16} />
     </button>
   );
 }
@@ -659,6 +659,12 @@ export function SignalDetailView({
   const data =
     SIGNAL_CARDS.find((c) => c.id === signalId) ?? SIGNAL_CARDS[0];
   const timerLabel = useSignalCountdown(data.id, data.timer);
+  const sideColor = data.side === "SHORT" ? "#ff41a3" : "#46ccb9";
+  const fundingParts = data.fundingRate.split(" · ");
+  const lsParts = data.longShortRatio.split(" · ");
+  const takeProfitPct = data.takeProfitPct.startsWith("-")
+    ? data.takeProfitPct
+    : data.takeProfitPct.replace("+", "-");
 
   return (
     <div
@@ -671,47 +677,20 @@ export function SignalDetailView({
         boxSizing: "border-box",
         fontFamily: FONT,
         overflow: "hidden",
+        background: "#1b1b1b",
       }}
     >
-      <div
-        style={{
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          padding: "12px 13px 12px",
-          background: "#1b1b1b",
-          boxSizing: "border-box",
-        }}
-      >
-        <BackButton onClick={onBack} />
-        <span
-          style={{
-            fontSize: 14,
-            fontWeight: 600,
-            lineHeight: "20px",
-            color: "#ffffff",
-          }}
-        >
-          Signal
-        </span>
-      </div>
-
       <div
         style={{
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
           overflowX: "hidden",
-          padding: "12px 13px 0",
+          padding: "12px 13px 16px",
           boxSizing: "border-box",
           scrollbarWidth: "none",
           touchAction: "pan-y",
           overscrollBehavior: "contain",
-          WebkitMaskImage:
-            "linear-gradient(180deg, #000 0%, #000 calc(100% - 36px), transparent 100%)",
-          maskImage:
-            "linear-gradient(180deg, #000 0%, #000 calc(100% - 36px), transparent 100%)",
         }}
         className="signal-scroll"
         data-agent-scroll
@@ -723,141 +702,101 @@ export function SignalDetailView({
             padding: 12,
             display: "flex",
             flexDirection: "column",
-            gap: 14,
+            gap: 20,
             boxSizing: "border-box",
-            marginBottom: 12,
           }}
         >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: 4 }}
-              >
-                <span
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 700,
-                    lineHeight: "20px",
-                    color: "rgba(255,255,255,0.9)",
-                  }}
-                >
-                  {data.symbol}
-                </span>
-                <span
-                  style={{
-                    padding: "1px 8px",
-                    borderRadius: 4,
-                    background: "rgba(255,65,163,0.05)",
-                    color: "#ff41a3",
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  {data.side}
-                </span>
-              </div>
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "rgba(255,255,255,0.8)",
-                }}
-              >
-                <img
-                  src={ASSETS.clock}
-                  alt=""
-                  width={14}
-                  height={14}
-                  style={{ display: "block" }}
-                />
-                {timerLabel}
-              </span>
-            </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <Row label="Entry (limit)" value={data.entry} />
-            <Row
-              label="Stop loss"
-              mid={data.stopLossPct}
-              value={data.stopLoss}
-              valueColor="#ff41a3"
-            />
-            <Row
-              label="Take profit"
-              mid={data.takeProfitPct}
-              value={data.takeProfit}
-              valueColor="#00ffab"
-            />
-          </div>
-
-          <div
-            style={{
-              height: 1,
-              background: "rgba(255,255,255,0.1)",
-            }}
-          />
-
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              gap: 8,
+              alignItems: "flex-start",
+              width: "100%",
             }}
           >
-            <Metric label="R:R" value={data.rr} />
-            <Metric label="TTL" value={data.ttl.replace("TTL ", "")} />
-            <Metric
-              label="Signal score"
-              value={`${data.signalScore}`}
-              suffix={data.signalScoreMax}
-              align="right"
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <button
+                type="button"
+                aria-label="Back"
+                onClick={onBack}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
+                  width: 16,
+                  height: 16,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                <BackIcon size={16} />
+              </button>
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  lineHeight: "20px",
+                  color: "rgba(255,255,255,0.9)",
+                }}
+              >
+                {data.symbol}
+              </span>
+              <span
+                style={{
+                  padding: "1px 8px",
+                  borderRadius: 4,
+                  background:
+                    data.side === "SHORT"
+                      ? "rgba(255,65,163,0.05)"
+                      : "rgba(70,204,185,0.05)",
+                  color: sideColor,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  lineHeight: "18px",
+                }}
+              >
+                {data.side}
+              </span>
+            </div>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: "18px",
+                color: "rgba(255,255,255,0.8)",
+              }}
+            >
+              <img
+                src={ASSETS.clock}
+                alt=""
+                width={13}
+                height={13}
+                style={{ display: "block" }}
+              />
+              {timerLabel}
+            </span>
           </div>
 
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-              padding: "2px 4px",
-              borderRadius: 6,
-              background: "rgba(255,255,255,0.05)",
+              flexDirection: "column",
+              gap: 8,
+              width: "100%",
             }}
           >
-            <img
-              src={ASSETS.signalBars}
-              alt=""
-              width={14}
-              height={14}
-              style={{ display: "block", width: 14, height: 14 }}
-            />
             <span
               style={{
                 fontSize: 12,
-                fontWeight: 500,
+                fontWeight: 600,
                 lineHeight: "18px",
-                color: "rgba(255,255,255,0.4)",
-              }}
-            >
-              {data.indicatorNote}
-            </span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "rgba(255,255,255,0.8)",
+                color: "rgba(255,255,255,0.5)",
               }}
             >
               Price Structure
@@ -865,167 +804,483 @@ export function SignalDetailView({
             <div
               style={{
                 display: "flex",
+                flexDirection: "column",
                 gap: 12,
-                alignItems: "center",
                 width: "100%",
               }}
             >
-              <PriceStructureBar />
+              <PriceStructureRow
+                accent="#ff41a3"
+                title="Stop loss"
+                pct={data.stopLossPct}
+                pctColor="#be4584"
+                price={data.stopLoss}
+                priceColor="#ff41a3"
+                note="Resistance Zone 63,952 – 64,234.1"
+                noteRight="1.26x"
+              />
               <div
                 style={{
-                  flex: 1,
-                  minWidth: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 22,
+                  height: 1,
+                  width: "100%",
+                  background: "rgba(255,255,255,0.1)",
+                }}
+              />
+              <PriceStructureRow
+                accent="rgba(255,255,255,0.6)"
+                title="Entry (limit)"
+                price={data.entry}
+                priceColor="#ffffff"
+                note="Gap 62,104.3 – 62,192"
+                noteRight="87.70"
+              />
+              <div
+                style={{
+                  height: 1,
+                  width: "100%",
+                  background: "rgba(255,255,255,0.1)",
+                }}
+              />
+              <PriceStructureRow
+                accent="#46ccb9"
+                title="Take profit"
+                pct={takeProfitPct}
+                pctColor="#32aa99"
+                price={data.takeProfit}
+                priceColor="#46ccb9"
+                note="Order Book Imbalance 0.06 < 0.67"
+                noteRight="Sell Pressure"
+              />
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                width: "100%",
+              }}
+            >
+              <DetailMetric label="R:R" value={data.rr} />
+              <DetailMetric
+                label="TTL"
+                value={data.ttl.replace(/^TTL\s+/i, "")}
+              />
+              <DetailMetric
+                label="Signal score"
+                value={data.signalScore}
+                suffix={data.signalScoreMax}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <img
+                src={ASSETS.signalBars}
+                alt=""
+                width={14}
+                height={14}
+                style={{ display: "block", flexShrink: 0 }}
+              />
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  lineHeight: "18px",
+                  color: "rgba(255,255,255,0.4)",
+                }}
+              >
+                {data.indicatorNote}
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              width: "100%",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                lineHeight: "18px",
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              Market Data
+            </span>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                width: "100%",
+              }}
+            >
+              <div
+                style={{
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 8,
+                  padding: 12,
+                  boxSizing: "border-box",
+                  width: "100%",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: 10,
+                    gap: 12,
+                    width: "100%",
                   }}
                 >
-                  <StructureBlock
-                    price={data.stopLoss}
-                    pct={data.stopLossPct}
-                    title="Stop Loss"
-                    priceColor="#ff41a3"
-                    pctColor="#96215d"
-                    note="Resistance Zone 63,952 – 64,234.1"
-                    noteRight="1.26x"
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                      width: "100%",
+                    }}
+                  >
+                    <MarketDataRow
+                      label="Funding Rate"
+                      value={fundingParts[0] ?? data.fundingRate}
+                      hint={fundingParts[1]}
+                    />
+                    <MarketDataRow
+                      label="Open Interest"
+                      value={data.openInterest}
+                    />
+                    <MarketDataRow
+                      label="Long/Short Ratio"
+                      value={lsParts[0] ?? data.longShortRatio}
+                      hint={lsParts[1]}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      height: 1,
+                      width: "100%",
+                      background: "rgba(255,255,255,0.1)",
+                    }}
                   />
-                  <StructureBlock
-                    price={data.entry}
-                    title="Entry"
-                    priceColor="#ffffff"
-                    note="Gap 62,104.3 – 62,192"
-                    noteRight="87.70"
-                  />
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      lineHeight: "18px",
+                      color: "rgba(255,255,255,0.4)",
+                    }}
+                  >
+                    A Long/Short Ratio below 1 indicates bearish positioning and
+                    a higher short squeeze risk
+                  </p>
                 </div>
-                <StructureBlock
-                  price={data.takeProfit}
-                  pct={data.takeProfitPct.replace("-", "−").replace("+", "−")}
-                  title="Take Profit"
-                  priceColor="#00ffab"
-                  pctColor="#2a8869"
-                  note="Order Book Imbalance"
-                  noteRight="0.06 < 0.67 Sell Pressure"
-                />
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  lineHeight: "18px",
+                  color: "rgba(255,255,255,0.4)",
+                }}
+              >
+                <span>Hunt Titan · SAGE</span>
+                <span>{data.posted}</span>
               </div>
             </div>
           </div>
 
           <div
             style={{
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 8,
-              padding: 8,
               display: "flex",
-              flexDirection: "column",
               gap: 8,
+              width: "100%",
             }}
           >
-            <span
+            <button
+              type="button"
+              onClick={onAskAgent}
               style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: "rgba(255,255,255,0.8)",
+                flex: 1,
+                height: 32,
+                border: "none",
+                borderRadius: 999,
+                background: "#6f51f6",
+                color: "#ffffff",
+                fontSize: 11,
+                fontWeight: 600,
+                fontFamily: FONT,
+                cursor: "pointer",
               }}
             >
-              Market Data
-            </span>
-            <Row label="Funding Rate" value={data.fundingRate} compact />
-            <Row label="Open Interest" value={data.openInterest} compact />
-            <Row
-              label="Long/Short Ratio"
-              value={data.longShortRatio}
-              compact
-            />
-            <div
+              Ask Agent
+            </button>
+            <button
+              type="button"
+              onClick={onTradeNow}
               style={{
-                height: 1,
-                background: "rgba(255,255,255,0.1)",
-              }}
-            />
-            <p
-              style={{
-                margin: 0,
-                fontSize: 10,
-                fontWeight: 500,
-                lineHeight: "16px",
-                color: "rgba(255,255,255,0.4)",
+                flex: 1,
+                height: 32,
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.3)",
+                background: "transparent",
+                color: "rgba(255,255,255,0.6)",
+                fontSize: 11,
+                fontWeight: 600,
+                fontFamily: FONT,
+                cursor: "pointer",
               }}
             >
-              A Long/Short Ratio below 1 indicates bearish positioning and a
-              higher short squeeze risk
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: 11,
-              fontWeight: 500,
-              lineHeight: "18px",
-              color: "rgba(255,255,255,0.4)",
-            }}
-          >
-            <span>Hunt Titan · SAGE</span>
-            <span>{data.posted}</span>
+              Trade Now
+            </button>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
+function PriceStructureRow({
+  accent,
+  title,
+  pct,
+  pctColor,
+  price,
+  priceColor,
+  note,
+  noteRight,
+}: {
+  accent: string;
+  title: string;
+  pct?: string;
+  pctColor?: string;
+  price: string;
+  priceColor: string;
+  note: string;
+  noteRight: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        width: "100%",
+        paddingLeft: 8,
+        borderLeft: `2px solid ${accent}`,
+        boxSizing: "border-box",
+      }}
+    >
       <div
         style={{
-          flexShrink: 0,
           display: "flex",
-          gap: 8,
-          padding: "12px 13px 16px",
-          boxSizing: "border-box",
-          background: "#1b1b1b",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          width: "100%",
         }}
       >
-        <button
-          type="button"
-          onClick={onAskAgent}
+        <span
           style={{
-            flex: 1,
-            height: 32,
-            border: "none",
-            borderRadius: 999,
-            backgroundImage: GRADIENTS.connectBtn,
-            color: "#ffffff",
-            fontSize: 11,
+            fontSize: 14,
             fontWeight: 600,
-            fontFamily: FONT,
-            cursor: "pointer",
+            lineHeight: "18px",
+            color: "rgba(255,255,255,0.8)",
           }}
         >
-          Ask Agent
-        </button>
-        <button
-          type="button"
-          onClick={onTradeNow}
+          {title}
+        </span>
+        <span
           style={{
-            flex: 1,
-            height: 32,
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.3)",
-            background: "transparent",
-            color: "rgba(255,255,255,0.6)",
-            fontSize: 11,
-            fontWeight: 600,
-            fontFamily: FONT,
-            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
           }}
         >
-          Trade Now
-        </button>
+          {pct ? (
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 500,
+                lineHeight: "18px",
+                color: pctColor ?? priceColor,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {pct}
+            </span>
+          ) : null}
+          <span
+            style={{
+              fontSize: 14,
+              fontWeight: 600,
+              lineHeight: "18px",
+              color: priceColor,
+              textAlign: "right",
+              minWidth: pct ? 71 : undefined,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {price}
+          </span>
+        </span>
       </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          width: "100%",
+          fontSize: 12,
+          fontWeight: 500,
+          lineHeight: "18px",
+        }}
+      >
+        <span style={{ color: "rgba(255,255,255,0.4)" }}>{note}</span>
+        <span style={{ color: "rgba(255,255,255,0.6)" }}>{noteRight}</span>
+      </div>
+    </div>
+  );
+}
+
+function DetailMetric({
+  label,
+  value,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  suffix?: string;
+}) {
+  return (
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        padding: 8,
+        borderRadius: 6,
+        background: "rgba(255,255,255,0.05)",
+        boxSizing: "border-box",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 500,
+          lineHeight: "18px",
+          color: "rgba(255,255,255,0.6)",
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          fontSize: 14,
+          fontWeight: suffix ? 600 : 500,
+          lineHeight: "12px",
+          letterSpacing: "-0.42px",
+          color: "rgba(255,255,255,0.8)",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {value}
+        {suffix ? (
+          <span
+            style={{
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.5)",
+            }}
+          >
+            {suffix}
+          </span>
+        ) : null}
+      </span>
+    </div>
+  );
+}
+
+function MarketDataRow({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "100%",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 500,
+          lineHeight: "18px",
+          color: "rgba(255,255,255,0.5)",
+        }}
+      >
+        {label}
+      </span>
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            lineHeight: "18px",
+            letterSpacing: "-0.36px",
+            color: "rgba(255,255,255,0.8)",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {value}
+        </span>
+        {hint ? (
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              lineHeight: "18px",
+              color: "rgba(255,255,255,0.6)",
+            }}
+          >
+            {hint}
+          </span>
+        ) : null}
+      </span>
     </div>
   );
 }

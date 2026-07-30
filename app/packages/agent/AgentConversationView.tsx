@@ -712,18 +712,33 @@ function SignalSnapshotCard({
 function DraftOrderResults({
   reply,
   order,
-  funded,
+  depositPhase = "idle",
   onDeposit,
+  onSendOrder,
+  onPlaceAnother,
+  onAdjustTpSl,
   onAddTakeProfit,
   onAddStopLoss,
 }: {
   reply: string;
   order: DraftOrder;
-  funded?: boolean;
+  depositPhase?: "idle" | "confirming" | "ready" | "submitted";
   onDeposit?: () => void;
+  onSendOrder?: (order: DraftOrder) => void;
+  onPlaceAnother?: () => void;
+  onAdjustTpSl?: () => void;
   onAddTakeProfit?: () => void;
   onAddStopLoss?: () => void;
 }) {
+  const mode =
+    depositPhase === "submitted"
+      ? "submitted"
+      : depositPhase === "ready"
+        ? "ready"
+        : depositPhase === "confirming"
+          ? "confirming"
+          : "deposit";
+
   return (
     <div
       style={{
@@ -770,10 +785,11 @@ function DraftOrderResults({
       </div>
       <DraftOrderCard
         order={order}
-        mode={funded ? "ready" : "deposit"}
+        mode={mode}
         onDeposit={onDeposit}
-        onSendOrder={() => undefined}
-        onModify={() => undefined}
+        onSendOrder={() => onSendOrder?.(order)}
+        onPlaceAnother={onPlaceAnother}
+        onModify={mode === "submitted" ? onAdjustTpSl : () => undefined}
         onAddTakeProfit={onAddTakeProfit}
         onAddStopLoss={onAddStopLoss}
       />
@@ -925,14 +941,20 @@ export function AgentConversationView({
   signalSnapshot,
   fileAttachment,
   onDraftDeposit,
-  draftFunded = false,
+  onSendOrder,
+  onPlaceAnother,
+  onAdjustTpSl,
+  draftDepositPhase = "idle",
 }: {
   userMessage?: string;
   agentName?: string;
   signalSnapshot?: SignalAskSnapshot | null;
   fileAttachment?: FileAttachment | null;
   onDraftDeposit?: () => void;
-  draftFunded?: boolean;
+  onSendOrder?: (order: DraftOrder) => void;
+  onPlaceAnother?: () => void;
+  onAdjustTpSl?: () => void;
+  draftDepositPhase?: "idle" | "confirming" | "ready" | "submitted";
 }) {
   const isNoTpSl = isNoTpSlQuery(userMessage);
   const isDraftFlow = isDraftOrderQuery(userMessage);
@@ -1163,8 +1185,11 @@ export function AgentConversationView({
             <DraftOrderResults
               reply={draftReply}
               order={draftOrder}
-              funded={draftFunded}
+              depositPhase={draftDepositPhase}
               onDeposit={onDraftDeposit}
+              onSendOrder={onSendOrder}
+              onPlaceAnother={onPlaceAnother}
+              onAdjustTpSl={onAdjustTpSl}
               onAddTakeProfit={canAddTpSl ? startTpSlAsk : undefined}
               onAddStopLoss={canAddTpSl ? startTpSlAsk : undefined}
             />

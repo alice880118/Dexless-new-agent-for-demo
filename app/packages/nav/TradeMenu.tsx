@@ -105,7 +105,7 @@ export function TradeMenu({ onSelect, style }: TradeMenuProps) {
           <img
             src={NAV_ASSETS.chevronRight}
             alt=""
-            style={{ width: 17, height: 17, display: "block", flexShrink: 0 }}
+            style={{ width: 16, height: 16, display: "block", flexShrink: 0 }}
           />
         </button>
       ))}

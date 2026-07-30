@@ -7,12 +7,13 @@ const SELL = "#ff41a3";
 
 type DraftOrderCardProps = {
   order: DraftOrder;
-  /** Chat deposit flow vs post-deposit CTAs vs More detail CTAs */
-  mode?: "deposit" | "ready" | "actions";
+  /** Chat deposit flow vs confirming vs post-deposit CTAs vs submitted vs More detail CTAs */
+  mode?: "deposit" | "confirming" | "ready" | "submitted" | "actions";
   onDeposit?: () => void;
   onAskAgent?: () => void;
   onSendOrder?: () => void;
   onModify?: () => void;
+  onPlaceAnother?: () => void;
   onEdit?: () => void;
   onAddTakeProfit?: () => void;
   onAddStopLoss?: () => void;
@@ -85,6 +86,7 @@ export function DraftOrderCard({
   onAskAgent,
   onSendOrder,
   onModify,
+  onPlaceAnother,
   onEdit,
   onAddTakeProfit,
   onAddStopLoss,
@@ -238,7 +240,10 @@ export function DraftOrderCard({
           </Row>
         </div>
 
-        {(mode === "deposit" || mode === "ready") && (
+        {(mode === "deposit" ||
+          mode === "confirming" ||
+          mode === "ready" ||
+          mode === "submitted") && (
           <div
             style={{
               width: "100%",
@@ -251,7 +256,19 @@ export function DraftOrderCard({
               gap: 4,
             }}
           >
-            {mode === "ready" ? (
+            {mode === "submitted" ? (
+              <p
+                style={{
+                  margin: 0,
+                  fontWeight: 500,
+                  fontSize: 12,
+                  lineHeight: "18px",
+                  color: "rgba(255,255,255,0.6)",
+                }}
+              >
+                Order submitted successfully.
+              </p>
+            ) : mode === "ready" ? (
               <p
                 style={{
                   margin: 0,
@@ -340,6 +357,63 @@ export function DraftOrderCard({
               Your draft order will be saved in full.
             </p>
           </>
+        ) : mode === "confirming" ? (
+          <>
+            <div style={{ display: "flex", gap: 8, width: "100%" }}>
+              <button
+                type="button"
+                disabled
+                style={{
+                  flex: 1,
+                  height: 32,
+                  border: "none",
+                  borderRadius: 999,
+                  background: "#6f51f6",
+                  color: "#ffffff",
+                  fontFamily: FONT,
+                  fontWeight: 600,
+                  fontSize: 11,
+                  lineHeight: "18px",
+                  cursor: "default",
+                  opacity: 0.5,
+                }}
+              >
+                Deposit
+              </button>
+              <button
+                type="button"
+                onClick={onModify}
+                style={{
+                  flex: 1,
+                  height: 32,
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 999,
+                  background: "transparent",
+                  color: "#ffffff",
+                  fontFamily: FONT,
+                  fontWeight: 600,
+                  fontSize: 11,
+                  lineHeight: "18px",
+                  cursor: "pointer",
+                }}
+              >
+                Modify
+              </button>
+            </div>
+            <p
+              style={{
+                margin: 0,
+                textAlign: "center",
+                fontWeight: 500,
+                fontSize: 12,
+                lineHeight: "18px",
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              Deposit may take a moment to confirm. You can keep discussing
+              this order with your agent.
+            </p>
+          </>
         ) : mode === "ready" ? (
           <div style={{ display: "flex", gap: 8, width: "100%" }}>
             <button
@@ -380,6 +454,48 @@ export function DraftOrderCard({
               }}
             >
               Modify
+            </button>
+          </div>
+        ) : mode === "submitted" ? (
+          <div style={{ display: "flex", gap: 8, width: "100%" }}>
+            <button
+              type="button"
+              onClick={onPlaceAnother}
+              style={{
+                flex: 1,
+                height: 32,
+                border: "none",
+                borderRadius: 999,
+                backgroundImage:
+                  "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
+                color: "#ffffff",
+                fontFamily: FONT,
+                fontWeight: 600,
+                fontSize: 11,
+                lineHeight: "18px",
+                cursor: "pointer",
+              }}
+            >
+              New order
+            </button>
+            <button
+              type="button"
+              onClick={onModify}
+              style={{
+                flex: 1,
+                height: 32,
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 999,
+                background: "transparent",
+                color: "#ffffff",
+                fontFamily: FONT,
+                fontWeight: 600,
+                fontSize: 11,
+                lineHeight: "18px",
+                cursor: "pointer",
+              }}
+            >
+              Adjust TP/SL
             </button>
           </div>
         ) : (

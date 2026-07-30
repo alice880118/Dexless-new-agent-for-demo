@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { AgentMascotLottie, AGENT_MASCOT_SIZE } from "./AgentMascotLottie";
 import { FlameIcon } from "./FlameIcon";
@@ -20,6 +20,8 @@ import type { FileAttachment } from "./file-attachment";
 import { useAgentName } from "./useAgentName";
 import { DEFAULT_AGENT_NAME } from "./agent-name";
 import { DepositSelectModal } from "./DepositSelectModal";
+import { DepositSuccessToast } from "./DepositSuccessToast";
+import { ConfirmSendOrderModal } from "./ConfirmSendOrderModal";
 import type { DraftOrder } from "./draft-order";
 
 type PanelView = "home" | "signals" | "detail" | "more" | "rename" | "chat";
@@ -90,8 +92,13 @@ export function DesktopTraderDnaPanel({
   const [chatKey, setChatKey] = useState(0);
   const [depositOpen, setDepositOpen] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const [draftFunded, setDraftFunded] = useState(false);
+  const [draftDepositPhase, setDraftDepositPhase] = useState<
+    "idle" | "confirming" | "ready" | "submitted"
+  >("idle");
+  const [showDepositSuccess, setShowDepositSuccess] = useState(false);
+  const [confirmOrder, setConfirmOrder] = useState<DraftOrder | null>(null);
   const [moreTab, setMoreTab] = useState<MoreTab>("history");
+  const depositTimerRef = useRef<number | null>(null);
   const [visible, setVisible] = useState(false);
   const [entered, setEntered] = useState(false);
   const { agentName, saveAgentName } = useAgentName();
@@ -118,9 +125,20 @@ export function DesktopTraderDnaPanel({
 
   const handleDraftDepositApprove = () => {
     setDepositOpen(false);
-    setShowDraftBanner(true);
-    setDraftFunded(true);
-    setPanelView("home");
+    setDraftDepositPhase("confirming");
+    setShowDepositSuccess(false);
+    if (depositTimerRef.current) {
+      window.clearTimeout(depositTimerRef.current);
+    }
+    depositTimerRef.current = window.setTimeout(() => {
+      setDraftDepositPhase("ready");
+      setShowDepositSuccess(true);
+      setShowDraftBanner(true);
+      depositTimerRef.current = window.setTimeout(() => {
+        setShowDepositSuccess(false);
+        depositTimerRef.current = null;
+      }, 3200);
+    }, 3000);
   };
 
   const handleDraftAskAgent = (order: DraftOrder) => {
@@ -139,7 +157,9 @@ export function DesktopTraderDnaPanel({
       setChatAttachment(null);
       setDepositOpen(false);
       setShowDraftBanner(false);
-      setDraftFunded(false);
+      setDraftDepositPhase("idle");
+      setShowDepositSuccess(false);
+      setConfirmOrder(null);
       setMoreTab("history");
       setVisible(true);
       setEntered(false);
@@ -152,6 +172,14 @@ export function DesktopTraderDnaPanel({
     const t = window.setTimeout(() => setVisible(false), 220);
     return () => window.clearTimeout(t);
   }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (depositTimerRef.current) {
+        window.clearTimeout(depositTimerRef.current);
+      }
+    };
+  }, []);
 
   if (!visible) return null;
 
@@ -385,6 +413,7 @@ export function DesktopTraderDnaPanel({
           flexDirection: "column",
         }}
       >
+        {showDepositSuccess ? <DepositSuccessToast /> : null}
         {panelView === "more" && (
           <MoreView
             onRename={() => setPanelView("rename")}
@@ -408,7 +437,16 @@ export function DesktopTraderDnaPanel({
             signalSnapshot={signalSnapshot}
             fileAttachment={chatAttachment}
             onDraftDeposit={() => setDepositOpen(true)}
-            draftFunded={draftFunded}
+            onSendOrder={(order) => setConfirmOrder(order)}
+            onPlaceAnother={() => {
+              setDraftDepositPhase("idle");
+              startChat("I want to long BTC with 20U");
+            }}
+            onAdjustTpSl={() => {
+              setDraftDepositPhase("idle");
+              startChat("Adjust my take profit and stop loss");
+            }}
+            draftDepositPhase={draftDepositPhase}
           />
         )}
         {panelView === "signals" && (
@@ -774,6 +812,20 @@ export function DesktopTraderDnaPanel({
         onClose={() => setDepositOpen(false)}
         onApprove={handleDraftDepositApprove}
       />
+      <ConfirmSendOrderModal
+        open={confirmOrder !== null}
+        order={confirmOrder}
+        onClose={() => setConfirmOrder(null)}
+        onAdjust={() => setConfirmOrder(null)}
+        onConfirm={() => {
+          setConfirmOrder(null);
+          setDraftDepositPhase("submitted");
+          setShowDraftBanner(false);
+        }}
+      />
+      {showDepositSuccess ? (
+        <DepositSuccessToast pageLevel top={60} />
+      ) : null}
     </div>
   );
 }
