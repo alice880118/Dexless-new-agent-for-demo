@@ -555,6 +555,7 @@ export function SignalListView({
         boxSizing: "border-box",
         overflow: "hidden",
         fontFamily: FONT,
+        background: "#1b1b1b",
       }}
     >
       <div
@@ -566,6 +567,7 @@ export function SignalListView({
           flexDirection: "column",
           gap: 12,
           boxSizing: "border-box",
+          zIndex: 2,
         }}
       >
         <div
@@ -594,49 +596,89 @@ export function SignalListView({
         style={{
           flex: 1,
           minHeight: 0,
-          overflowY: "auto",
-          padding: "12px 13px",
-          boxSizing: "border-box",
-          scrollbarWidth: "none",
+          position: "relative",
           display: "flex",
           flexDirection: "column",
-          gap: 8,
-          touchAction: "pan-y",
-          overscrollBehavior: "contain",
+          background: "#1b1b1b",
         }}
-        className="signal-scroll"
-        data-agent-scroll
       >
-        {SIGNAL_CARDS.map((card) => (
-          <SignalCard
-            key={card.id}
-            data={card}
-            onViewMore={() => onViewMore(card.id)}
-            onAskAgent={() => onAskAgent(card.id)}
-            onTradeNow={() => onTradeNow(card.id)}
-          />
-        ))}
+        {/* Fade under fixed Signal + tabs when list scrolls */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 28,
+            background:
+              "linear-gradient(180deg, #1b1b1b 0%, rgba(27,27,27,0) 100%)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
         <div
           style={{
-            marginTop: "auto",
-            padding: "4px 8px",
-            borderRadius: 4,
-            border: "1px solid rgba(255,255,255,0.1)",
-            textAlign: "center",
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            padding: "12px 13px 28px",
+            boxSizing: "border-box",
+            scrollbarWidth: "none",
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            touchAction: "pan-y",
+            overscrollBehavior: "contain",
           }}
+          className="signal-scroll"
+          data-agent-scroll
         >
-          <span
+          {SIGNAL_CARDS.map((card) => (
+            <SignalCard
+              key={card.id}
+              data={card}
+              onViewMore={() => onViewMore(card.id)}
+              onAskAgent={() => onAskAgent(card.id)}
+              onTradeNow={() => onTradeNow(card.id)}
+            />
+          ))}
+          <div
             style={{
-              fontSize: 11,
-              fontWeight: 500,
-              lineHeight: "16px",
-              letterSpacing: "-0.33px",
-              color: "rgba(255,255,255,0.5)",
+              marginTop: "auto",
+              padding: "4px 8px",
+              borderRadius: 4,
+              border: "1px solid rgba(255,255,255,0.1)",
+              textAlign: "center",
             }}
           >
-            This strategy is provided by a third party
-          </span>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                lineHeight: "16px",
+                letterSpacing: "-0.33px",
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              This strategy is provided by a third party
+            </span>
+          </div>
         </div>
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 48,
+            background:
+              "linear-gradient(180deg, rgba(19,21,25,0) 0%, #131519 100%)",
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
       </div>
     </div>
   );
@@ -663,6 +705,8 @@ export function SignalDetailView({
     ? data.takeProfitPct
     : data.takeProfitPct.replace("+", "-");
 
+  const cardSurface = "rgba(255,255,255,0.05)";
+
   return (
     <div
       style={{
@@ -677,29 +721,21 @@ export function SignalDetailView({
         background: "#1b1b1b",
       }}
     >
+      {/* Fixed header: back + symbol */}
       <div
         style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          padding: "12px 13px 16px",
+          flexShrink: 0,
+          padding: "12px 13px 0",
           boxSizing: "border-box",
-          scrollbarWidth: "none",
-          touchAction: "pan-y",
-          overscrollBehavior: "contain",
+          background: "#1b1b1b",
+          zIndex: 2,
         }}
-        className="signal-scroll"
-        data-agent-scroll
       >
         <div
           style={{
-            borderRadius: 8,
-            background: "rgba(255,255,255,0.05)",
-            padding: 12,
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
+            borderRadius: "8px 8px 0 0",
+            background: cardSurface,
+            padding: "12px 12px 0",
             boxSizing: "border-box",
           }}
         >
@@ -709,6 +745,7 @@ export function SignalDetailView({
               justifyContent: "space-between",
               alignItems: "flex-start",
               width: "100%",
+              paddingBottom: 12,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -779,7 +816,39 @@ export function SignalDetailView({
               {timerLabel}
             </span>
           </div>
+        </div>
+      </div>
 
+      {/* Scrollable body */}
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          padding: "0 13px",
+          /* Clear the fade above fixed CTAs when scrolled to end */
+          paddingBottom: 56,
+          boxSizing: "border-box",
+          scrollbarWidth: "none",
+          touchAction: "pan-y",
+          overscrollBehavior: "contain",
+          background: "#1b1b1b",
+        }}
+        className="signal-scroll"
+        data-agent-scroll
+      >
+        <div
+          style={{
+            background: cardSurface,
+            padding: "8px 12px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+            boxSizing: "border-box",
+            borderRadius: "0 0 8px 8px",
+          }}
+        >
           <div
             style={{
               display: "flex",
@@ -1007,51 +1076,76 @@ export function SignalDetailView({
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div
+      {/* Fixed CTAs — same surface as composer / input zone */}
+      <div
+        style={{
+          flexShrink: 0,
+          position: "relative",
+          padding: "8px 16px 16px",
+          boxSizing: "border-box",
+          background: "#131519",
+          zIndex: 2,
+        }}
+      >
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: "100%",
+            height: 48,
+            background:
+              "linear-gradient(180deg, rgba(19,21,25,0) 0%, #131519 100%)",
+            pointerEvents: "none",
+          }}
+        />
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            width: "100%",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onAskAgent}
             style={{
-              display: "flex",
-              gap: 8,
-              width: "100%",
+              flex: 1,
+              height: 32,
+              border: "none",
+              borderRadius: 999,
+              backgroundImage: GRADIENTS.connectBtn,
+              color: "#ffffff",
+              fontSize: 11,
+              fontWeight: 600,
+              fontFamily: FONT,
+              cursor: "pointer",
             }}
           >
-            <button
-              type="button"
-              onClick={onAskAgent}
-              style={{
-                flex: 1,
-                height: 32,
-                border: "none",
-                borderRadius: 999,
-                background: "#6f51f6",
-                color: "#ffffff",
-                fontSize: 11,
-                fontWeight: 600,
-                fontFamily: FONT,
-                cursor: "pointer",
-              }}
-            >
-              Ask Agent
-            </button>
-            <button
-              type="button"
-              onClick={onTradeNow}
-              style={{
-                flex: 1,
-                height: 32,
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.3)",
-                background: "transparent",
-                color: "rgba(255,255,255,0.6)",
-                fontSize: 11,
-                fontWeight: 600,
-                fontFamily: FONT,
-                cursor: "pointer",
-              }}
-            >
-              Trade Now
-            </button>
-          </div>
+            Ask Agent
+          </button>
+          <button
+            type="button"
+            onClick={onTradeNow}
+            style={{
+              flex: 1,
+              height: 32,
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.3)",
+              background: "transparent",
+              color: "rgba(255,255,255,0.6)",
+              fontSize: 11,
+              fontWeight: 600,
+              fontFamily: FONT,
+              cursor: "pointer",
+            }}
+          >
+            Trade Now
+          </button>
         </div>
       </div>
     </div>

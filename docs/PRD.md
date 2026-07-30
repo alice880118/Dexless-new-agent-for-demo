@@ -190,7 +190,13 @@ sign-in
 1. Home **View Signal** → 列表（Titan／Sage／Vanguard）
 2. View more → 詳情
 3. **Ask Agent** → 聊天（含 signal snapshot）
-4. **Trade Now** → Signal Trade modal
+4. **Trade Now** → 開啟 Trade Perps 下單面板，並在旁邊顯示該信號的數據視窗（`SignalTradeModal`）
+
+> **註記：** Signal → Trade Now 後，信號數據視窗會顯示在下單面板旁邊（非另開獨立全螢幕）。
+
+### 5.5 Agent 下單成功通知
+
+- Confirm order 確認送出後，顯示一則無 icon 的頂部通知：`Order submitted`（約 3.2s）
 
 ---
 
@@ -276,6 +282,7 @@ sign-in
 ### 路徑 E — Signal
 
 1. View Signal → 開詳情 → Ask Agent 或 Trade Now  
+2. Trade Now → 確認下單面板旁顯示信號數據視窗  
 
 ---
 

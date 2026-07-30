@@ -62,8 +62,10 @@ function stepState(stage: OnboardingStage, id: OnboardingStage): StepState {
 
 function HelpLink({ centered = false }: { centered?: boolean }) {
   return (
-    <button
-      type="button"
+    <a
+      href="https://discord.com/invite/Pm9fy2MWH4"
+      target="_blank"
+      rel="noopener noreferrer"
       style={{
         border: "none",
         background: "transparent",
@@ -81,7 +83,7 @@ function HelpLink({ centered = false }: { centered?: boolean }) {
       }}
     >
       Need help?
-    </button>
+    </a>
   );
 }
 
@@ -418,12 +420,12 @@ export function OnboardingShell({
             paddingTop: 55,
             paddingLeft: 24,
             paddingRight: 24,
-            paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))",
+            paddingBottom: "calc(48px + env(safe-area-inset-bottom, 0px))",
             boxSizing: "border-box",
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
             scrollPaddingBottom:
-              "calc(24px + env(safe-area-inset-bottom, 0px))",
+              "calc(48px + env(safe-area-inset-bottom, 0px))",
           }}
         >
           <MobileStepProgress stage={stage} setupPhase={setupPhase} />
@@ -444,7 +446,7 @@ export function OnboardingShell({
             style={{
               marginTop: 8,
               flexShrink: 0,
-              paddingBottom: 4,
+              paddingBottom: 12,
               width: "100%",
               display: "flex",
               justifyContent: "center",

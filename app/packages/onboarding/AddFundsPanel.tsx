@@ -367,15 +367,11 @@ export function AddFundsPanel({
 
   const title = isWalletFlow
     ? "Fund your Dexless account"
-    : isEmailDesktop
-      ? "Fund your Dexless wallet"
-      : "Add funds to make your first trade";
+    : "Fund your Dexless wallet";
 
   const subtitle = isWalletFlow
     ? "Choose a network and deposit USDC from your connected wallet."
-    : isEmailDesktop
-      ? "Send from another wallet or exchange to the address below. Make sure you use the same network on both sides."
-      : "Pick a network, then transfer from another wallet or an exchange.";
+    : "Send from another wallet or exchange to the address below. Make sure you use the same network on both sides.";
 
   const copiedToast = !isMobile && copiedTip ? (
     <div
@@ -388,34 +384,28 @@ export function AddFundsPanel({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 8,
-        padding: "8px 12px",
-        borderRadius: 8,
-        background: "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(255,255,255,0.1)",
+        padding: "10px 14px",
+        borderRadius: 12,
+        background: "rgba(12,13,16,0.95)",
+        border: "1px solid rgba(255,255,255,0.15)",
         boxSizing: "border-box",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
         width: "fit-content",
         maxWidth: "100%",
         pointerEvents: "none",
         whiteSpace: "nowrap",
       }}
     >
-      <img
-        src={ONBOARDING_ASSETS.copyCheck}
-        alt=""
-        width={16}
-        height={16}
-        style={{ display: "block", flexShrink: 0 }}
-      />
       <span
         style={{
           fontSize: 13,
           fontWeight: 600,
           lineHeight: "18px",
           color: "#ffffff",
+          textAlign: "center",
         }}
       >
-        Address copied successfully
+        Address copied
       </span>
     </div>
   ) : null;
@@ -1158,8 +1148,9 @@ export function AddFundsPanel({
               <div
                 aria-hidden
                 style={{
-                  height: 18,
+                  height: 0,
                   width: 1,
+                  marginTop: -2,
                   opacity: 0,
                   pointerEvents: "none",
                   flexShrink: 0,
@@ -1287,7 +1278,7 @@ export function AddFundsPanel({
                 textAlign: "center",
               }}
             >
-              Deposit submitted — confirmation may take a moment.
+              Deposit submitted
             </span>
           </div>,
           document.body,
@@ -1328,7 +1319,7 @@ export function AddFundsPanel({
                 textAlign: "center",
               }}
             >
-              Address copied successfully
+              Address copied
             </span>
           </div>,
           document.body,

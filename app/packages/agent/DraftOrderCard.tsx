@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { FONT } from "../nav/design-system";
+import { FONT, GRADIENTS } from "../nav/design-system";
 import type { DraftOrder } from "./draft-order";
 
 const BUY = "#46ccb9";
@@ -333,7 +333,7 @@ export function DraftOrderCard({
                 height: 32,
                 border: "none",
                 borderRadius: 999,
-                background: "#6f51f6",
+                backgroundImage: GRADIENTS.connectBtn,
                 color: "#ffffff",
                 fontFamily: FONT,
                 fontWeight: 600,
@@ -368,7 +368,7 @@ export function DraftOrderCard({
                   height: 32,
                   border: "none",
                   borderRadius: 999,
-                  background: "#6f51f6",
+                  backgroundImage: GRADIENTS.connectBtn,
                   color: "#ffffff",
                   fontFamily: FONT,
                   fontWeight: 600,
@@ -424,8 +424,7 @@ export function DraftOrderCard({
                 height: 32,
                 border: "none",
                 borderRadius: 999,
-                backgroundImage:
-                  "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
+                backgroundImage: GRADIENTS.connectBtn,
                 color: "#ffffff",
                 fontFamily: FONT,
                 fontWeight: 600,
@@ -466,8 +465,7 @@ export function DraftOrderCard({
                 height: 32,
                 border: "none",
                 borderRadius: 999,
-                backgroundImage:
-                  "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
+                backgroundImage: GRADIENTS.connectBtn,
                 color: "#ffffff",
                 fontFamily: FONT,
                 fontWeight: 600,
@@ -508,8 +506,7 @@ export function DraftOrderCard({
                 height: 32,
                 border: "none",
                 borderRadius: 999,
-                backgroundImage:
-                  "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
+                backgroundImage: GRADIENTS.connectBtn,
                 color: "#ffffff",
                 fontFamily: FONT,
                 fontWeight: 600,

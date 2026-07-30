@@ -142,11 +142,11 @@ export function ReferralCodePanel({
         }}
       >
         <img
-          src={ONBOARDING_ASSETS.circleCheckTeal}
+          src={ONBOARDING_ASSETS.circleCheckReady12}
           alt=""
-          width={13}
-          height={13}
-          style={{ display: "block", width: 13, height: 13 }}
+          width={12}
+          height={12}
+          style={{ display: "block", width: 12, height: 12, flexShrink: 0 }}
         />
         <span
           style={{
@@ -260,11 +260,11 @@ export function ReferralCodePanel({
           }}
         >
           <img
-            src={ONBOARDING_ASSETS.circleCheckTeal}
+            src={ONBOARDING_ASSETS.circleCheckReady12}
             alt=""
-            width={13}
-            height={13}
-            style={{ display: "block", width: 13, height: 13 }}
+            width={12}
+            height={12}
+            style={{ display: "block", width: 12, height: 12, flexShrink: 0 }}
           />
           <span
             style={{

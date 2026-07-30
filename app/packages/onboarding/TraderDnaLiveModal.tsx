@@ -1,5 +1,6 @@
 import { COLORS, FONT } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
+import { AccountLiveHeroLottie } from "./AccountLiveHeroLottie";
 import { ONBOARDING_ASSETS } from "./assets";
 import {
   OnboardingShell,
@@ -63,31 +64,10 @@ export function TraderDnaLiveModal({
   );
 
   const hero = (
-    <div
-      style={{
-        width: "100%",
-        height: asFlow && isMobile ? 278 : 200,
-        borderRadius: asFlow && isMobile ? 0 : 8,
-        overflow: "hidden",
-        background: asFlow ? "#000000" : "#0c0d10",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxSizing: "border-box",
-      }}
-    >
-      <img
-        src={ONBOARDING_ASSETS.accountLiveHero}
-        alt=""
-        style={{
-          display: "block",
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          objectPosition: "center",
-        }}
-      />
-    </div>
+    <AccountLiveHeroLottie
+      tall={asFlow && isMobile}
+      surfaceColor={asFlow ? "#0a0b0d" : "#0c0d10"}
+    />
   );
 
   const actions = (
@@ -121,8 +101,9 @@ export function TraderDnaLiveModal({
             <div
               aria-hidden
               style={{
-                height: 18,
+                height: 0,
                 width: 1,
+                marginTop: -2,
                 opacity: 0,
                 pointerEvents: "none",
                 flexShrink: 0,

@@ -6,11 +6,14 @@ type DepositSuccessToastProps = {
   pageLevel?: boolean;
   /** Offset from top (e.g. below top nav) */
   top?: number;
+  /** Toast copy — no icon */
+  message?: string;
 };
 
 export function DepositSuccessToast({
   pageLevel = false,
   top = 64,
+  message = "Deposit submitted",
 }: DepositSuccessToastProps) {
   const node = (
     <div
@@ -25,26 +28,17 @@ export function DepositSuccessToast({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: 8,
         width: pageLevel ? "min(360px, calc(100vw - 32px))" : undefined,
         padding: "10px 14px",
         borderRadius: 12,
         border: "1px solid rgba(255,255,255,0.15)",
-        background: pageLevel
-          ? "rgba(12,13,16,0.95)"
-          : "rgba(255,255,255,0.08)",
+        background: "rgba(12,13,16,0.95)",
         boxSizing: "border-box",
-        boxShadow: pageLevel ? "0 8px 24px rgba(0,0,0,0.45)" : undefined,
+        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
         pointerEvents: "none",
+        fontFamily: FONT,
       }}
     >
-      <img
-        src="/onboarding/circle-check-ready.png"
-        alt=""
-        width={16}
-        height={16}
-        style={{ display: "block", flexShrink: 0 }}
-      />
       <span
         style={{
           fontFamily: FONT,
@@ -52,9 +46,10 @@ export function DepositSuccessToast({
           fontSize: 13,
           lineHeight: "18px",
           color: "#ffffff",
+          textAlign: "center",
         }}
       >
-        Deposit successful
+        {message}
       </span>
     </div>
   );

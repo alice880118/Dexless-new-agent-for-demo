@@ -96,9 +96,11 @@ export function DesktopTraderDnaPanel({
     "idle" | "confirming" | "ready" | "submitted"
   >("idle");
   const [showDepositSuccess, setShowDepositSuccess] = useState(false);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [confirmOrder, setConfirmOrder] = useState<DraftOrder | null>(null);
   const [moreTab, setMoreTab] = useState<MoreTab>("history");
   const depositTimerRef = useRef<number | null>(null);
+  const orderToastTimerRef = useRef<number | null>(null);
   const [visible, setVisible] = useState(false);
   const [entered, setEntered] = useState(false);
   const { agentName, saveAgentName } = useAgentName();
@@ -148,19 +150,10 @@ export function DesktopTraderDnaPanel({
   useEffect(() => {
     if (isOpen) {
       setActiveChip(null);
-      setPanelView("home");
-      setSignalId("btc-1");
-      setChatMessage("I want to long BTC with 20U");
-      setSignalSnapshot(null);
-      setDraft("");
-      setAttachment(null);
-      setChatAttachment(null);
       setDepositOpen(false);
-      setShowDraftBanner(false);
-      setDraftDepositPhase("idle");
       setShowDepositSuccess(false);
+      setShowOrderSuccess(false);
       setConfirmOrder(null);
-      setMoreTab("history");
       setVisible(true);
       setEntered(false);
       const id = window.requestAnimationFrame(() => {
@@ -177,6 +170,9 @@ export function DesktopTraderDnaPanel({
     return () => {
       if (depositTimerRef.current) {
         window.clearTimeout(depositTimerRef.current);
+      }
+      if (orderToastTimerRef.current) {
+        window.clearTimeout(orderToastTimerRef.current);
       }
     };
   }, []);
@@ -413,7 +409,6 @@ export function DesktopTraderDnaPanel({
           flexDirection: "column",
         }}
       >
-        {showDepositSuccess ? <DepositSuccessToast /> : null}
         {panelView === "more" && (
           <MoreView
             onRename={() => setPanelView("rename")}
@@ -821,10 +816,26 @@ export function DesktopTraderDnaPanel({
           setConfirmOrder(null);
           setDraftDepositPhase("submitted");
           setShowDraftBanner(false);
+          setShowOrderSuccess(true);
+          setShowDepositSuccess(false);
+          if (orderToastTimerRef.current) {
+            window.clearTimeout(orderToastTimerRef.current);
+          }
+          orderToastTimerRef.current = window.setTimeout(() => {
+            setShowOrderSuccess(false);
+            orderToastTimerRef.current = null;
+          }, 3200);
         }}
       />
       {showDepositSuccess ? (
         <DepositSuccessToast pageLevel top={60} />
+      ) : null}
+      {showOrderSuccess ? (
+        <DepositSuccessToast
+          pageLevel
+          top={60}
+          message="Order submitted"
+        />
       ) : null}
     </div>
   );
