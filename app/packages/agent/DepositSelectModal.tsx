@@ -157,7 +157,10 @@ export function DepositSelectModal({
         ...shellBase,
         borderRadius: isMobile ? "8px 8px 0 0" : 8,
         maxWidth: isMobile ? undefined : 420,
-        maxHeight: isMobile ? "90vh" : "min(720px, 92vh)",
+        /* dvh avoids in-app browser chrome clipping the sheet footer CTA */
+        maxHeight: isMobile
+          ? "min(90dvh, 90vh)"
+          : "min(720px, 92dvh, 92vh)",
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -169,6 +172,7 @@ export function DepositSelectModal({
           padding: "14px 20px",
           borderBottom: "1px solid #383838",
           boxSizing: "border-box",
+          flexShrink: 0,
         }}
       >
         <h2
@@ -215,6 +219,7 @@ export function DepositSelectModal({
           padding: "12px 20px 0",
           borderBottom: "1px solid rgba(255,255,255,0.2)",
           boxSizing: "border-box",
+          flexShrink: 0,
         }}
       >
         {(["Deposit", "Withdraw", "Transfer"] as const).map((tab) => {
@@ -259,9 +264,7 @@ export function DepositSelectModal({
           minHeight: 0,
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
-          padding: isMobile
-            ? "16px 20px calc(56px + env(safe-area-inset-bottom, 0px))"
-            : "16px 20px 48px",
+          padding: "16px 20px",
           display: "flex",
           flexDirection: "column",
           gap: 16,
@@ -564,7 +567,20 @@ export function DepositSelectModal({
             </span>
           </div>
         </div>
+      </div>
 
+      {/* Sticky footer CTA — stays above in-app / browser bottom chrome */}
+      <div
+        style={{
+          flexShrink: 0,
+          padding: isMobile
+            ? "12px 20px calc(16px + env(safe-area-inset-bottom, 0px) + 24px)"
+            : "12px 20px 20px",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+          background: "#0c0d10",
+          boxSizing: "border-box",
+        }}
+      >
         <button
           type="button"
           onClick={onApprove}

@@ -819,16 +819,23 @@ export function SignalDetailView({
         </div>
       </div>
 
-      {/* Scrollable body */}
+      {/* Scroll + overlaid CTAs share one #1b1b1b surface (no seam while scrolling) */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
+          position: "relative",
+          background: "#1b1b1b",
+        }}
+      >
+      <div
+        style={{
+          height: "100%",
           overflowY: "auto",
           overflowX: "hidden",
           padding: "0 13px",
-          /* Clear the fade above fixed CTAs when scrolled to end */
-          paddingBottom: 56,
+          /* Clear overlaid CTA row + fade when scrolled to end */
+          paddingBottom: 88,
           boxSizing: "border-box",
           scrollbarWidth: "none",
           touchAction: "pan-y",
@@ -1079,35 +1086,27 @@ export function SignalDetailView({
         </div>
       </div>
 
-      {/* Fixed CTAs — same surface as composer / input zone */}
+      {/* Fixed CTAs overlaid on scroll surface — same #1b1b1b, no color break */}
       <div
         style={{
-          flexShrink: 0,
-          position: "relative",
-          padding: "8px 16px 16px",
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          padding: "40px 16px 16px",
           boxSizing: "border-box",
-          background: "#131519",
+          background:
+            "linear-gradient(180deg, rgba(27,27,27,0) 0%, #1b1b1b 45%, #1b1b1b 100%)",
           zIndex: 2,
+          pointerEvents: "none",
         }}
       >
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: "100%",
-            height: 48,
-            background:
-              "linear-gradient(180deg, rgba(19,21,25,0) 0%, #131519 100%)",
-            pointerEvents: "none",
-          }}
-        />
         <div
           style={{
             display: "flex",
             gap: 8,
             width: "100%",
+            pointerEvents: "auto",
           }}
         >
           <button
@@ -1147,6 +1146,7 @@ export function SignalDetailView({
             Trade Now
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

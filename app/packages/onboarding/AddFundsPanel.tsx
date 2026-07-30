@@ -1161,7 +1161,8 @@ export function AddFundsPanel({
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: isMobile ? 32 : 24,
+                /* Mobile: pull fund body 20px closer to progress rail */
+                gap: isMobile ? 12 : 24,
                 width: "100%",
               }}
             >

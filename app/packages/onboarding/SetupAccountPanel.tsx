@@ -449,7 +449,8 @@ export function SetupAccountPanel({
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 32,
+                /* Enable trading: pull cards 20px closer to progress rail */
+                gap: enableActive ? 12 : 32,
                 width: "100%",
               }}
             >

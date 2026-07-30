@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { FONT } from "../nav/design-system";
 import type { SignalAskSnapshot } from "./SignalViews";
 import type { FileAttachment } from "./file-attachment";
@@ -19,7 +19,7 @@ import {
 } from "./draft-order";
 
 type ProcessPhase = "idle" | "planning" | "market" | "executing" | "complete";
-type TpSlSubFlow = "idle" | "analyzing" | "suggest" | "applied";
+type TpSlSubFlow = "idle" | "analyzing" | "suggest";
 
 const SNAPSHOT_ASSETS = {
   icon: "/trader-dna/chat/snapshot-icon.svg",
@@ -965,6 +965,16 @@ export function AgentConversationView({
     isNoTpSl ? NO_TPSL_DRAFT_ORDER : PRIMARY_DRAFT_ORDER,
   );
   const [tpSlFlow, setTpSlFlow] = useState<TpSlSubFlow>("idle");
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollToLatest = (smooth = true) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({
+      top: el.scrollHeight,
+      behavior: smooth ? "smooth" : "auto",
+    });
+  };
   const [askMessage, setAskMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -1025,7 +1035,9 @@ export function AgentConversationView({
       takeProfit: SUGGESTED_TAKE_PROFIT,
       stopLoss: SUGGESTED_STOP_LOSS,
     }));
-    setTpSlFlow("applied");
+    /* End ask turn — hide auto-sent "Can you..." bubble after values applied */
+    setAskMessage(null);
+    setTpSlFlow("idle");
   };
 
   const skipTpSl = () => {
@@ -1035,19 +1047,28 @@ export function AgentConversationView({
 
   const showAskTurn =
     Boolean(askMessage) &&
-    (tpSlFlow === "analyzing" ||
-      tpSlFlow === "suggest" ||
-      tpSlFlow === "applied");
+    (tpSlFlow === "analyzing" || tpSlFlow === "suggest");
   const analyzingAsk = tpSlFlow === "analyzing" && phase !== "complete";
   const showSuggest = tpSlFlow === "suggest" && phase === "complete";
   const canAddTpSl =
-    isNoTpSl && tpSlFlow === "idle" && !draftOrder.takeProfit && !draftOrder.stopLoss;
+    isNoTpSl &&
+    tpSlFlow === "idle" &&
+    !draftOrder.takeProfit &&
+    !draftOrder.stopLoss;
   const draftReply =
     isNoTpSl && !draftOrder.takeProfit ? NO_TPSL_DRAFT_REPLY : DRAFT_ORDER_REPLY;
   const showInitialProcess = !hasInitialResult;
 
+  /* Keep view pinned to latest agent content during TP/SL ask turn */
+  useEffect(() => {
+    if (tpSlFlow === "idle") return;
+    const t = window.setTimeout(() => scrollToLatest(true), 40);
+    return () => window.clearTimeout(t);
+  }, [tpSlFlow, phase, phaseSteps, askMessage, showSuggest]);
+
   return (
     <div
+      ref={scrollRef}
       style={{
         ...slideIn,
         width: "100%",
@@ -1239,6 +1260,7 @@ export function AgentConversationView({
       {showSuggest && (
         <TpSlSuggestResults onApply={applyTpSl} onSkip={skipTpSl} />
       )}
+      <div aria-hidden style={{ height: 1, flexShrink: 0 }} />
     </div>
   );
 }

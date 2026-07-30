@@ -417,15 +417,15 @@ export function OnboardingShell({
             display: "flex",
             flexDirection: "column",
             gap: 40,
-            paddingTop: 55,
+            paddingTop: 15,
             paddingLeft: 24,
             paddingRight: 24,
-            paddingBottom: "calc(48px + env(safe-area-inset-bottom, 0px))",
+            paddingBottom: "calc(32px + env(safe-area-inset-bottom, 0px))",
             boxSizing: "border-box",
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
             scrollPaddingBottom:
-              "calc(48px + env(safe-area-inset-bottom, 0px))",
+              "calc(32px + env(safe-area-inset-bottom, 0px))",
           }}
         >
           <MobileStepProgress stage={stage} setupPhase={setupPhase} />
@@ -446,7 +446,6 @@ export function OnboardingShell({
             style={{
               marginTop: 8,
               flexShrink: 0,
-              paddingBottom: 12,
               width: "100%",
               display: "flex",
               justifyContent: "center",

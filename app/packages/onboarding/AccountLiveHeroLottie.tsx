@@ -76,8 +76,7 @@ export function AccountLiveHeroLottie({
 
   const height = tall ? 278 : 200;
   const welcomeTop = tall ? "calc(57% + 32px)" : "calc(55% + 32px)";
-  /** Desktop popup (>768): soft edge fade over clipped orbit rings */
-  const showEdgeFade = !tall;
+  const fadeColor = surfaceColor === "transparent" ? "#0a0b0d" : surfaceColor;
 
   return (
     <div
@@ -149,36 +148,33 @@ export function AccountLiveHeroLottie({
         </div>
       ) : null}
 
-      {showEdgeFade ? (
-        <>
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              top: 0,
-              height: 12,
-              zIndex: 2,
-              pointerEvents: "none",
-              background: `linear-gradient(180deg, ${surfaceColor} 0%, transparent 100%)`,
-            }}
-          />
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: 12,
-              zIndex: 2,
-              pointerEvents: "none",
-              background: `linear-gradient(0deg, ${surfaceColor} 0%, transparent 100%)`,
-            }}
-          />
-        </>
-      ) : null}
+      {/* Soft edge fade — clipped orbit rings (top + bottom, 12px) */}
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: 0,
+          height: 12,
+          zIndex: 2,
+          pointerEvents: "none",
+          background: `linear-gradient(180deg, ${fadeColor} 0%, transparent 100%)`,
+        }}
+      />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 12,
+          zIndex: 2,
+          pointerEvents: "none",
+          background: `linear-gradient(0deg, ${fadeColor} 0%, transparent 100%)`,
+        }}
+      />
 
       {/* # My Trader Archetype — top-left */}
       <div
