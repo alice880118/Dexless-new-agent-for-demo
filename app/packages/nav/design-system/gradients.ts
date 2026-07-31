@@ -1,5 +1,6 @@
 /** Gradient tokens */
 export const GRADIENTS = {
+  /** Site-wide primary CTA fill (menus: primary button stays on the left) */
   connectBtn:
     "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
   airdropBorder: "linear-gradient(90deg, #7053f3 0%, #76bab2 45%, #e3ff94 98%)",

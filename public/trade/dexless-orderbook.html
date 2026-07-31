@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orderbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#131519; --ask:#ff41a3; --bid:#46ccb9; --mark:#ff9a56; --fund:#ffcf1c;
+    --t9:rgba(255,255,255,0.9); --t5:rgba(255,255,255,0.5); --t36:rgba(255,255,255,0.36);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:#000;display:flex;align-items:center;justify-content:center;padding:16px;
+    font-family:"Manrope",-apple-system,Segoe UI,Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums lining-nums;
+  }
+  .ob{
+    background:var(--bg);border-radius:6px;width:100%;max-width:240px;
+    display:flex;flex-direction:column;padding:4px 0 0;overflow:hidden;
+  }
+  .num{font-variant-numeric:tabular-nums lining-nums;letter-spacing:-0.36px}
+
+  /* --- tabs (desktop only) --- */
+  .tabs{order:1;display:none;gap:12px;padding:8px 16px 0;position:relative}
+  .tab{font-size:12px;font-weight:700;color:var(--t9);cursor:pointer}
+  .tab:not(.active){font-weight:500;color:var(--t5)}
+  .tab.active::after{content:"";position:absolute;left:16px;bottom:-4px;width:62px;height:2px;background:rgba(255,255,255,0.9);border-radius:4px}
+  .tabdiv{order:1;display:none;height:1px;background:rgba(227,231,234,0.1);margin:8px 0 0}
+
+  /* --- funding rate (mobile only) --- */
+  .funding{order:1;display:flex;flex-direction:column;gap:4px;padding:8px}
+  .fund-label{font-size:12px;font-weight:500;color:var(--t5);text-decoration:underline dotted;text-underline-offset:2px}
+  .frate{font-size:12px;font-weight:600;color:var(--fund)}
+  .fin{font-size:12px;font-weight:600;color:var(--t36)}
+
+  /* --- grouping pill --- */
+  .group{order:6;display:flex;padding:8px}
+  .pill{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:rgba(255,255,255,0.1);border-radius:6px;height:22px;padding:2px 8px;
+    font-size:12px;font-weight:600;color:var(--t9);cursor:pointer;min-width:84px}
+  .pill .cv{font-size:9px;opacity:.7}
+
+  /* --- column header --- */
+  .colhead{order:2;display:flex;align-items:center;gap:12px;height:24px;padding:0 8px}
+  .colhead .c{font-size:12px;font-weight:600;color:var(--t5)}
+  .colhead .price{width:72px}
+  .colhead .qty{margin-left:auto;text-align:right;display:flex;align-items:center;gap:3px}
+  .colhead .total{width:92px;text-align:right;display:none}
+  .sortv{font-size:8px;color:var(--t5)}
+
+  /* --- rows --- */
+  .asks{order:3;display:flex;flex-direction:column;gap:1px}
+  .bids{order:5;display:flex;flex-direction:column;gap:1px}
+  .row{position:relative;display:flex;align-items:center;gap:12px;height:24px;padding:0 8px}
+  .bar{position:absolute;right:0;top:0;height:100%;pointer-events:none;transition:width .5s ease}
+  .ask .bar{background:linear-gradient(90deg,#fb8aff,#ff41a3);opacity:.15}
+  .bid .bar{background:linear-gradient(90deg,#00ffab 0%,#00ffab 50%,#0ef3ff 100%);opacity:.20}
+  .row span{position:relative;z-index:1;font-size:12px;font-weight:600}
+  .row .price{width:72px}
+  .ask .price{color:var(--ask)}
+  .bid .price{color:var(--bid)}
+  .row .qty{margin-left:auto;text-align:right;color:var(--t9);width:80px}
+  .row .total{text-align:right;color:var(--t9);width:92px;display:none}
+  .row.fup{animation:fup .6s ease-out}
+  .row.fdn{animation:fdn .6s ease-out}
+  @keyframes fup{from{background:rgba(70,204,185,.20)}to{background:transparent}}
+  @keyframes fdn{from{background:rgba(255,65,163,.20)}to{background:transparent}}
+
+  /* --- mid / spread row --- */
+  .mid{order:4;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px}
+  .midleft{display:flex;align-items:center;gap:12px}
+  .lastwrap,.markwrap{display:flex;align-items:center;gap:4px}
+  .last{font-size:12px;font-weight:600;color:var(--bid);letter-spacing:-0.36px}
+  .arrow{font-size:9px;color:var(--bid)}
+  .last.dn{color:var(--ask)} .arrow.dn{color:var(--ask)}
+  .markdot{width:9px;height:9px;border-radius:2px;background:var(--mark);transform:rotate(45deg);opacity:.9}
+  .mark{font-size:12px;font-weight:600;color:var(--mark);letter-spacing:-0.36px}
+  .spct{font-size:10px;font-weight:600;color:var(--t5);letter-spacing:-0.3px;display:none}
+
+  /* ============ DESKTOP >=768 ============ */
+  @media (min-width:768px){
+    .ob{max-width:300px}
+    .tabs,.tabdiv{display:flex}
+    .funding{display:none}
+    .colhead{order:3;padding:0 12px}
+    .colhead .total{display:block}
+    .group{order:2;padding:0 12px 4px}
+    .asks,.bids{gap:1px}
+    .row{padding:0 12px}
+    .row .total{display:block}
+    .last{font-size:16px;line-height:28px}
+    .arrow{font-size:11px}
+    .mark{font-size:14px}
+    .spct{display:block}
+    .mid{padding:2px 12px}
+  }
+</style>
+</head>
+<body>
+  <div class="ob" id="ob">
+    <div class="tabs"><span class="tab active">Orderbook</span><span class="tab">Trades</span></div>
+    <div class="tabdiv"></div>
+
+    <div class="funding">
+      <span class="fund-label">Pred. funding rate</span>
+      <div><span class="frate" id="frate">0.0053%</span><span class="fin" id="fin"> in 07:42:01</span></div>
+    </div>
+
+    <div class="group"><span class="pill">1 <span class="cv">▼</span></span></div>
+
+    <div class="colhead">
+      <span class="c price">Price(USDC)</span>
+      <span class="c qty">Qty(BTC) <span class="sortv">▼</span></span>
+      <span class="c total">Total(BTC)</span>
+    </div>
+
+    <div class="asks" id="asks"></div>
+
+    <div class="mid">
+      <div class="midleft">
+        <span class="lastwrap"><span class="last num" id="last">111,855.1</span><span class="arrow" id="arrow">▲</span></span>
+        <span class="markwrap"><span class="markdot"></span><span class="mark num" id="mark">111,856.1</span></span>
+      </div>
+      <span class="spct num" id="spct">0.0197%</span>
+    </div>
+
+    <div class="bids" id="bids"></div>
+  </div>
+
+<script>
+const LEVELS=11;
+let mid=111855, lastMid=111855;
+let asks=[], bids=[];
+
+const fmtP = p => Math.round(p).toLocaleString('en-US');
+const fmtQ = q => q.toFixed(5);
+const rndQty = () => 0.1 + Math.random()*5.8;
+
+function genLadder(){
+  // asks: best (mid+1) .. highest (mid+LEVELS); cumulative from best outward
+  let tmp=[];
+  for(let i=1;i<=LEVELS;i++) tmp.push({price:mid+i, qty:rndQty(), prev:0});
+  let c=0; for(const r of tmp){ c+=r.qty; r.total=c; }
+  asks = tmp.reverse();                    // display highest first
+  // bids: best (mid) .. lowest (mid-LEVELS+1); cumulative from best downward
+  let tb=[];
+  for(let i=0;i<LEVELS;i++) tb.push({price:mid-i, qty:rndQty(), prev:0});
+  let cb=0; for(const r of tb){ cb+=r.qty; r.total=cb; }
+  bids = tb;
+}
+genLadder();
+
+function buildRows(el, arr, side){
+  el.innerHTML='';
+  arr.forEach((r)=>{
+    const row=document.createElement('div'); row.className='row '+side;
+    row.innerHTML=`<div class="bar"></div><span class="price num"></span><span class="qty num"></span><span class="total num"></span>`;
+    el.appendChild(row); r.el=row;
+  });
+}
+buildRows(document.getElementById('asks'), asks, 'ask');
+buildRows(document.getElementById('bids'), bids, 'bid');
+
+function recompute(){
+  let c=0; for(let i=asks.length-1;i>=0;i--){ c+=asks[i].qty; asks[i].total=c; } // best ask is last
+  let cb=0; for(let i=0;i<bids.length;i++){ cb+=bids[i].qty; bids[i].total=cb; }
+}
+
+function render(){
+  const maxA = asks[0].total, maxB = bids[bids.length-1].total;
+  const paint = (arr, max) => arr.forEach(r=>{
+    r.el.querySelector('.price').textContent=fmtP(r.price);
+    r.el.querySelector('.qty').textContent=fmtQ(r.qty);
+    r.el.querySelector('.total').textContent=fmtQ(r.total);
+    r.el.querySelector('.bar').style.width=(8 + r.total/max*92)+'%';
+    if(r.prev!==0 && Math.abs(r.qty-r.prev)>1e-6){
+      const cls = r.qty>r.prev ? 'fup':'fdn';
+      r.el.classList.remove('fup','fdn'); void r.el.offsetWidth; r.el.classList.add(cls);
+    }
+    r.prev=r.qty;
+  });
+  paint(asks, maxA); paint(bids, maxB);
+
+  // mid + mark + spread
+  const lastEl=document.getElementById('last'), arrEl=document.getElementById('arrow');
+  const midPrice = mid + 0.1, markPrice = mid + 1.1;
+  lastEl.textContent = fmtP(mid)+'.1';
+  document.getElementById('mark').textContent = fmtP(mid+1)+'.1';
+  const up = mid>=lastMid;
+  lastEl.classList.toggle('dn', !up);
+  arrEl.classList.toggle('dn', !up);
+  arrEl.textContent = up ? '▲' : '▼';
+  const spread = markPrice - midPrice;
+  document.getElementById('spct').textContent = (spread/midPrice*100).toFixed(4)+'%';
+  lastMid = mid;
+}
+render();
+
+// ---- live tick every 1s ----
+function tick(){
+  // occasionally move the mid price by ±1 and rebuild ladder
+  if(Math.random()<0.3){
+    lastMid = mid;
+    mid += Math.random()<0.5 ? 1 : -1;
+    const oldAsks=asks.map(r=>r.el), oldBids=bids.map(r=>r.el);
+    genLadder();
+    asks.forEach((r,i)=>{ r.el=oldAsks[i]; r.prev=0; });
+    bids.forEach((r,i)=>{ r.el=oldBids[i]; r.prev=0; });
+  } else {
+    // jitter a random subset of quantities
+    const jitter = arr => arr.forEach(r=>{ if(Math.random()<0.55){ r.qty=Math.max(0.05, r.qty + (Math.random()-0.5)*1.8); } });
+    jitter(asks); jitter(bids);
+    recompute();
+  }
+  render();
+}
+setInterval(tick, 1000);
+
+// ---- funding countdown ----
+let fsec = 7*3600 + 42*60 + 1;
+setInterval(()=>{
+  fsec = fsec>0 ? fsec-1 : 8*3600;
+  const h=String(Math.floor(fsec/3600)).padStart(2,'0');
+  const m=String(Math.floor(fsec%3600/60)).padStart(2,'0');
+  const s=String(fsec%60).padStart(2,'0');
+  document.getElementById('fin').textContent=` in ${h}:${m}:${s}`;
+}, 1000);
+</script>
+</body>
+</html>

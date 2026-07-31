@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import type { LottieComponentProps } from "lottie-react";
-import { FONT } from "../nav/design-system";
+import { FONT, FOOTER_HEIGHT } from "../nav/design-system";
 
 const BADGE_WIDTH = 70;
 const LOTTIE_SIZE = 58;
+/** Clear site footer + positions pagination on the right */
+const BADGE_BOTTOM = FOOTER_HEIGHT + 56;
 
 type LottieComponent = React.ComponentType<LottieComponentProps>;
 
@@ -50,11 +52,12 @@ export function TraderDnaBadge({ onClick, hidden = false }: TraderDnaBadgeProps)
         style={{
           position: "fixed",
           right: 24,
-          bottom: 40,
+          bottom: BADGE_BOTTOM,
           zIndex: 1000,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          gap: 4,
           width: BADGE_WIDTH,
           padding: 0,
           border: "none",
@@ -81,7 +84,7 @@ export function TraderDnaBadge({ onClick, hidden = false }: TraderDnaBadgeProps)
         </span>
         <span
           style={{
-            marginTop: -4,
+            marginTop: 0,
             fontFamily: FONT,
             fontWeight: 600,
             fontSize: 12,

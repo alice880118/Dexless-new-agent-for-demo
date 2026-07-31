@@ -12,6 +12,7 @@ type DraftOrderCardProps = {
   onDeposit?: () => void;
   onAskAgent?: () => void;
   onSendOrder?: () => void;
+  onViewPosition?: () => void;
   onModify?: () => void;
   onPlaceAnother?: () => void;
   onEdit?: () => void;
@@ -85,6 +86,7 @@ export function DraftOrderCard({
   onDeposit,
   onAskAgent,
   onSendOrder,
+  onViewPosition,
   onModify,
   onPlaceAnother,
   onEdit,
@@ -368,16 +370,30 @@ export function DraftOrderCard({
                   height: 32,
                   border: "none",
                   borderRadius: 999,
-                  backgroundImage: GRADIENTS.connectBtn,
+                  backgroundImage:
+                    "linear-gradient(90deg, rgba(112,83,243,0.5) 0%, rgba(118,186,178,0.5) 62.694%, rgba(227,255,148,0.5) 137.26%)",
                   color: "#ffffff",
                   fontFamily: FONT,
                   fontWeight: 600,
                   fontSize: 11,
                   lineHeight: "18px",
                   cursor: "default",
-                  opacity: 0.5,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
                 }}
               >
+                <img
+                  src="/onboarding/spinner.png"
+                  alt=""
+                  width={14}
+                  height={14}
+                  style={{
+                    display: "block",
+                    animation: "draftOrderSpin 0.8s linear infinite",
+                  }}
+                />
                 Deposit
               </button>
               <button
@@ -413,12 +429,18 @@ export function DraftOrderCard({
               Deposit may take a moment to confirm. You can keep discussing
               this order with your agent.
             </p>
+            <style>{`
+              @keyframes draftOrderSpin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+            `}</style>
           </>
         ) : mode === "ready" ? (
           <div style={{ display: "flex", gap: 8, width: "100%" }}>
             <button
               type="button"
-              onClick={onSendOrder}
+              onClick={onViewPosition ?? onSendOrder}
               style={{
                 flex: 1,
                 height: 32,
@@ -433,7 +455,7 @@ export function DraftOrderCard({
                 cursor: "pointer",
               }}
             >
-              Send Order
+              View Position
             </button>
             <button
               type="button"

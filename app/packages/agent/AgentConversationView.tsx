@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { FONT } from "../nav/design-system";
+import { FONT, GRADIENTS } from "../nav/design-system";
 import type { SignalAskSnapshot } from "./SignalViews";
 import type { FileAttachment } from "./file-attachment";
 import { FileAttachmentChip } from "./FileAttachmentChip";
@@ -713,8 +713,9 @@ function DraftOrderResults({
   reply,
   order,
   depositPhase = "idle",
+  showPosition = false,
   onDeposit,
-  onSendOrder,
+  onViewPosition,
   onPlaceAnother,
   onAdjustTpSl,
   onAddTakeProfit,
@@ -723,8 +724,9 @@ function DraftOrderResults({
   reply: string;
   order: DraftOrder;
   depositPhase?: "idle" | "confirming" | "ready" | "submitted";
+  showPosition?: boolean;
   onDeposit?: () => void;
-  onSendOrder?: (order: DraftOrder) => void;
+  onViewPosition?: () => void;
   onPlaceAnother?: () => void;
   onAdjustTpSl?: () => void;
   onAddTakeProfit?: () => void;
@@ -787,12 +789,92 @@ function DraftOrderResults({
         order={order}
         mode={mode}
         onDeposit={onDeposit}
-        onSendOrder={() => onSendOrder?.(order)}
+        onViewPosition={onViewPosition}
         onPlaceAnother={onPlaceAnother}
         onModify={mode === "submitted" ? onAdjustTpSl : () => undefined}
         onAddTakeProfit={onAddTakeProfit}
         onAddStopLoss={onAddStopLoss}
       />
+      {showPosition ? <PositionSnapshotCard order={order} /> : null}
+    </div>
+  );
+}
+
+function PositionSnapshotCard({ order }: { order: DraftOrder }) {
+  const isLong = order.side === "Long";
+  const accent = isLong ? "#46ccb9" : "#ff41a3";
+  const entryMatch = order.entry.match(/[\d,]+(?:\.\d+)?/);
+  const entry = entryMatch?.[0] ?? "—";
+  const rows: { label: string; value: string; color?: string }[] = [
+    { label: "Market", value: order.market },
+    { label: "Side", value: order.side, color: accent },
+    { label: "Margin", value: order.margin },
+    { label: "Leverage", value: order.leverageLine },
+    { label: "Entry", value: entry },
+    { label: "Mark", value: entry },
+    { label: "Take profit", value: order.takeProfit || "—" },
+    { label: "Stop loss", value: order.stopLoss || "—" },
+    { label: "uPnL", value: "+0.00 USDC", color: "#46ccb9" },
+  ];
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        background: "rgba(255,255,255,0.05)",
+        borderRadius: 8,
+        padding: 12,
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        fontFamily: FONT,
+      }}
+    >
+      <p
+        style={{
+          margin: 0,
+          fontWeight: 600,
+          fontSize: 13,
+          lineHeight: "18px",
+          color: "rgba(255,255,255,0.9)",
+        }}
+      >
+        Current position
+      </p>
+      {rows.map((row) => (
+        <div
+          key={row.label}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <span
+            style={{
+              fontWeight: 500,
+              fontSize: 12,
+              lineHeight: "18px",
+              color: "rgba(255,255,255,0.5)",
+            }}
+          >
+            {row.label}
+          </span>
+          <span
+            style={{
+              fontWeight: 600,
+              fontSize: 12,
+              lineHeight: "18px",
+              color: row.color ?? "rgba(255,255,255,0.9)",
+              textAlign: "right",
+            }}
+          >
+            {row.value}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -837,8 +919,7 @@ function TpSlSuggestResults({
             height: 32,
             border: "none",
             borderRadius: 999,
-            backgroundImage:
-              "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
+            backgroundImage: GRADIENTS.connectBtn,
             color: "#ffffff",
             fontFamily: FONT,
             fontWeight: 600,
@@ -941,20 +1022,22 @@ export function AgentConversationView({
   signalSnapshot,
   fileAttachment,
   onDraftDeposit,
-  onSendOrder,
+  onViewPosition,
   onPlaceAnother,
   onAdjustTpSl,
   draftDepositPhase = "idle",
+  showPosition = false,
 }: {
   userMessage?: string;
   agentName?: string;
   signalSnapshot?: SignalAskSnapshot | null;
   fileAttachment?: FileAttachment | null;
   onDraftDeposit?: () => void;
-  onSendOrder?: (order: DraftOrder) => void;
+  onViewPosition?: () => void;
   onPlaceAnother?: () => void;
   onAdjustTpSl?: () => void;
   draftDepositPhase?: "idle" | "confirming" | "ready" | "submitted";
+  showPosition?: boolean;
 }) {
   const isNoTpSl = isNoTpSlQuery(userMessage);
   const isDraftFlow = isDraftOrderQuery(userMessage);
@@ -1065,6 +1148,12 @@ export function AgentConversationView({
     const t = window.setTimeout(() => scrollToLatest(true), 40);
     return () => window.clearTimeout(t);
   }, [tpSlFlow, phase, phaseSteps, askMessage, showSuggest]);
+
+  useEffect(() => {
+    if (!showPosition) return;
+    const t = window.setTimeout(() => scrollToLatest(true), 40);
+    return () => window.clearTimeout(t);
+  }, [showPosition]);
 
   return (
     <div
@@ -1207,8 +1296,9 @@ export function AgentConversationView({
               reply={draftReply}
               order={draftOrder}
               depositPhase={draftDepositPhase}
+              showPosition={showPosition}
               onDeposit={onDraftDeposit}
-              onSendOrder={onSendOrder}
+              onViewPosition={onViewPosition}
               onPlaceAnother={onPlaceAnother}
               onAdjustTpSl={onAdjustTpSl}
               onAddTakeProfit={canAddTpSl ? startTpSlAsk : undefined}

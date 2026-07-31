@@ -24,6 +24,10 @@ type AgentOverlayProps = {
   /** Agent entry only after wallet connected */
   walletConnected?: boolean;
   onTradeNow?: (signal: SignalCardData) => void;
+  /** Open to Signal list when agent opens */
+  initialView?: "home" | "signals";
+  /** <768 View Position → focus trade Positions table */
+  onViewTradePositions?: () => void;
 };
 
 /** Floating agent icon when bottom nav is shown (768 / 390); desktop uses Trader DNA badge */
@@ -38,6 +42,8 @@ export function AgentOverlay({
   onOpenChange,
   walletConnected = false,
   onTradeNow,
+  initialView = "home",
+  onViewTradePositions,
 }: AgentOverlayProps) {
   const phoneMode = useFloatingAgentEntry(breakpoint);
   const bottomInset = showBottomNav ? BOTTOM_NAV_HEIGHT : 0;
@@ -50,7 +56,7 @@ export function AgentOverlay({
   }));
   const [internalOpen, setInternalOpen] = useState(false);
   const [isIconActive, setIsIconActive] = useState(false);
-  const [agentMinimized, setAgentMinimized] = useState(false);
+  const [, setAgentMinimized] = useState(false);
   const [agentPosition, setAgentPosition] = useState<AgentIconPosition>(() =>
     getDefaultAgentPosition(viewport.width, viewport.height),
   );
@@ -128,6 +134,31 @@ export function AgentOverlay({
     if (!isChatOpen) setAgentMinimized(false);
   }, [isChatOpen]);
 
+  /** Close agent when user taps outside the agent surface (<768 / phone mode). */
+  useEffect(() => {
+    if (!isChatOpen || !phoneMode) return;
+
+    const isAgentSurface = (el: Element | null) =>
+      Boolean(
+        el?.closest?.(
+          '[data-agent-surface="true"], [data-chat-hit], [data-agent-scroll]',
+        ),
+      );
+
+    const onPointerDownCapture = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (!target || isAgentSurface(target)) return;
+      setChatOpen(false);
+      setAgentMinimized(false);
+      window.setTimeout(() => setIsIconActive(false), 320);
+    };
+
+    document.addEventListener("pointerdown", onPointerDownCapture, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDownCapture, true);
+    };
+  }, [isChatOpen, phoneMode, setChatOpen]);
+
   const agentAnchorX = agentPosition.x + AGENT_ICON_SIZE / 2;
   const agentAnchorY = agentPosition.y + AGENT_ICON_SIZE / 2;
 
@@ -146,6 +177,7 @@ export function AgentOverlay({
           isOpen={isChatOpen}
           onClose={() => setChatOpen(false)}
           onTradeNow={onTradeNow}
+          initialView={initialView}
         />
       </>
     );
@@ -160,32 +192,10 @@ export function AgentOverlay({
         pointerEvents: "none",
       }}
     >
-      {isChatOpen ? (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: 0,
-            /* Minimized: leave bottom nav uncovered so tabs stay clickable */
-            bottom: agentMinimized ? bottomInset : 0,
-            zIndex: 150,
-            pointerEvents: "auto",
-            touchAction: "none",
-            overscrollBehavior: "none",
-            background: "transparent",
-          }}
-          onTouchMove={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onWheel={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-        />
-      ) : null}
+      {/*
+        No full-screen scroll lock: background trade page stays scrollable.
+        Agent surfaces use pointerEvents auto; tapping background menus closes agent.
+      */}
       <div
         style={{
           position: "relative",
@@ -217,6 +227,8 @@ export function AgentOverlay({
           anchorY={agentAnchorY}
           onTradeNow={onTradeNow}
           onMinimizedChange={setAgentMinimized}
+          initialView={initialView}
+          onViewTradePositions={onViewTradePositions}
         />
       </div>
     </div>

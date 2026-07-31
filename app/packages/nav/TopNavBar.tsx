@@ -121,7 +121,7 @@ function NavLink({
       style={{
         display: "flex",
         alignItems: "center",
-        padding: "0 4px",
+        padding: "0 6px",
         border: "none",
         background: "transparent",
         cursor: "pointer",
@@ -232,7 +232,7 @@ function AirdropButton({ onClick }: { onClick?: () => void }) {
           display: "flex",
           alignItems: "center",
           gap: 2,
-          padding: "4px 8px",
+          padding: "4px 10px",
           borderRadius: 999,
           border: "none",
           background: "#121419",
@@ -387,7 +387,7 @@ export function TopNavBar({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 200,
+    zIndex: 300,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
@@ -591,7 +591,7 @@ export function TopNavBar({
                 display: "flex",
                 alignItems: "center",
                 gap: 4,
-                padding: "4px 8px",
+                padding: "4px 10px",
                 border: "none",
                 background: "transparent",
                 cursor: "pointer",
@@ -694,7 +694,6 @@ export function TopNavBar({
               )}
             </div>
 
-            <Divider height={16} />
             <AirdropButton onClick={() => goTo("airdrop")} />
           </div>
         )}

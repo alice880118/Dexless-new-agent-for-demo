@@ -20,6 +20,8 @@ const FLOAT_CSS = `
 const BG_SCALE = 1.6;
 /** Main character is 1.3× smaller than previous (1.6 / 1.3) */
 const CHAR_SCALE = 1.6 / 1.3;
+/** Mobile only: shrink center character further */
+const CHAR_SCALE_MOBILE = CHAR_SCALE * 0.8;
 
 type AccountLiveHeroLottieProps = {
   /** Mobile flow uses Figma ~342×278 frame */
@@ -76,6 +78,7 @@ export function AccountLiveHeroLottie({
 
   const height = tall ? 278 : 200;
   const welcomeTop = tall ? "calc(57% + 32px)" : "calc(55% + 32px)";
+  const charScale = tall ? CHAR_SCALE_MOBILE : CHAR_SCALE;
   const fadeColor = surfaceColor === "transparent" ? "#0a0b0d" : surfaceColor;
 
   return (
@@ -130,7 +133,7 @@ export function AccountLiveHeroLottie({
             top: "42%",
             width: "100%",
             height: "100%",
-            transform: `translate(-50%, -50%) scale(${CHAR_SCALE})`,
+            transform: `translate(-50%, -50%) scale(${charScale})`,
             transformOrigin: "center center",
             display: "flex",
             alignItems: "center",

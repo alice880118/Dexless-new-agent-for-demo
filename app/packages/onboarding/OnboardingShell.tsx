@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { COLORS, FONT } from "../nav/design-system";
+import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
 
@@ -545,7 +545,7 @@ export function PrimaryButton({
         cursor: dimmed ? "default" : "pointer",
         backgroundImage: dimmed
           ? "linear-gradient(90deg, rgba(112,83,243,0.5) 0%, rgba(118,186,178,0.5) 62.694%, rgba(227,255,148,0.5) 137.26%)"
-          : "linear-gradient(90deg, #7053f3 0%, #76bab2 62.694%, #e3ff94 137.26%)",
+          : GRADIENTS.connectBtn,
         color: "#ffffff",
         fontSize: 14,
         fontWeight: 600,

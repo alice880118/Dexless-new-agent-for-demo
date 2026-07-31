@@ -277,6 +277,7 @@ export function ConfirmSendOrderModal({
       role="dialog"
       aria-modal="true"
       aria-label="Confirm order"
+      data-agent-surface="true"
       style={{
         position: "fixed",
         inset: 0,

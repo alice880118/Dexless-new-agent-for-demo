@@ -177,6 +177,7 @@ export function FloatingAgentIcon({
     <button
       type="button"
       aria-label="Agent assistant"
+      data-agent-surface="true"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

@@ -719,24 +719,31 @@ export function SignalDetailView({
         fontFamily: FONT,
         overflow: "hidden",
         background: "#1b1b1b",
+        padding: "12px 13px 0",
       }}
     >
-      {/* Fixed header: back + symbol */}
+      {/* One continuous card: sticky BTC nav + scroll body (no seam when scrolled) */}
       <div
         style={{
-          flexShrink: 0,
-          padding: "12px 13px 0",
+          flex: 1,
+          minHeight: 0,
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 8,
+          background: cardSurface,
+          overflow: "hidden",
           boxSizing: "border-box",
-          background: "#1b1b1b",
-          zIndex: 2,
         }}
       >
+        {/* Fixed header: back + symbol — same surface as Price Structure */}
         <div
           style={{
-            borderRadius: "8px 8px 0 0",
-            background: cardSurface,
+            flexShrink: 0,
             padding: "12px 12px 0",
             boxSizing: "border-box",
+            background: cardSurface,
+            zIndex: 2,
           }}
         >
           <div
@@ -817,53 +824,41 @@ export function SignalDetailView({
             </span>
           </div>
         </div>
-      </div>
 
-      {/* Scroll + overlaid CTAs share one #1b1b1b surface (no seam while scrolling) */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          position: "relative",
-          background: "#1b1b1b",
-        }}
-      >
-      <div
-        style={{
-          height: "100%",
-          overflowY: "auto",
-          overflowX: "hidden",
-          padding: "0 13px",
-          /* Clear overlaid CTA row + fade when scrolled to end */
-          paddingBottom: 88,
-          boxSizing: "border-box",
-          scrollbarWidth: "none",
-          touchAction: "pan-y",
-          overscrollBehavior: "contain",
-          background: "#1b1b1b",
-        }}
-        className="signal-scroll"
-        data-agent-scroll
-      >
         <div
           style={{
-            background: cardSurface,
-            padding: "8px 12px 16px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
-            boxSizing: "border-box",
-            borderRadius: "0 0 8px 8px",
+            flex: 1,
+            minHeight: 0,
+            position: "relative",
           }}
         >
           <div
             style={{
+              height: "100%",
+              overflowY: "auto",
+              overflowX: "hidden",
+              padding: "0 12px 88px",
+              boxSizing: "border-box",
+              scrollbarWidth: "none",
+              touchAction: "pan-y",
+              overscrollBehavior: "contain",
+              background: cardSurface,
               display: "flex",
               flexDirection: "column",
-              gap: 8,
-              width: "100%",
+              gap: 20,
             }}
+            className="signal-scroll"
+            data-agent-scroll
           >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                width: "100%",
+                paddingTop: 8,
+              }}
+            >
             <span
               style={{
                 fontSize: 12,
@@ -1083,70 +1078,70 @@ export function SignalDetailView({
               </div>
             </div>
           </div>
-        </div>
-      </div>
+          </div>
 
-      {/* Fixed CTAs overlaid on scroll surface — same #1b1b1b, no color break */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          padding: "40px 16px 16px",
-          boxSizing: "border-box",
-          background:
-            "linear-gradient(180deg, rgba(27,27,27,0) 0%, #1b1b1b 45%, #1b1b1b 100%)",
-          zIndex: 2,
-          pointerEvents: "none",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            width: "100%",
-            pointerEvents: "auto",
-          }}
-        >
-          <button
-            type="button"
-            onClick={onAskAgent}
+          {/* Fixed CTAs — fade into page bg below card */}
+          <div
             style={{
-              flex: 1,
-              height: 32,
-              border: "none",
-              borderRadius: 999,
-              backgroundImage: GRADIENTS.connectBtn,
-              color: "#ffffff",
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: FONT,
-              cursor: "pointer",
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              padding: "40px 16px 16px",
+              boxSizing: "border-box",
+              background:
+                "linear-gradient(180deg, rgba(27,27,27,0) 0%, #1b1b1b 45%, #1b1b1b 100%)",
+              zIndex: 3,
+              pointerEvents: "none",
             }}
           >
-            Ask Agent
-          </button>
-          <button
-            type="button"
-            onClick={onTradeNow}
-            style={{
-              flex: 1,
-              height: 32,
-              borderRadius: 999,
-              border: "1px solid rgba(255,255,255,0.3)",
-              background: "transparent",
-              color: "rgba(255,255,255,0.6)",
-              fontSize: 11,
-              fontWeight: 600,
-              fontFamily: FONT,
-              cursor: "pointer",
-            }}
-          >
-            Trade Now
-          </button>
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                width: "100%",
+                pointerEvents: "auto",
+              }}
+            >
+              <button
+                type="button"
+                onClick={onAskAgent}
+                style={{
+                  flex: 1,
+                  height: 32,
+                  border: "none",
+                  borderRadius: 999,
+                  backgroundImage: GRADIENTS.connectBtn,
+                  color: "#ffffff",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  fontFamily: FONT,
+                  cursor: "pointer",
+                }}
+              >
+                Ask Agent
+              </button>
+              <button
+                type="button"
+                onClick={onTradeNow}
+                style={{
+                  flex: 1,
+                  height: 32,
+                  borderRadius: 999,
+                  border: "1px solid rgba(255,255,255,0.3)",
+                  background: "transparent",
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  fontFamily: FONT,
+                  cursor: "pointer",
+                }}
+              >
+                Trade Now
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

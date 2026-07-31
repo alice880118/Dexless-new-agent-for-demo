@@ -70,15 +70,17 @@ type DesktopTraderDnaPanelProps = {
   isOpen: boolean;
   onClose: () => void;
   onTradeNow?: (signal: SignalCardData) => void;
+  initialView?: "home" | "signals";
 };
 
 export function DesktopTraderDnaPanel({
   isOpen,
   onClose,
   onTradeNow,
+  initialView = "home",
 }: DesktopTraderDnaPanelProps) {
   const [activeChip, setActiveChip] = useState<string | null>(null);
-  const [panelView, setPanelView] = useState<PanelView>("home");
+  const [panelView, setPanelView] = useState<PanelView>(initialView);
   const [signalId, setSignalId] = useState<string>("btc-1");
   const [chatMessage, setChatMessage] = useState(
     "I want to long BTC with 20U",
@@ -95,6 +97,7 @@ export function DesktopTraderDnaPanel({
   const [draftDepositPhase, setDraftDepositPhase] = useState<
     "idle" | "confirming" | "ready" | "submitted"
   >("idle");
+  const [showPosition, setShowPosition] = useState(false);
   const [showDepositSuccess, setShowDepositSuccess] = useState(false);
   const [showOrderSuccess, setShowOrderSuccess] = useState(false);
   const [confirmOrder, setConfirmOrder] = useState<DraftOrder | null>(null);
@@ -123,11 +126,13 @@ export function DesktopTraderDnaPanel({
     setAttachment(null);
     setPanelView("chat");
     setChatKey((k) => k + 1);
+    setShowPosition(false);
   };
 
   const handleDraftDepositApprove = () => {
     setDepositOpen(false);
     setDraftDepositPhase("confirming");
+    setShowPosition(false);
     setShowDepositSuccess(false);
     if (depositTimerRef.current) {
       window.clearTimeout(depositTimerRef.current);
@@ -154,6 +159,7 @@ export function DesktopTraderDnaPanel({
       setShowDepositSuccess(false);
       setShowOrderSuccess(false);
       setConfirmOrder(null);
+      setPanelView(initialView === "signals" ? "signals" : "home");
       setVisible(true);
       setEntered(false);
       const id = window.requestAnimationFrame(() => {
@@ -164,7 +170,7 @@ export function DesktopTraderDnaPanel({
     setEntered(false);
     const t = window.setTimeout(() => setVisible(false), 220);
     return () => window.clearTimeout(t);
-  }, [isOpen]);
+  }, [isOpen, initialView]);
 
   useEffect(() => {
     return () => {
@@ -432,13 +438,16 @@ export function DesktopTraderDnaPanel({
             signalSnapshot={signalSnapshot}
             fileAttachment={chatAttachment}
             onDraftDeposit={() => setDepositOpen(true)}
-            onSendOrder={(order) => setConfirmOrder(order)}
+            onViewPosition={() => setShowPosition(true)}
+            showPosition={showPosition}
             onPlaceAnother={() => {
               setDraftDepositPhase("idle");
+              setShowPosition(false);
               startChat("I want to long BTC with 20U");
             }}
             onAdjustTpSl={() => {
               setDraftDepositPhase("idle");
+              setShowPosition(false);
               startChat("Adjust my take profit and stop loss");
             }}
             draftDepositPhase={draftDepositPhase}

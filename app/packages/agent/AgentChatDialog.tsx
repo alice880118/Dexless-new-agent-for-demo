@@ -85,6 +85,9 @@ type AgentChatDialogProps = {
   anchorY: number;
   onTradeNow?: (signal: SignalCardData) => void;
   onMinimizedChange?: (minimized: boolean) => void;
+  initialView?: "home" | "signals";
+  /** Close agent and focus trade Positions table (<768) */
+  onViewTradePositions?: () => void;
 };
 
 function IconBtn({
@@ -311,12 +314,14 @@ export function AgentChatDialog({
   anchorY,
   onTradeNow,
   onMinimizedChange,
+  initialView = "home",
+  onViewTradePositions,
 }: AgentChatDialogProps) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [activeChip, setActiveChip] = useState<string | null>(null);
-  const [panelView, setPanelView] = useState<PanelView>("home");
+  const [panelView, setPanelView] = useState<PanelView>(initialView);
   const [signalId, setSignalId] = useState("btc-1");
   const [chatMessage, setChatMessage] = useState(
     "I want to long BTC with 20U",
@@ -402,8 +407,9 @@ export function AgentChatDialog({
       setShowDepositSuccess(false);
       setShowOrderSuccess(false);
       setConfirmOrder(null);
+      setPanelView(initialView === "signals" ? "signals" : "home");
     }
-  }, [isOpen]);
+  }, [isOpen, initialView]);
 
   useEffect(() => {
     return () => {
@@ -561,6 +567,7 @@ export function AgentChatDialog({
       aria-hidden={!isOpen}
       role="dialog"
       aria-label="Trader DNA"
+      data-agent-surface="true"
       style={{
         position: "absolute",
         left: 0,
@@ -801,7 +808,10 @@ export function AgentChatDialog({
               signalSnapshot={signalSnapshot}
               fileAttachment={chatAttachment}
               onDraftDeposit={() => setDepositOpen(true)}
-              onSendOrder={(order) => setConfirmOrder(order)}
+              onViewPosition={() => {
+                onViewTradePositions?.();
+                onClose();
+              }}
               onPlaceAnother={() => {
                 setDraftDepositPhase("idle");
                 startChat("I want to long BTC with 20U");
@@ -1074,7 +1084,10 @@ export function AgentChatDialog({
               signalSnapshot={signalSnapshot}
               fileAttachment={chatAttachment}
               onDraftDeposit={() => setDepositOpen(true)}
-              onSendOrder={(order) => setConfirmOrder(order)}
+              onViewPosition={() => {
+                onViewTradePositions?.();
+                onClose();
+              }}
               onPlaceAnother={() => {
                 setDraftDepositPhase("idle");
                 startChat("I want to long BTC with 20U");

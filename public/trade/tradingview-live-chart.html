@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Live Chart</title>
+<style>
+  :root{
+    --bg:#0b0b10; --grid:#181820; --axis:#8a8a93;
+    --up:#26bd85; --down:#e0447b; --tab-active-bg:#2a2a30;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;width:100%;overflow:hidden;background:var(--bg)}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#d1d1d6;-webkit-font-smoothing:antialiased;
+  }
+  .app{
+    width:100%;height:100%;
+    background:var(--bg);overflow:hidden;
+    display:flex;flex-direction:column;
+  }
+  .toolbar{display:flex;align-items:center;padding:8px 12px;border-bottom:1px solid #14141a;flex-shrink:0;gap:6px}
+  .tabs{display:flex;gap:2px;overflow-x:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .right{display:flex;align-items:center;flex-shrink:0}
+  .tf{
+    font-size:15px;font-weight:600;color:#6f6f78;padding:6px 11px;border-radius:7px;
+    cursor:pointer;background:transparent;border:none;transition:.12s;line-height:1;white-space:nowrap;
+  }
+  .tf:hover{color:#c9c9d0}
+  .tf.active{color:#fff;background:var(--tab-active-bg)}
+  .tb-btn{
+    display:flex;align-items:center;gap:4px;color:#8a8a93;font-size:14px;font-weight:500;
+    padding:6px 8px;border-radius:7px;cursor:pointer;background:none;border:none;white-space:nowrap;
+  }
+  .tb-btn:hover{color:#c9c9d0;background:#16161c}
+  .tb-btn svg{width:17px;height:17px}
+  .caret{font-size:10px;opacity:.8}
+  .chart-wrap{position:relative;flex:1;min-height:0}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .price-head{
+    position:absolute;top:12px;left:14px;z-index:2;font-size:19px;font-weight:600;
+    letter-spacing:.2px;font-variant-numeric:tabular-nums;pointer-events:none;
+  }
+  .price-head .chg{font-size:19px;font-weight:600}
+  .tv-logo{
+    position:absolute;left:16px;bottom:40px;z-index:2;width:34px;height:34px;border-radius:50%;
+    background:#1c1c22;display:flex;align-items:center;justify-content:center;opacity:.9;
+  }
+  .settings{position:absolute;right:14px;bottom:38px;z-index:2;color:#8a8a93;cursor:pointer;width:22px;height:22px}
+
+  @media (max-width:600px){
+    .toolbar{padding:7px 8px;gap:3px}
+    .tf{font-size:13px;padding:5px 8px}
+    .tb-btn{font-size:12px;padding:5px 6px}
+    .price-head,.price-head .chg{font-size:15px}
+    .tv-logo{width:28px;height:28px;left:10px;bottom:36px}
+    .tv-logo svg{width:16px;height:16px}
+    .settings{width:19px;height:19px;right:10px;bottom:34px}
+  }
+  @media (max-width:380px){
+    .tf{font-size:12px;padding:5px 6px}
+    .price-head,.price-head .chg{font-size:13px}
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="toolbar" id="toolbar">
+      <div class="tabs">
+        <button class="tf" data-tf="1m" type="button">1m</button>
+        <button class="tf active" data-tf="15m" type="button">15m</button>
+        <button class="tf" data-tf="1h" type="button">1h</button>
+        <button class="tf" data-tf="4h" type="button">4h</button>
+        <button class="tf" data-tf="1D" type="button">1D</button>
+        <button class="tf" data-tf="1W" type="button">1W</button>
+        <button class="tb-btn" type="button" style="margin-left:6px">More <span class="caret">▼</span></button>
+      </div>
+      <div class="right">
+        <button class="tb-btn" type="button" aria-label="functions" style="font-style:italic;font-weight:600;font-size:17px">&fnof;<sub style="font-style:normal;font-size:11px">x</sub></button>
+        <button class="tb-btn" type="button" aria-label="indicators">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-8 4 5"/></svg>
+          <span class="caret">▼</span>
+        </button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="price-head" id="priceHead"></div>
+      <canvas id="c"></canvas>
+      <div class="tv-logo" aria-label="TradingView">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#d1d1d6"><rect x="2" y="14" width="4" height="7" rx="1"/><rect x="9" y="8" width="4" height="13" rx="1"/><path d="M16 3h6v3h-1.5v6h-3V6H16z"/></svg>
+      </div>
+      <svg class="settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="12,3 20,7.5 20,16.5 12,21 4,16.5 4,7.5"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/></svg>
+    </div>
+  </div>
+
+<script>
+const cv=document.getElementById('c'), ctx=cv.getContext('2d'), head=document.getElementById('priceHead');
+const UP='#26bd85', DOWN='#e0447b', AXIS='#8a8a93', GRID='#181820';
+const TF={'1m':1,'15m':15,'1h':60,'4h':240,'1D':1440,'1W':10080};
+let tfKey='15m', tfMin=TF[tfKey];
+
+let W=0,H=0,dpr=1;
+let R_AXIS=74, B_AXIS=30, axisFont=12, tagFont=12;
+function metrics(){
+  if(W<460){ R_AXIS=54; B_AXIS=26; axisFont=11; tagFont=11; }
+  else if(W<820){ R_AXIS=64; B_AXIS=28; axisFont=12; tagFont=12; }
+  else { R_AXIS=74; B_AXIS=30; axisFont=12; tagFont=12; }
+}
+function visibleCount(){ return W<460?34:(W<820?48:60); }
+
+function resize(){
+  dpr=window.devicePixelRatio||1;
+  const r=cv.getBoundingClientRect();
+  W=Math.max(1,r.width); H=Math.max(1,r.height);
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  metrics();
+}
+
+const BUF=64;
+let candles=[], price=59821.8, sessionOpen=59876.1;
+let startMs=Date.now()-BUF*tfMin*60000;
+function seed(){
+  candles=[]; let p=59300;
+  for(let i=0;i<BUF;i++){
+    const o=p, drift=(Math.random()-0.48)*220, c=o+drift;
+    const h=Math.max(o,c)+Math.random()*90, l=Math.min(o,c)-Math.random()*90;
+    candles.push({o,h,l,c,t:startMs+i*tfMin*60000}); p=c;
+  }
+  price=candles[BUF-1].c; sessionOpen=candles[BUF-30].o;
+}
+seed();
+
+let sMin=0,sMax=0,tMin=0,tMax=0;
+function targetScale(){
+  const vis=Math.min(candles.length,visibleCount());
+  let lo=Infinity,hi=-Infinity;
+  for(let i=candles.length-vis;i<candles.length;i++){ const k=candles[i]; if(k.l<lo)lo=k.l; if(k.h>hi)hi=k.h; }
+  const pad=(hi-lo)*0.12||100; tMin=lo-pad; tMax=hi+pad;
+}
+targetScale(); sMin=tMin; sMax=tMax;
+
+function niceStep(range){
+  const raw=range/6, pow=Math.pow(10,Math.floor(Math.log10(raw||1)));
+  for(const m of [1,2,2.5,5,10]){ if(pow*m>=raw) return pow*m; }
+  return pow*10;
+}
+
+let formT=0; const CANDLE_MS=4000; let last=performance.now(); let lastTick=0;
+function tickPrice(){
+  price+=(Math.random()-0.5)*26-(price-candles[candles.length-1].o)*0.002;
+  const cur=candles[candles.length-1];
+  cur.c=price; if(price>cur.h)cur.h=price; if(price<cur.l)cur.l=price;
+}
+function commitCandle(){
+  const prev=candles[candles.length-1];
+  candles.push({o:prev.c,h:prev.c,l:prev.c,c:prev.c,t:prev.t+tfMin*60000});
+  if(candles.length>BUF) candles.shift();
+  targetScale();
+}
+
+function fmt(n){ return n.toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function fmtTime(ms){ const d=new Date(ms); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  const plotW=W-R_AXIS, plotH=H-B_AXIS;
+  if(plotW<=0||plotH<=0) return;
+  sMin+=(tMin-sMin)*0.08; sMax+=(tMax-sMax)*0.08;
+  const y=v=>plotH-(v-sMin)/(sMax-sMin)*plotH;
+
+  const step=niceStep(sMax-sMin), first=Math.ceil(sMin/step)*step;
+  ctx.font=axisFont+'px -apple-system,Segoe UI,Roboto,sans-serif'; ctx.textBaseline='middle';
+  for(let v=first;v<sMax;v+=step){
+    const py=y(v);
+    ctx.strokeStyle=GRID; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(0,py+0.5); ctx.lineTo(plotW,py+0.5); ctx.stroke();
+    ctx.fillStyle=AXIS; ctx.textAlign='left'; ctx.fillText(fmt(v),plotW+7,py);
+  }
+
+  const vis=Math.min(candles.length,visibleCount());
+  const start=candles.length-vis;
+  const slot=plotW/vis, bw=Math.max(2,slot*0.62);
+  for(let i=0;i<vis;i++){
+    const k=candles[start+i], cx=i*slot+slot/2, up=k.c>=k.o, col=up?UP:DOWN;
+    ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(Math.round(cx)+0.5,y(k.h)); ctx.lineTo(Math.round(cx)+0.5,y(k.l)); ctx.stroke();
+    const yo=y(k.o),yc=y(k.c), top=Math.min(yo,yc), bh=Math.max(1,Math.abs(yc-yo));
+    ctx.fillRect(cx-bw/2,top,bw,bh);
+  }
+
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  const labelEvery=Math.max(4,Math.round(vis/(W<460?5:9)));
+  for(let i=vis-1;i>=0;i-=labelEvery){
+    const cx=i*slot+slot/2;
+    ctx.strokeStyle=GRID; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(Math.round(cx)+0.5,0); ctx.lineTo(Math.round(cx)+0.5,plotH); ctx.stroke();
+    ctx.fillStyle=AXIS; ctx.fillText(fmtTime(candles[start+i].t),cx,plotH+7);
+  }
+
+  const cp=candles[candles.length-1].c, cpy=y(cp);
+  const tagCol=cp>=candles[candles.length-1].o?UP:DOWN;
+  ctx.strokeStyle=tagCol; ctx.lineWidth=1; ctx.setLineDash([2,3]);
+  ctx.beginPath(); ctx.moveTo(0,Math.round(cpy)+0.5); ctx.lineTo(plotW,Math.round(cpy)+0.5); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle=tagCol; ctx.fillRect(plotW,cpy-11,R_AXIS,22);
+  ctx.fillStyle='#fff'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.font='600 '+tagFont+'px -apple-system,Segoe UI,Roboto,sans-serif';
+  ctx.fillText(fmt(cp),plotW+7,cpy);
+
+  const chg=cp-sessionOpen, pct=chg/sessionOpen*100, hcol=chg>=0?UP:DOWN, sign=chg>=0?'+':'\u2212';
+  head.innerHTML=`<span style="color:${hcol}">${fmt(cp)}</span> `+
+    `<span class="chg" style="color:${hcol}">${sign}${fmt(Math.abs(chg))} (${sign}${Math.abs(pct).toFixed(2)}%)</span>`;
+}
+
+function loop(now){
+  last=now;
+  /* 1s price tick — calmer K-line / headline updates */
+  if(now-lastTick>=1000){
+    lastTick=now;
+    tickPrice();
+    formT+=1000/CANDLE_MS;
+    if(formT>=1){ formT=0; commitCandle(); }
+  }
+  draw(); requestAnimationFrame(loop);
+}
+
+document.getElementById('toolbar').addEventListener('click',e=>{
+  const b=e.target.closest('.tf'); if(!b) return;
+  document.querySelectorAll('.tf').forEach(t=>t.classList.remove('active'));
+  b.classList.add('active');
+  tfKey=b.dataset.tf; tfMin=TF[tfKey];
+  startMs=Date.now()-BUF*tfMin*60000;
+  seed(); targetScale(); sMin=tMin; sMax=tMax; formT=0;
+});
+
+const ro=new ResizeObserver(()=>resize());
+ro.observe(cv.parentElement||document.body);
+window.addEventListener('resize', resize);
+resize(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

@@ -610,6 +610,7 @@ export function DepositSelectModal({
       role="dialog"
       aria-modal="true"
       aria-label="Deposit to Dexless Account"
+      data-agent-surface="true"
       style={{
         position: "fixed",
         inset: 0,
