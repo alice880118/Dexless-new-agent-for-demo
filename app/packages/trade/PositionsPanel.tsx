@@ -514,34 +514,26 @@ function DesktopTabBar({
               userSelect: "none",
             }}
           >
-            <span
+            <img
+              src={
+                hideOther
+                  ? "/trade/order/select.svg"
+                  : "/trade/order/unselect.svg"
+              }
+              alt=""
+              width={16}
+              height={16}
+              draggable={false}
               style={{
+                display: "block",
                 width: 16,
                 height: 16,
-                borderRadius: 4,
-                border: hideOther
-                  ? "none"
-                  : "1.5px solid rgba(255,255,255,0.35)",
-                background: hideOther ? "#DBFD5C" : "transparent",
-                boxSizing: "border-box",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
+                minWidth: 16,
+                minHeight: 16,
                 flexShrink: 0,
+                objectFit: "contain",
               }}
-            >
-              {hideOther ? (
-                <svg width="9" height="7" viewBox="0 0 10 8" fill="none" aria-hidden>
-                  <path
-                    d="M1 4L3.5 6.5L9 1"
-                    stroke="#fff"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              ) : null}
-            </span>
+            />
             <input
               type="checkbox"
               checked={hideOther}
@@ -1501,30 +1493,22 @@ function MobilePositionCards({
             userSelect: "none",
           }}
         >
-          <span
+          <img
+            src="/trade/order/select.svg"
+            alt=""
+            width={16}
+            height={16}
+            draggable={false}
             style={{
+              display: "block",
               width: 16,
               height: 16,
-              borderRadius: 4,
-              border: "none",
-              background: "#DBFD5C",
-              boxSizing: "border-box",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
+              minWidth: 16,
+              minHeight: 16,
               flexShrink: 0,
+              objectFit: "contain",
             }}
-          >
-            <svg width="9" height="7" viewBox="0 0 10 8" fill="none" aria-hidden>
-              <path
-                d="M1 4L3.5 6.5L9 1"
-                stroke="#fff"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
+          />
           <input
             type="checkbox"
             defaultChecked

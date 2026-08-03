@@ -1,5 +1,12 @@
 import { createPortal } from "react-dom";
-import { COLORS, FONT } from "../nav/design-system";
+import { FONT } from "../nav/design-system";
+import {
+  DrawerDragHandle,
+  DrawerOptionRow,
+  DRAWER_PAD,
+  DRAWER_SHELL,
+  DRAWER_TITLE,
+} from "./MobileDrawerChrome";
 
 export type MobileOrderType =
   | "limit"
@@ -10,45 +17,54 @@ export type MobileOrderType =
   | "scaled"
   | "trailing_stop";
 
+/** Figma 7541:66775 order — Limit → Market → Post Only → Stop Limit → … */
 export const MOBILE_ORDER_TYPES: {
   id: MobileOrderType;
   label: string;
   desc: string;
+  icon: string;
 }[] = [
   {
     id: "limit",
     label: "Limit",
     desc: "Buy or sell at a specified price or better",
+    icon: "/trade/order/types/limit.svg",
   },
   {
     id: "market",
     label: "Market",
     desc: "Buy or sell immediately at the best available market price",
+    icon: "/trade/order/types/market.svg",
   },
   {
     id: "post_only",
     label: "Post Only",
     desc: "Maker only. Canceled if it would execute immediately",
+    icon: "/trade/order/types/post-only.svg",
   },
   {
     id: "stop_limit",
     label: "Stop Limit",
     desc: "Place a limit order when the trigger price is reached",
+    icon: "/trade/order/types/stop-limit.svg",
   },
   {
     id: "stop_market",
     label: "Stop Market",
     desc: "Place a market order when the trigger price is reached",
+    icon: "/trade/order/types/stop-market.svg",
   },
   {
     id: "scaled",
     label: "Scaled",
     desc: "Place multiple limit orders within a specified price range",
+    icon: "/trade/order/types/scaled.svg",
   },
   {
     id: "trailing_stop",
     label: "Trailing Stop",
     desc: "Track favorable price moves and trigger on a set reversal",
+    icon: "/trade/order/types/trailing-stop.svg",
   },
 ];
 
@@ -59,7 +75,7 @@ type OrderTypeDrawerProps = {
   onClose: () => void;
 };
 
-/** Bottom drawer — matches project chain/deposit drawer pattern + Figma 7432:48887 */
+/** Bottom drawer — Figma 7541:66775 */
 export function OrderTypeDrawer({
   open,
   value,
@@ -107,22 +123,24 @@ export function OrderTypeDrawer({
       <div
         role="dialog"
         aria-label="Order Type"
+        className="trade-drag-scroll"
         style={{
+          ...DRAWER_SHELL,
           position: "relative",
           width: "100%",
           maxHeight: "85vh",
-          background: "#0c0d10",
-          borderTopLeftRadius: 4,
-          borderTopRightRadius: 4,
-          boxSizing: "border-box",
-          padding: "20px 20px calc(48px + env(safe-area-inset-bottom, 0px))",
+          padding: DRAWER_PAD,
           display: "flex",
           flexDirection: "column",
           gap: 14,
-          animation: "orderTypeDrawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both",
-          overflow: "hidden",
+          animation:
+            "orderTypeDrawerIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both",
+          overflow: "auto",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
+        <DrawerDragHandle />
         <div
           style={{
             display: "flex",
@@ -131,108 +149,82 @@ export function OrderTypeDrawer({
             flexShrink: 0,
           }}
         >
-          <span
-            style={{
-              fontFamily: FONT,
-              fontSize: 16,
-              fontWeight: 600,
-              lineHeight: "20px",
-              color: "#ffffff",
-            }}
-          >
-            Order Type
-          </span>
+          <span style={DRAWER_TITLE}>Order Type</span>
         </div>
+
         <div
           style={{
             display: "flex",
             flexDirection: "column",
             gap: 12,
-            overflow: "hidden",
+            width: "100%",
           }}
         >
-          {MOBILE_ORDER_TYPES.map((t, i) => {
+          {MOBILE_ORDER_TYPES.map((t) => {
             const selected = t.id === value;
             return (
-              <div key={t.id}>
-                {i > 0 ? (
-                  <div
-                    style={{
-                      height: 1,
-                      background: "rgba(255,255,255,0.08)",
-                      marginBottom: 12,
-                    }}
-                  />
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelect(t.id);
-                    onClose();
-                  }}
+              <DrawerOptionRow
+                key={t.id}
+                selected={selected}
+                onClick={() => {
+                  onSelect(t.id);
+                  onClose();
+                }}
+              >
+                <img
+                  src={t.icon}
+                  alt=""
+                  width={24}
+                  height={18}
+                  draggable={false}
                   style={{
+                    display: "block",
+                    width: 24,
+                    height: 18,
+                    minWidth: 24,
+                    minHeight: 18,
+                    flexShrink: 0,
+                    objectFit: "contain",
+                    objectPosition: "center",
+                  }}
+                />
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
                     display: "flex",
-                    alignItems: "center",
+                    flexDirection: "column",
                     gap: 4,
-                    width: "100%",
-                    padding: 8,
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    boxSizing: "border-box",
                   }}
                 >
-                  <div
+                  <span
                     style={{
-                      flex: 1,
-                      minWidth: 0,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 4,
+                      fontFamily: FONT,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      lineHeight: "18px",
+                      letterSpacing: "-0.42px",
+                      color: "#ffffff",
+                      fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    <span
-                      style={{
-                        fontFamily: FONT,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        lineHeight: "18px",
-                        letterSpacing: "-0.42px",
-                        color: "#ffffff",
-                      }}
-                    >
-                      {t.label}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: FONT,
-                        fontSize: 11,
-                        fontWeight: 500,
-                        lineHeight: "16px",
-                        letterSpacing: "-0.33px",
-                        color: COLORS.white40,
-                      }}
-                    >
-                      {t.desc}
-                    </span>
-                  </div>
-                  {selected ? (
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 5,
-                        height: 5,
-                        borderRadius: 999,
-                        background: "#dbfd5c",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ) : (
-                    <span style={{ width: 5, flexShrink: 0 }} />
-                  )}
-                </button>
-              </div>
+                    {t.label}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: FONT,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      lineHeight: "18px",
+                      letterSpacing: "-0.36px",
+                      color: "rgba(255,255,255,0.5)",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {t.desc}
+                  </span>
+                </div>
+              </DrawerOptionRow>
             );
           })}
         </div>

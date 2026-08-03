@@ -2,7 +2,9 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
+import { DrawerDragHandle } from "./MobileDrawerChrome";
 import { PctSlider, qtyFromPct } from "./PctSlider";
+import { PnlModeField, type PnlFieldMode } from "./PnlModeField";
 import { TRADE_COLORS } from "./tradeLayout";
 import type { TpSlMode, TpSlSubmitPayload } from "./tpSlTypes";
 
@@ -25,8 +27,8 @@ type TpSlDrawerProps = {
   variant?: "order" | "position";
 };
 
-const CHECKED = "/trade/tpsl/checkbox-checked.svg";
-const UNCHECKED = "/trade/tpsl/checkbox-empty.svg";
+const CHECKED = "/trade/order/select.svg";
+const UNCHECKED = "/trade/order/unselect.svg";
 const CARET = "/trade/order/stop-limit-caret.svg";
 
 /** Demo position — matches TP/SL sheet header */
@@ -47,6 +49,11 @@ function parsePrice(raw: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
+function parseSigned(raw: string): number | null {
+  const n = Number(String(raw).replace(/,/g, "").trim());
+  return Number.isFinite(n) ? n : null;
+}
+
 function formatPnl(n: number): string {
   return Math.abs(n) >= 100 ? n.toFixed(2) : n.toFixed(2);
 }
@@ -56,6 +63,11 @@ function formatPriceLabel(n: number): string {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   })}USDC`;
+}
+
+function kindColor(n: number | null | undefined): string | undefined {
+  if (n == null) return undefined;
+  return n >= 0 ? BUY : SELL;
 }
 
 function calcPnl(exit: number, isBuy: boolean, qty: number): number {
@@ -75,7 +87,6 @@ const MOBILE_MAX_H = "min(90dvh, calc(100dvh - 48px), calc(100vh - 48px))";
 
 const shellBase: CSSProperties = {
   background: "#0c0d10",
-  border: "1px solid #383838",
   boxSizing: "border-box",
   fontFamily: FONT,
   display: "flex",
@@ -105,8 +116,11 @@ export function TpSlDrawer({
   const [slLimit, setSlLimit] = useState(false);
   const [tpTrigger, setTpTrigger] = useState("");
   const [tpOrder, setTpOrder] = useState("");
+  const [tpPnl, setTpPnl] = useState("");
   const [slTrigger, setSlTrigger] = useState("");
   const [slOrder, setSlOrder] = useState("");
+  const [slPnl, setSlPnl] = useState("");
+  const [pnlMode, setPnlMode] = useState<PnlFieldMode>("pnl");
   const [qtyPct, setQtyPct] = useState(34);
   const [quantity, setQuantity] = useState(() =>
     qtyFromPct(String(POS_MAX_QTY), 34),
@@ -124,8 +138,11 @@ export function TpSlDrawer({
     setSlLimit(Boolean(initialValues?.slLimit));
     setTpTrigger(initialValues?.tpTrigger ?? "");
     setTpOrder(initialValues?.tpOrder ?? "");
+    setTpPnl(initialValues?.tpPnl ?? "");
     setSlTrigger(initialValues?.slTrigger ?? "");
     setSlOrder(initialValues?.slOrder ?? "");
+    setSlPnl(initialValues?.slPnl ?? "");
+    setPnlMode("pnl");
     if (initialValues?.quantity) {
       setQuantity(initialValues.quantity);
       const max = POS_MAX_QTY;
@@ -160,11 +177,13 @@ export function TpSlDrawer({
   const tpRoi = tpPnlNum != null ? calcRoi(tpPnlNum, qtyNum) : null;
   const slRoi = slPnlNum != null ? calcRoi(slPnlNum, qtyNum) : null;
 
-  const tpPnlDisplay = tpPnlNum != null ? formatPnl(tpPnlNum) : "";
-  const slPnlDisplay = slPnlNum != null ? formatPnl(slPnlNum) : "";
+  const tpPnlDisplay =
+    tpPnl.trim() || (tpPnlNum != null ? formatPnl(tpPnlNum) : "");
+  const slPnlDisplay =
+    slPnl.trim() || (slPnlNum != null ? formatPnl(slPnlNum) : "");
 
-  const totalTp = tpPnlNum;
-  const totalSl = slPnlNum;
+  const totalTp = parseSigned(tpPnl) ?? tpPnlNum;
+  const totalSl = parseSigned(slPnl) ?? slPnlNum;
   const riskReward =
     totalTp != null && totalSl != null && Math.abs(totalSl) > 0
       ? Math.abs(totalTp) / Math.abs(totalSl)
@@ -204,7 +223,8 @@ export function TpSlDrawer({
     <div
       style={{
         ...shellBase,
-        borderRadius: isMobile ? "8px 8px 0 0" : 8,
+        borderRadius: isMobile ? "4px 4px 0 0" : 8,
+        border: "none",
         maxWidth: isMobile ? undefined : 420,
         maxHeight: isMobile ? MOBILE_MAX_H : DESKTOP_MAX_H,
         height: isMobile ? undefined : "auto",
@@ -212,25 +232,7 @@ export function TpSlDrawer({
       onClick={(e) => e.stopPropagation()}
     >
       {isMobile ? (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: 20,
-            flexShrink: 0,
-          }}
-        >
-          <span
-            style={{
-              width: 40,
-              height: 4,
-              borderRadius: 999,
-              background: "#313338",
-              display: "block",
-            }}
-          />
-        </div>
+        <DrawerDragHandle />
       ) : (
         <div
           style={{
@@ -319,6 +321,7 @@ export function TpSlDrawer({
           WebkitOverflowScrolling: "touch",
           display: "block",
           scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
         <div
@@ -559,9 +562,13 @@ export function TpSlDrawer({
               showLimitToggle={!isFull}
               showOrderPrice={showTpOrder}
               trigger={tpTrigger}
-              pnl={tpPnlDisplay}
+              pnl={tpPnl}
+              onPnlChange={setTpPnl}
+              pnlMode={pnlMode}
+              onPnlModeChange={setPnlMode}
+              pnlModeSelectable
               pnlColor={
-                tpPnlNum == null ? undefined : tpPnlNum >= 0 ? BUY : SELL
+                kindColor(parseSigned(tpPnl.trim() ? tpPnl : tpPnlDisplay) ?? tpPnlNum)
               }
               order={tpOrder}
               onTrigger={setTpTrigger}
@@ -573,7 +580,6 @@ export function TpSlDrawer({
               orderPlaceholder={
                 isPosition ? "Order price (USDC)" : "Order price/Limit (USDC)"
               }
-              pnlPlaceholder={isPosition ? "PnL (USDC)" : "PnL"}
             />
 
             <TpSlSection
@@ -583,9 +589,13 @@ export function TpSlDrawer({
               showLimitToggle={!isFull}
               showOrderPrice={showSlOrder}
               trigger={slTrigger}
-              pnl={slPnlDisplay}
+              pnl={slPnl}
+              onPnlChange={setSlPnl}
+              pnlMode={pnlMode}
+              onPnlModeChange={setPnlMode}
+              pnlModeSelectable
               pnlColor={
-                slPnlNum == null ? undefined : slPnlNum >= 0 ? BUY : SELL
+                kindColor(parseSigned(slPnl.trim() ? slPnl : slPnlDisplay) ?? slPnlNum)
               }
               order={slOrder}
               onTrigger={setSlTrigger}
@@ -597,7 +607,6 @@ export function TpSlDrawer({
               orderPlaceholder={
                 isPosition ? "Order price (USDC)" : "Order price/Limit (USDC)"
               }
-              pnlPlaceholder={isPosition ? "PnL (USDC)" : "PnL"}
             />
 
             {isPosition && !isFull ? (
@@ -805,6 +814,17 @@ export function TpSlDrawer({
           }
         `}</style>
       ) : null}
+      <style>{`
+        .trade-drag-scroll {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .trade-drag-scroll::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+      `}</style>
       <div
         style={{
           width: "100%",
@@ -1082,6 +1102,10 @@ function TpSlSection({
   showOrderPrice,
   trigger,
   pnl,
+  onPnlChange,
+  pnlMode = "pnl",
+  onPnlModeChange,
+  pnlModeSelectable = false,
   pnlColor,
   order,
   onTrigger,
@@ -1091,7 +1115,6 @@ function TpSlSection({
   helperRoi,
   orderTypeLabel,
   orderPlaceholder = "Order price/Limit (USDC)",
-  pnlPlaceholder = "PnL",
 }: {
   kind: "tp" | "sl";
   limit: boolean;
@@ -1100,6 +1123,10 @@ function TpSlSection({
   showOrderPrice: boolean;
   trigger: string;
   pnl: string;
+  onPnlChange?: (v: string) => void;
+  pnlMode?: PnlFieldMode;
+  onPnlModeChange?: (m: PnlFieldMode) => void;
+  pnlModeSelectable?: boolean;
   pnlColor?: string;
   order: string;
   onTrigger: (v: string) => void;
@@ -1109,7 +1136,6 @@ function TpSlSection({
   helperRoi: number | null;
   orderTypeLabel: string;
   orderPlaceholder?: string;
-  pnlPlaceholder?: string;
 }) {
   const isTp = kind === "tp";
   const accent = isTp ? BUY : SELL;
@@ -1164,9 +1190,18 @@ function TpSlSection({
               <img
                 src={limit ? CHECKED : UNCHECKED}
                 alt=""
-                width={20}
-                height={20}
-                style={{ display: "block", width: 20, height: 20 }}
+                width={16}
+                height={16}
+                draggable={false}
+                style={{
+                  display: "block",
+                  width: 16,
+                  height: 16,
+                  minWidth: 16,
+                  minHeight: 16,
+                  objectFit: "contain",
+                  flexShrink: 0,
+                }}
               />
               <span
                 style={{
@@ -1191,13 +1226,23 @@ function TpSlSection({
               value={trigger}
               onChange={onTrigger}
             />
-            <FilledField
-              label={pnlPlaceholder}
-              placeholder={pnlPlaceholder}
-              value={pnl}
-              valueColor={pnlColor}
-              readOnly
-            />
+            {pnlModeSelectable && onPnlChange && onPnlModeChange ? (
+              <PnlModeField
+                mode={pnlMode}
+                onModeChange={onPnlModeChange}
+                value={pnl}
+                onChange={onPnlChange}
+                valueColor={pnlColor}
+              />
+            ) : (
+              <FilledField
+                label="PnL"
+                placeholder="PnL"
+                value={pnl}
+                valueColor={pnlColor}
+                readOnly
+              />
+            )}
           </div>
           {showOrderPrice ? (
             <div style={{ display: "flex", gap: 4, width: "100%" }}>

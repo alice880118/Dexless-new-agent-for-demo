@@ -705,7 +705,7 @@ export function SignalDetailView({
     ? data.takeProfitPct
     : data.takeProfitPct.replace("+", "-");
 
-  const cardSurface = "rgba(255,255,255,0.05)";
+  const cardSurface = "rgba(255,255,255,0.05)"; /* 5% #FFFFFF */
 
   return (
     <div
@@ -718,11 +718,11 @@ export function SignalDetailView({
         boxSizing: "border-box",
         fontFamily: FONT,
         overflow: "hidden",
-        background: "#1b1b1b",
+        background: "#131519",
         padding: "12px 13px 0",
       }}
     >
-      {/* One continuous card: sticky BTC nav + scroll body (no seam when scrolled) */}
+      {/* One continuous card — 5% white surface */}
       <div
         style={{
           flex: 1,
@@ -734,6 +734,7 @@ export function SignalDetailView({
           background: cardSurface,
           overflow: "hidden",
           boxSizing: "border-box",
+          isolation: "isolate",
         }}
       >
         {/* Fixed header: back + symbol — same surface as Price Structure */}
@@ -742,7 +743,7 @@ export function SignalDetailView({
             flexShrink: 0,
             padding: "12px 12px 0",
             boxSizing: "border-box",
-            background: cardSurface,
+            background: "transparent",
             zIndex: 2,
           }}
         >
@@ -842,7 +843,7 @@ export function SignalDetailView({
               scrollbarWidth: "none",
               touchAction: "pan-y",
               overscrollBehavior: "contain",
-              background: cardSurface,
+              background: "transparent",
               display: "flex",
               flexDirection: "column",
               gap: 20,
@@ -1089,8 +1090,9 @@ export function SignalDetailView({
               bottom: 0,
               padding: "40px 16px 16px",
               boxSizing: "border-box",
+              /* Soft darken over the 5% white card — do not paint solid #1b1b1b */
               background:
-                "linear-gradient(180deg, rgba(27,27,27,0) 0%, #1b1b1b 45%, #1b1b1b 100%)",
+                "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.55) 100%)",
               zIndex: 3,
               pointerEvents: "none",
             }}

@@ -105,8 +105,19 @@ export function TpSlEstimatePopover({
 }: TpSlEstimatePopoverProps) {
   const isLong = kind === "tp";
   const accent = isLong ? BUY : SELL;
-  const showPnl = isOffsetMode(mode);
+  const showOffsetTip = isOffsetMode(mode);
+  const showPriceTip = mode === "price";
   const est = computeTpSlEstimate(mode, kind, value);
+
+  /** Price-mode Est. PnL — 盈綠／虧粉 by sign */
+  const pricePnlNum = Number(
+    String(est.pnlLabel).replace(/[^0-9.\-]/g, ""),
+  );
+  const pricePnlLabel = Number.isFinite(pricePnlNum)
+    ? `${pricePnlNum < 0 ? "-" : ""}${Math.abs(pricePnlNum).toFixed(2)} USDC`
+    : est.pnlLabel;
+  const pricePnlColor =
+    Number.isFinite(pricePnlNum) && pricePnlNum < 0 ? SELL : BUY;
 
   const row = (label: string, val: string, valColor: string) => (
     <div
@@ -119,7 +130,7 @@ export function TpSlEstimatePopover({
     >
       <span
         style={{
-          width: 45,
+          width: label === "Price" ? 45 : undefined,
           flexShrink: 0,
           fontFamily: FONT,
           fontSize: 12,
@@ -181,11 +192,16 @@ export function TpSlEstimatePopover({
 
   return (
     <div style={shell} aria-hidden>
-      {showPnl ? (
+      {showOffsetTip ? (
         <>
           {row("Price", est.priceLabel, "rgba(255,255,255,0.9)")}
           {row("Est. ROI", est.roiLabel, accent)}
           {row("Est. PnL", est.pnlLabel, accent)}
+        </>
+      ) : showPriceTip ? (
+        <>
+          {row("Est. PnL", pricePnlLabel, pricePnlColor)}
+          {row("Price", est.priceLabel, "rgba(255,255,255,0.9)")}
         </>
       ) : (
         <>

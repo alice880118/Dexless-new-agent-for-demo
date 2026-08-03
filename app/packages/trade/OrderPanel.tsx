@@ -2,6 +2,15 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { createPortal } from "react-dom";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { ACCOUNT, MARKET } from "./demoData";
+import { OrderConfirmModal, type OrderConfirmData } from "./OrderConfirmModal";
+import { AdvancedGearIcon } from "./AdvancedGearIcon";
+import {
+  UnitPreferenceDrawer,
+  qtyFieldLabel,
+  qtyPrefIsQuote,
+  qtyUnitLabel,
+  type QtyUnitPref,
+} from "./UnitPreferenceDrawer";
 import { PctSlider, qtyFromPct } from "./PctSlider";
 import { SignalBarsIcon } from "./SignalBarsIcon";
 import { TRADE_COLORS } from "./tradeLayout";
@@ -14,6 +23,7 @@ import {
 } from "./TpSlEstimatePopover";
 import {
   TpSlSettingsPicker,
+  normalizeSlPnlInput,
   tpSlFieldLabel,
   tpSlModeUnit,
   type TpSlInputMode,
@@ -49,6 +59,119 @@ function Chevron({ size = 7 }: { size?: number }) {
   );
 }
 
+/** Same as MobileOrderPanel Cross/100X chevron — square 14×14, not stretched */
+function MenuChevron({ size = 14 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 14 14"
+      fill="none"
+      aria-hidden
+      style={{
+        display: "block",
+        width: size,
+        height: size,
+        minWidth: size,
+        minHeight: size,
+        flexShrink: 0,
+      }}
+    >
+      <path
+        d="M3.5 5.25L7 8.75L10.5 5.25"
+        stroke="rgba(255,255,255,0.5)"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+type MarginMode = "cross" | "isolated";
+type TpSlPosMode = "full" | "partial";
+
+function MarginModeSelect({
+  value,
+  onChange,
+}: {
+  value: MarginMode;
+  onChange: (v: MarginMode) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label="Margin mode"
+      onClick={() =>
+        onChange(value === "cross" ? "isolated" : "cross")
+      }
+      style={{
+        width: 78,
+        height: 24,
+        padding: "2px 8px",
+        borderRadius: 6,
+        border: "none",
+        background: "rgba(255,255,255,0.1)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 4,
+        cursor: "pointer",
+        boxSizing: "border-box",
+        fontFamily: FONT,
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: "18px",
+        color: "rgba(255,255,255,0.8)",
+        flexShrink: 0,
+      }}
+    >
+      {value === "cross" ? "Cross" : "Isolated"}
+      <MenuChevron size={14} />
+    </button>
+  );
+}
+
+function TpSlPositionSelect({
+  value,
+  onChange,
+}: {
+  value: TpSlPosMode;
+  onChange: (v: TpSlPosMode) => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label="TP/SL position mode"
+      onClick={() => onChange(value === "full" ? "partial" : "full")}
+      style={{
+        width: "fit-content",
+        height: 24,
+        padding: "2px 8px",
+        borderRadius: 6,
+        border: "none",
+        background: "rgba(255,255,255,0.1)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        gap: 12,
+        cursor: "pointer",
+        boxSizing: "border-box",
+        fontFamily: FONT,
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: "18px",
+        color: "rgba(255,255,255,0.8)",
+        flexShrink: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {value === "full" ? "Full position" : "Partial position"}
+      <MenuChevron size={14} />
+    </button>
+  );
+}
+
 function RadioDot({ selected }: { selected: boolean }) {
   return (
     <span
@@ -69,32 +192,22 @@ function RadioDot({ selected }: { selected: boolean }) {
 
 function CheckBox({ checked }: { checked: boolean }) {
   return (
-    <span
+    <img
+      src={checked ? "/trade/order/select.svg" : "/trade/order/unselect.svg"}
+      alt=""
+      width={16}
+      height={16}
+      draggable={false}
       style={{
+        display: "block",
         width: 16,
         height: 16,
-        borderRadius: 4,
-        border: checked ? "none" : "1.5px solid rgba(255,255,255,0.35)",
-        background: checked ? "#DBFD5C" : "transparent",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxSizing: "border-box",
+        minWidth: 16,
+        minHeight: 16,
         flexShrink: 0,
+        objectFit: "contain",
       }}
-    >
-      {checked ? (
-        <svg width="9" height="7" viewBox="0 0 10 8" fill="none" aria-hidden>
-          <path
-            d="M1 4L3.5 6.5L9 1"
-            stroke="#fff"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
-    </span>
+    />
   );
 }
 
@@ -122,8 +235,10 @@ function TpSlPriceField({
   );
   const filled = value.trim().length > 0;
   const showLabel = focused || filled;
+  const useAccent = mode !== "price";
   const accent = kind === "tp" ? TPSL_LONG : TPSL_SHORT;
-  const valueColor = filled || focused ? accent : "rgba(255,255,255,0.8)";
+  const valueColor =
+    useAccent && (filled || focused) ? accent : "rgba(255,255,255,0.8)";
 
   useEffect(() => {
     if (!focused) {
@@ -326,10 +441,61 @@ export function OrderPanel({
   const [slPrice, setSlPrice] = useState("");
   const [reduceOnly, setReduceOnly] = useState(false);
   const [tif, setTif] = useState<"post" | "ioc" | "fok" | null>(null);
+  const [unitPrefOpen, setUnitPrefOpen] = useState(false);
+  const [qtyUnitPref, setQtyUnitPref] = useState<QtyUnitPref>("base");
   const [orderConfirm, setOrderConfirm] = useState(true);
+  const [orderConfirmOpen, setOrderConfirmOpen] = useState(false);
+  const [disableOrderConfirmPref, setDisableOrderConfirmPref] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [marginMode, setMarginMode] = useState<MarginMode>("cross");
+  const [tpSlPosMode, setTpSlPosMode] = useState<TpSlPosMode>("full");
+
+  const orderTypeLabel =
+    orderType === "limit"
+      ? "Limit"
+      : orderType === "market"
+        ? "Market"
+        : "Stop Limit";
+
+  const buildConfirmData = (): OrderConfirmData => ({
+    symbol: MARKET.symbol,
+    base: MARKET.base,
+    iconSrc: "/onboarding/chains/ethereum.png",
+    orderTypeLabel,
+    side,
+    quantity: qty || "0",
+    price: orderType === "market" ? "Market" : price || MARKET.markPrice,
+    quote: MARKET.quote,
+    estTotal: orderSize || "0",
+  });
+
+  const handleCtaClick = () => {
+    if (!walletConnected) {
+      onSubmit?.();
+      return;
+    }
+    if (orderConfirm) {
+      setDisableOrderConfirmPref(false);
+      setOrderConfirmOpen(true);
+      return;
+    }
+    onSubmit?.();
+  };
 
   const isBuy = side === "buy";
+  const markPx =
+    Number(String(MARKET.markPrice).replace(/,/g, "")) || 1;
+  const quoteInput = qtyPrefIsQuote(qtyUnitPref) ? orderSize : qty;
+  const quoteNum = Number(String(quoteInput).replace(/,/g, "")) || 0;
+  const qtyAsBase = qtyPrefIsQuote(qtyUnitPref)
+    ? quoteNum / markPx
+    : Number(String(qty).replace(/,/g, "")) || 0;
+  const qtyBaseLabel =
+    qtyAsBase > 0
+      ? qtyAsBase >= 1
+        ? qtyAsBase.toLocaleString("en-US", { maximumFractionDigits: 4 })
+        : qtyAsBase.toFixed(5).replace(/0+$/, "").replace(/\.$/, "")
+      : "0";
   const ctaLabel = !walletConnected
     ? "Login"
     : isBuy
@@ -433,42 +599,7 @@ export function OrderPanel({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button
-              type="button"
-              style={{
-                width: 78,
-                height: 24,
-                padding: "2px 8px",
-                borderRadius: 6,
-                border: "none",
-                background: "rgba(255,255,255,0.1)",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
-                boxSizing: "border-box",
-                fontFamily: FONT,
-                fontSize: 12,
-                fontWeight: 600,
-                lineHeight: "18px",
-                color: "rgba(255,255,255,0.8)",
-              }}
-            >
-              Cross
-              <img
-                src="/trade/order/chevron-down.svg"
-                alt=""
-                width={16}
-                height={16}
-                style={{
-                  display: "block",
-                  width: 16,
-                  height: 16,
-                  flexShrink: 0,
-                  objectFit: "contain",
-                }}
-              />
-            </button>
+            <MarginModeSelect value={marginMode} onChange={setMarginMode} />
             <button
               type="button"
               style={{
@@ -491,19 +622,7 @@ export function OrderPanel({
               }}
             >
               75x
-              <img
-                src="/trade/order/chevron-down.svg"
-                alt=""
-                width={16}
-                height={16}
-                style={{
-                  display: "block",
-                  width: 16,
-                  height: 16,
-                  flexShrink: 0,
-                  objectFit: "contain",
-                }}
-              />
+              <MenuChevron size={14} />
             </button>
           </div>
           {walletConnected ? (
@@ -602,42 +721,44 @@ export function OrderPanel({
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            gap: 9,
+            alignItems: "flex-start",
+            justifyContent: "space-between",
             width: "100%",
+            gap: 8,
+            position: "relative",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-              gap: 8,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {(
-                [
-                  { id: "limit", label: "Limit" },
-                  { id: "market", label: "Market" },
-                  { id: "stop", label: "Stop Limit" },
-                ] as const
-              ).map((t) => {
-                const active = orderType === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setOrderType(t.id)}
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
+            {(
+              [
+                { id: "limit", label: "Limit" },
+                { id: "market", label: "Market" },
+                { id: "stop", label: "Stop Limit" },
+              ] as const
+            ).map((t) => {
+              const active = orderType === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setOrderType(t.id)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    padding: 0,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    flexDirection: "column",
+                    alignItems: "stretch",
+                    gap: 9,
+                    fontFamily: FONT,
+                  }}
+                >
+                  <span
                     style={{
-                      border: "none",
-                      background: "transparent",
-                      padding: 0,
-                      cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
-                      gap: 4,
+                      gap: 0,
                       fontFamily: FONT,
                       fontSize: 12,
                       fontWeight: 600,
@@ -645,6 +766,7 @@ export function OrderPanel({
                       color: active
                         ? "rgba(255,255,255,0.9)"
                         : "rgba(255,255,255,0.5)",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {t.label}
@@ -659,59 +781,59 @@ export function OrderPanel({
                           width: 7,
                           height: 5,
                           flexShrink: 0,
+                          marginLeft: 4,
                         }}
                       />
                     ) : null}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              aria-label="Open signals"
-              onClick={() => onOpenAgentSignals?.()}
-              style={{
-                width: 24,
-                height: 24,
-                borderRadius: 6,
-                border: "1px solid rgba(255,255,255,0.3)",
-                background: "transparent",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: onOpenAgentSignals ? "pointer" : "default",
-                padding: 0,
-                flexShrink: 0,
-                boxSizing: "border-box",
-              }}
-            >
-              <SignalBarsIcon size={16} />
-            </button>
+                  </span>
+                  <span
+                    aria-hidden
+                    style={{
+                      width: "100%",
+                      height: 2,
+                      borderRadius: 4,
+                      background: active
+                        ? "rgba(255,255,255,0.9)"
+                        : "transparent",
+                    }}
+                  />
+                </button>
+              );
+            })}
           </div>
-          <div style={{ position: "relative", width: "100%", height: 2 }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                bottom: 0,
-                height: 1,
-                background: "rgba(227,231,234,0.1)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left:
-                  orderType === "limit" ? 0 : orderType === "market" ? 48 : 112,
-                bottom: 0,
-                width: orderType === "stop" ? 72 : 30,
-                height: 2,
-                borderRadius: 4,
-                background: "rgba(255,255,255,0.9)",
-              }}
-            />
-          </div>
+          <button
+            type="button"
+            aria-label="Open signals"
+            onClick={() => onOpenAgentSignals?.()}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.3)",
+              background: "transparent",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: onOpenAgentSignals ? "pointer" : "default",
+              padding: 0,
+              flexShrink: 0,
+              boxSizing: "border-box",
+            }}
+          >
+            <SignalBarsIcon size={16} />
+          </button>
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 1,
+              background: "rgba(227,231,234,0.1)",
+              pointerEvents: "none",
+            }}
+          />
         </div>
       </div>
 
@@ -793,7 +915,7 @@ export function OrderPanel({
                     fontFamily: FONT,
                     fontSize: 12,
                     fontWeight: 600,
-                    color: midActive ? TRADE_COLORS.midAccent : COLORS.white50,
+                    color: midActive ? "#DBFD5C" : COLORS.white50,
                     cursor: "pointer",
                   }}
                 >
@@ -804,48 +926,189 @@ export function OrderPanel({
           </div>
         </FieldBox>
 
-        <div style={{ display: "flex", gap: 4, width: "100%" }}>
-          <FieldBox style={{ flex: 1, padding: "8px 12px", minWidth: 0 }}>
-            <span style={labelMuted}>Qty</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
-              <input
-                value={qty}
-                onChange={(e) => setQty(e.target.value)}
+        {qtyPrefIsQuote(qtyUnitPref) ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 4,
+              width: "100%",
+            }}
+          >
+            <FieldBox style={{ padding: "8px 12px", minWidth: 0 }}>
+              <div
                 style={{
-                  ...valueText,
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  width: 48,
-                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
                 }}
-              />
-              <span style={{ ...labelMuted, marginLeft: "auto" }}>{MARKET.base}</span>
-            </div>
-          </FieldBox>
-          <FieldBox style={{ flex: 1, padding: "8px 12px", minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <span style={labelMuted}>Order size≈</span>
-              <Chevron size={7} />
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 1 }}>
-              <input
-                value={orderSize}
-                onChange={(e) => setOrderSize(e.target.value)}
+              >
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                  }}
+                >
+                  <span style={labelMuted}>{qtyFieldLabel(qtyUnitPref)}</span>
+                  <input
+                    value={orderSize}
+                    onChange={(e) => setOrderSize(e.target.value)}
+                    style={{
+                      ...valueText,
+                      border: "none",
+                      outline: "none",
+                      background: "transparent",
+                      width: "100%",
+                      padding: 0,
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setUnitPrefOpen(true)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    padding: "0 2px",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: 24,
+                    flexShrink: 0,
+                    fontFamily: FONT,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: "rgba(255,255,255,0.5)",
+                  }}
+                >
+                  {qtyUnitLabel(qtyUnitPref, "BTC")}
+                  <Chevron size={14} />
+                </button>
+              </div>
+            </FieldBox>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 4,
+                padding: "0 2px",
+              }}
+            >
+              <span style={labelMuted}>Qty≈</span>
+              <span
                 style={{
-                  ...valueText,
-                  border: "none",
-                  outline: "none",
-                  background: "transparent",
-                  flex: 1,
-                  minWidth: 0,
-                  padding: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 2,
                 }}
-              />
-              <span style={labelMuted}>USDC</span>
+              >
+                <span
+                  style={{
+                    fontFamily: FONT,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    lineHeight: "12px",
+                    letterSpacing: "-0.36px",
+                    color: "rgba(255,255,255,0.9)",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {qtyBaseLabel}
+                </span>
+                <span style={labelMuted}>BTC</span>
+              </span>
             </div>
-          </FieldBox>
-        </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 4, width: "100%" }}>
+            <FieldBox style={{ flex: 1, padding: "8px 12px", minWidth: 0 }}>
+              <span style={labelMuted}>Qty</span>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  marginTop: 1,
+                }}
+              >
+                <input
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value)}
+                  style={{
+                    ...valueText,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    width: 48,
+                    padding: 0,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setUnitPrefOpen(true)}
+                  style={{
+                    ...labelMuted,
+                    marginLeft: "auto",
+                    border: "none",
+                    background: "transparent",
+                    padding: 0,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  BTC
+                  <Chevron size={14} />
+                </button>
+              </div>
+            </FieldBox>
+            <FieldBox style={{ flex: 1, padding: "8px 12px", minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={labelMuted}>Order size≈</span>
+                <button
+                  type="button"
+                  onClick={() => setUnitPrefOpen(true)}
+                  style={{
+                    border: "none",
+                    background: "transparent",
+                    padding: 0,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                  }}
+                >
+                  <Chevron size={7} />
+                </button>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  marginTop: 1,
+                }}
+              >
+                <input
+                  value={orderSize}
+                  onChange={(e) => setOrderSize(e.target.value)}
+                  style={{
+                    ...valueText,
+                    border: "none",
+                    outline: "none",
+                    background: "transparent",
+                    flex: 1,
+                    minWidth: 0,
+                    padding: 0,
+                  }}
+                />
+                <span style={labelMuted}>USDC</span>
+              </div>
+            </FieldBox>
+          </div>
+        )}
       </div>
 
       {/* Slider — Figma 7445:96302 */}
@@ -860,7 +1123,7 @@ export function OrderPanel({
       {/* CTA */}
       <button
         type="button"
-        onClick={() => onSubmit?.()}
+        onClick={handleCtaClick}
         style={{
           width: "100%",
           height: 40,
@@ -929,18 +1192,34 @@ export function OrderPanel({
           flexShrink: 0,
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <button
             type="button"
-            onClick={() => setTpSlOn(!tpSlOn)}
+            onClick={() => {
+              if (tpSlOn) {
+                setTpSlOn(false);
+                return;
+              }
+              setTpSlOn(true);
+              setReduceOnly(false);
+              setHidden(false);
+            }}
+            disabled={reduceOnly}
             style={{
               border: "none",
               background: "transparent",
               padding: 0,
-              cursor: "pointer",
+              cursor: reduceOnly ? "not-allowed" : "pointer",
               display: "inline-flex",
               alignItems: "center",
               gap: 4,
+              opacity: reduceOnly ? 0.4 : 1,
             }}
           >
             <CheckBox checked={tpSlOn} />
@@ -960,6 +1239,8 @@ export function OrderPanel({
             type="button"
             onClick={() => {
               setTpSlOn(true);
+              setReduceOnly(false);
+              setHidden(false);
               setTpSlAdvancedOpen(true);
             }}
             style={{
@@ -974,49 +1255,21 @@ export function OrderPanel({
               fontSize: 12,
               fontWeight: 600,
               lineHeight: "18px",
-              color: "#DBFD5C",
+              color: "rgba(255,255,255,0.5)",
+              opacity: reduceOnly ? 0.4 : 1,
             }}
           >
             Advanced
-              <img
-              src="/trade/order/advanced-gear.svg"
-              alt=""
-              width={14}
-              height={14}
-              style={{
-                display: "block",
-                width: 14,
-                height: 14,
-                minWidth: 14,
-                minHeight: 14,
-                flexShrink: 0,
-                objectFit: "contain",
-              }}
-            />
+            <AdvancedGearIcon size={12} />
           </button>
         </div>
 
         {tpSlOn ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: 24,
-                padding: "2px 8px",
-                borderRadius: 6,
-                background: "rgba(255,255,255,0.1)",
-                fontFamily: FONT,
-                fontSize: 12,
-                fontWeight: 600,
-                lineHeight: "18px",
-                color: "rgba(255,255,255,0.8)",
-                boxSizing: "border-box",
-                width: "fit-content",
-              }}
-            >
-              Cross
-            </span>
+            <TpSlPositionSelect
+              value={tpSlPosMode}
+              onChange={setTpSlPosMode}
+            />
             <TpSlPriceField
               label={tpSlFieldLabel(tpSlInputMode, "tp")}
               value={tpPrice}
@@ -1029,7 +1282,11 @@ export function OrderPanel({
             <TpSlPriceField
               label={tpSlFieldLabel(tpSlInputMode, "sl")}
               value={slPrice}
-              onChange={setSlPrice}
+              onChange={(v) =>
+                setSlPrice(
+                  tpSlInputMode === "pnl" ? normalizeSlPnlInput(v) : v,
+                )
+              }
               unit={tpSlModeUnit(tpSlInputMode)}
               onUnitClick={() => setTpSlSettingsOpen(true)}
               kind="sl"
@@ -1041,15 +1298,24 @@ export function OrderPanel({
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button
             type="button"
-            onClick={() => setReduceOnly(!reduceOnly)}
+            onClick={() => {
+              if (reduceOnly) {
+                setReduceOnly(false);
+                return;
+              }
+              setReduceOnly(true);
+              setTpSlOn(false);
+            }}
+            disabled={tpSlOn}
             style={{
               border: "none",
               background: "transparent",
               padding: 0,
-              cursor: "pointer",
+              cursor: tpSlOn ? "not-allowed" : "pointer",
               display: "inline-flex",
               alignItems: "center",
               gap: 4,
+              opacity: tpSlOn ? 0.4 : 1,
             }}
           >
             <CheckBox checked={reduceOnly} />
@@ -1138,22 +1404,26 @@ export function OrderPanel({
             </button>
             <button
               type="button"
-              onClick={() => setHidden(!hidden)}
+              onClick={() => {
+                if (tpSlOn) return;
+                setHidden(!hidden);
+              }}
+              disabled={tpSlOn}
               style={{
                 border: "none",
                 background: "transparent",
                 padding: 0,
-                cursor: "pointer",
+                cursor: tpSlOn ? "not-allowed" : "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 4,
                 fontFamily: FONT,
                 fontSize: 12,
                 fontWeight: 500,
-                color: COLORS.white50,
+                color: tpSlOn ? "rgba(255,255,255,0.3)" : COLORS.white50,
               }}
             >
-              <CheckBox checked={hidden} />
+              <CheckBox checked={hidden && !tpSlOn} />
               Hidden
             </button>
           </div>
@@ -1161,18 +1431,47 @@ export function OrderPanel({
         ) : null}
       </div>
 
+      <OrderConfirmModal
+        open={orderConfirmOpen}
+        data={orderConfirmOpen ? buildConfirmData() : null}
+        disableConfirmChecked={disableOrderConfirmPref}
+        onDisableConfirmChange={setDisableOrderConfirmPref}
+        onCancel={() => setOrderConfirmOpen(false)}
+        onConfirm={() => {
+          if (disableOrderConfirmPref) setOrderConfirm(false);
+          setOrderConfirmOpen(false);
+          onSubmit?.();
+        }}
+      />
+
       <TpSlSettingsPicker
         open={tpSlSettingsOpen}
         value={tpSlInputMode}
-        onSelect={setTpSlInputMode}
+        onSelect={(id) => {
+          setTpSlInputMode(id);
+          if (id === "pnl") {
+            setSlPrice((prev) =>
+              prev.trim() ? normalizeSlPnlInput(prev) : prev,
+            );
+          }
+        }}
         onClose={() => setTpSlSettingsOpen(false)}
+      />
+
+      <UnitPreferenceDrawer
+        open={unitPrefOpen}
+        value={qtyUnitPref}
+        baseSymbol="BTC"
+        quoteSymbol={MARKET.quote}
+        onSelect={setQtyUnitPref}
+        onClose={() => setUnitPrefOpen(false)}
       />
 
       <TpSlDrawer
         open={tpSlAdvancedOpen}
         variant="order"
         initialSide={side}
-        initialMode="full"
+        initialMode={tpSlPosMode}
         initialValues={{
           mode: "full",
           tpTrigger: tpPrice,

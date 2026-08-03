@@ -1,12 +1,25 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
-import { ACCOUNT } from "./demoData";
+import { ACCOUNT, MARKET } from "./demoData";
 import {
   MOBILE_ORDER_TYPES,
   OrderTypeDrawer,
   type MobileOrderType,
 } from "./OrderTypeDrawer";
+import {
+  TimeInForceDrawer,
+  type TimeInForce,
+} from "./TimeInForceDrawer";
+import {
+  UnitPreferenceDrawer,
+  qtyFieldLabel,
+  qtyPrefIsQuote,
+  qtyUnitLabel,
+  type QtyUnitPref,
+} from "./UnitPreferenceDrawer";
+import { OrderConfirmModal, type OrderConfirmData } from "./OrderConfirmModal";
+import { AdvancedGearIcon } from "./AdvancedGearIcon";
 import { PctSlider, qtyFromPct } from "./PctSlider";
 import { SignalBarsIcon } from "./SignalBarsIcon";
 import { TRADE_COLORS } from "./tradeLayout";
@@ -19,6 +32,7 @@ import {
 } from "./TpSlEstimatePopover";
 import {
   TpSlSettingsPicker,
+  normalizeSlPnlInput,
   tpSlFieldLabel,
   tpSlModeUnit,
   type TpSlInputMode,
@@ -58,31 +72,33 @@ function CheckBox({
       aria-checked={checked}
       role="checkbox"
       style={{
-        width: 20,
-        height: 20,
-        borderRadius: 4,
-        border: checked ? "none" : "1.5px solid rgba(255,255,255,0.35)",
-        background: checked ? "#DBFD5C" : "transparent",
+        width: 16,
+        height: 16,
+        padding: 0,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        flexShrink: 0,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 0,
-        cursor: "pointer",
-        flexShrink: 0,
-        boxSizing: "border-box",
       }}
     >
-      {checked ? (
-        <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden>
-          <path
-            d="M1 4L3.5 6.5L9 1"
-            stroke="#fff"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      ) : null}
+      <img
+        src={checked ? "/trade/order/select.svg" : "/trade/order/unselect.svg"}
+        alt=""
+        width={16}
+        height={16}
+        draggable={false}
+        style={{
+          display: "block",
+          width: 16,
+          height: 16,
+          minWidth: 16,
+          minHeight: 16,
+          objectFit: "contain",
+        }}
+      />
     </button>
   );
 }
@@ -98,6 +114,7 @@ function UnitInput({
   style,
   estimateKind,
   estimateMode,
+  footer,
 }: {
   label: string;
   value: string;
@@ -109,6 +126,8 @@ function UnitInput({
   style?: CSSProperties;
   estimateKind?: TpSlFieldKind;
   estimateMode?: TpSlInputMode;
+  /** Below the field — e.g. Qty≈ conversion */
+  footer?: ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
@@ -118,6 +137,7 @@ function UnitInput({
   const filled = value.trim().length > 0;
   const showLabel = focused || filled;
   const showTip = Boolean(estimateKind && estimateMode && focused);
+  const useAccent = Boolean(estimateKind) && estimateMode !== "price";
   const accent =
     estimateKind === "tp"
       ? TPSL_LONG
@@ -125,7 +145,9 @@ function UnitInput({
         ? TPSL_SHORT
         : null;
   const valueColor =
-    accent && (filled || focused) ? accent : "rgba(255,255,255,0.8)";
+    useAccent && accent && (filled || focused)
+      ? accent
+      : "rgba(255,255,255,0.8)";
 
   useEffect(() => {
     if (!showTip) {
@@ -149,107 +171,121 @@ function UnitInput({
 
   return (
     <div
-      ref={wrapRef}
       style={{
-        position: "relative",
-        background: "rgba(255,255,255,0.05)",
-        borderRadius: 6,
-        height: 44,
-        padding: "0 8px",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        boxSizing: "border-box",
+        flexDirection: "column",
+        gap: footer ? 4 : 0,
         width: "100%",
-        gap: 8,
-        overflow: "visible",
-        zIndex: showTip ? 5 : 1,
         ...style,
       }}
     >
-      {showTip && estimateKind && estimateMode && anchor && typeof document !== "undefined"
-        ? createPortal(
-            <TpSlEstimatePopover
-              kind={estimateKind}
-              mode={estimateMode}
-              value={value}
-              anchorRect={anchor}
-            />,
-            document.body,
-          )
-        : null}
       <div
+        ref={wrapRef}
         style={{
-          flex: 1,
-          minWidth: 0,
+          position: "relative",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 6,
+          height: 44,
+          padding: "0 8px",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: showLabel ? 2 : 0,
-          padding: showLabel ? "4px 0" : 0,
+          alignItems: "center",
+          justifyContent: "space-between",
           boxSizing: "border-box",
+          width: "100%",
+          gap: 8,
+          overflow: "visible",
+          zIndex: showTip ? 5 : 1,
         }}
       >
-        {showLabel ? (
-          <span
-            style={{
-              fontFamily: FONT,
-              fontSize: 11,
-              fontWeight: 500,
-              lineHeight: "16px",
-              color: "rgba(255,255,255,0.5)",
-              pointerEvents: "none",
-            }}
-          >
-            {label}
-          </span>
-        ) : null}
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          placeholder={showLabel ? "" : label}
+        {showTip &&
+        estimateKind &&
+        estimateMode &&
+        anchor &&
+        typeof document !== "undefined"
+          ? createPortal(
+              <TpSlEstimatePopover
+                kind={estimateKind}
+                mode={estimateMode}
+                value={value}
+                anchorRect={anchor}
+              />,
+              document.body,
+            )
+          : null}
+        <div
           style={{
-            width: "100%",
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            padding: 0,
-            margin: 0,
-            fontFamily: FONT,
-            fontSize: showLabel ? 14 : 12,
-            fontWeight: showLabel ? 600 : 500,
-            lineHeight: showLabel ? "14px" : "18px",
-            letterSpacing: showLabel ? "-0.42px" : undefined,
-            color: valueColor,
-          }}
-        />
-      </div>
-      {trailing}
-      {showUnit && unit ? (
-        <button
-          type="button"
-          onClick={onUnitClick}
-          style={{
-            border: "none",
-            background: "transparent",
-            cursor: onUnitClick ? "pointer" : "default",
-            display: "inline-flex",
-            alignItems: "center",
-            height: 24,
-            padding: "0 2px",
-            flexShrink: 0,
-            fontFamily: FONT,
-            fontSize: 12,
-            fontWeight: 500,
-            color: "rgba(255,255,255,0.5)",
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            gap: showLabel ? 2 : 0,
+            padding: showLabel ? "4px 0" : 0,
+            boxSizing: "border-box",
           }}
         >
-          {unit}
-          <Chevron size={16} />
-        </button>
-      ) : null}
+          {showLabel ? (
+            <span
+              style={{
+                fontFamily: FONT,
+                fontSize: 11,
+                fontWeight: 500,
+                lineHeight: "16px",
+                color: "rgba(255,255,255,0.5)",
+                pointerEvents: "none",
+              }}
+            >
+              {label}
+            </span>
+          ) : null}
+          <input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            placeholder={showLabel ? "" : label}
+            style={{
+              width: "100%",
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              padding: 0,
+              margin: 0,
+              fontFamily: FONT,
+              fontSize: showLabel ? 14 : 12,
+              fontWeight: showLabel ? 600 : 500,
+              lineHeight: showLabel ? "14px" : "18px",
+              letterSpacing: showLabel ? "-0.42px" : undefined,
+              color: valueColor,
+            }}
+          />
+        </div>
+        {trailing}
+        {showUnit && unit ? (
+          <button
+            type="button"
+            onClick={onUnitClick}
+            style={{
+              border: "none",
+              background: "transparent",
+              cursor: onUnitClick ? "pointer" : "default",
+              display: "inline-flex",
+              alignItems: "center",
+              height: 24,
+              padding: "0 2px",
+              flexShrink: 0,
+              fontFamily: FONT,
+              fontSize: 12,
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.5)",
+            }}
+          >
+            {unit}
+            <Chevron size={16} />
+          </button>
+        ) : null}
+      </div>
+      {footer}
     </div>
   );
 }
@@ -270,6 +306,124 @@ function GridIcon() {
         )),
       )}
     </svg>
+  );
+}
+
+function OrderOptionsMenu({
+  open,
+  orderConfirm,
+  hideFromBook,
+  hideDisabled,
+  onToggleConfirm,
+  onToggleHide,
+  onClose,
+}: {
+  open: boolean;
+  orderConfirm: boolean;
+  hideFromBook: boolean;
+  /** When TP/SL is on — only Show order confirmation is selectable */
+  hideDisabled?: boolean;
+  onToggleConfirm: () => void;
+  onToggleHide: () => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const item = (
+    checked: boolean,
+    label: string,
+    onClick: () => void,
+    disabled?: boolean,
+  ) => (
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      aria-disabled={disabled || undefined}
+      disabled={disabled}
+      onClick={disabled ? undefined : onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        width: "100%",
+        border: "none",
+        background: "transparent",
+        padding: "8px 12px",
+        cursor: disabled ? "not-allowed" : "pointer",
+        textAlign: "left",
+        boxSizing: "border-box",
+        fontFamily: FONT,
+        fontSize: 12,
+        fontWeight: 500,
+        lineHeight: "18px",
+        color: disabled ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.8)",
+        opacity: disabled ? 0.7 : 1,
+      }}
+    >
+      <img
+        src={
+          checked && !disabled
+            ? "/trade/order/select.svg"
+            : "/trade/order/unselect.svg"
+        }
+        alt=""
+        width={16}
+        height={16}
+        draggable={false}
+        style={{
+          display: "block",
+          width: 16,
+          height: 16,
+          flexShrink: 0,
+          opacity: disabled ? 0.4 : 1,
+        }}
+      />
+      {label}
+    </button>
+  );
+
+  return (
+    <div
+      ref={ref}
+      role="menu"
+      style={{
+        position: "absolute",
+        right: 0,
+        bottom: "calc(100% + 6px)",
+        zIndex: 30,
+        minWidth: 240,
+        padding: "4px 0",
+        borderRadius: 8,
+        background: "#131519",
+        border: "1px solid rgba(255,255,255,0.1)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+        boxSizing: "border-box",
+      }}
+    >
+      {item(
+        orderConfirm,
+        "Show order confirmation window",
+        onToggleConfirm,
+      )}
+      {item(
+        hideFromBook,
+        "Hide order from order book",
+        onToggleHide,
+        hideDisabled,
+      )}
+    </div>
   );
 }
 
@@ -311,6 +465,10 @@ export function MobileOrderPanel({
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [orderType, setOrderType] = useState<MobileOrderType>("limit");
   const [typeOpen, setTypeOpen] = useState(false);
+  const [tifOpen, setTifOpen] = useState(false);
+  const [tif, setTif] = useState<TimeInForce>("gtc");
+  const [unitPrefOpen, setUnitPrefOpen] = useState(false);
+  const [qtyUnitPref, setQtyUnitPref] = useState<QtyUnitPref>("base");
   const [pct, setPct] = useState(0);
   const [tpSl, setTpSl] = useState(false);
   const [tpSlAdvancedOpen, setTpSlAdvancedOpen] = useState(false);
@@ -327,6 +485,13 @@ export function MobileOrderPanel({
   const [endPrice, setEndPrice] = useState("");
   const [orderCount, setOrderCount] = useState("");
   const [callback, setCallback] = useState("");
+  const [marginMode, setMarginMode] = useState<"cross" | "isolated">("cross");
+  const [tpSlPosMode, setTpSlPosMode] = useState<"full" | "partial">("full");
+  const [orderConfirm, setOrderConfirm] = useState(true);
+  const [orderConfirmOpen, setOrderConfirmOpen] = useState(false);
+  const [disableOrderConfirmPref, setDisableOrderConfirmPref] = useState(false);
+  const [hideFromBook, setHideFromBook] = useState(false);
+  const [orderOptsOpen, setOrderOptsOpen] = useState(false);
 
   const isBuy = side === "buy";
   const setPctAndQty = (next: number) => {
@@ -344,6 +509,41 @@ export function MobileOrderPanel({
       ? TRADE_COLORS.buyGrad
       : "linear-gradient(90deg, #ff41a3 0%, #be4584 100%)";
 
+  const currentOrderTypeLabel = orderTypeLabel(orderType);
+
+  const buildConfirmData = (): OrderConfirmData => ({
+    symbol: MARKET.symbol,
+    base: MARKET.base,
+    iconSrc: "/onboarding/chains/ethereum.png",
+    orderTypeLabel: currentOrderTypeLabel,
+    side,
+    quantity: qty || "0",
+    price: orderType === "market" ? "Market" : price || MARKET.markPrice,
+    quote: MARKET.quote,
+    estTotal:
+      qty && price
+        ? String(
+            (
+              Number(String(qty).replace(/,/g, "")) *
+              Number(String(price).replace(/,/g, "") || 0)
+            ).toFixed(2),
+          )
+        : "0",
+  });
+
+  const handleCtaClick = () => {
+    if (!walletConnected) {
+      onSubmit?.();
+      return;
+    }
+    if (orderConfirm) {
+      setDisableOrderConfirmPref(false);
+      setOrderConfirmOpen(true);
+      return;
+    }
+    onSubmit?.();
+  };
+
   const showPriceRow =
     orderType === "limit" || orderType === "post_only";
   const showTrigger =
@@ -356,7 +556,20 @@ export function MobileOrderPanel({
     orderType === "limit" ||
     orderType === "market" ||
     orderType === "post_only";
-  const showGtc = orderType === "limit" || orderType === "post_only";
+  const showGtc = orderType === "limit";
+
+  const markPx =
+    Number(String(MARKET.markPrice).replace(/,/g, "")) || 1;
+  const qtyNum = Number(String(qty).replace(/,/g, "")) || 0;
+  const qtyAsBase = qtyPrefIsQuote(qtyUnitPref)
+    ? qtyNum / markPx
+    : qtyNum;
+  const qtyBaseLabel =
+    qtyAsBase > 0
+      ? qtyAsBase >= 1
+        ? qtyAsBase.toFixed(4)
+        : qtyAsBase.toFixed(5).replace(/0+$/, "").replace(/\.$/, "")
+      : "0";
 
   const muted: CSSProperties = {
     fontFamily: FONT,
@@ -431,8 +644,14 @@ export function MobileOrderPanel({
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <MiniSelect label="Cross" />
-          <MiniSelect label="100X" />
+          <MiniSelect
+            label={marginMode === "cross" ? "Cross" : "Isolated"}
+            onClick={() =>
+              setMarginMode((m) => (m === "cross" ? "isolated" : "cross"))
+            }
+            compact
+          />
+          <MiniSelect label="100X" compact />
           <SignalIcon onClick={onOpenAgentSignals} />
         </div>
 
@@ -588,10 +807,67 @@ export function MobileOrderPanel({
         ) : null}
 
         <UnitInput
-          label="Quantity"
+          label={qtyFieldLabel(qtyUnitPref)}
           value={qty}
           onChange={setQty}
-          unit="BTC"
+          unit={qtyUnitLabel(qtyUnitPref, "BTC")}
+          onUnitClick={() => setUnitPrefOpen(true)}
+          footer={
+            qtyPrefIsQuote(qtyUnitPref) ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 4,
+                  padding: "0 2px",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: FONT,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    lineHeight: "18px",
+                    color: "rgba(255,255,255,0.5)",
+                  }}
+                >
+                  Qty≈
+                </span>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: FONT,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      lineHeight: "12px",
+                      letterSpacing: "-0.36px",
+                      color: "rgba(255,255,255,0.9)",
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {qtyBaseLabel}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: FONT,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      lineHeight: "18px",
+                      color: "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    BTC
+                  </span>
+                </span>
+              </div>
+            ) : null
+          }
         />
       </div>
 
@@ -605,7 +881,7 @@ export function MobileOrderPanel({
 
       <button
         type="button"
-        onClick={() => onSubmit?.()}
+        onClick={handleCtaClick}
         style={{
           width: "100%",
           height: 32,
@@ -705,12 +981,33 @@ export function MobileOrderPanel({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 4,
+                    opacity: reduceOnly ? 0.4 : 1,
+                    pointerEvents: reduceOnly ? "none" : "auto",
                   }}
                 >
-                  <CheckBox checked={tpSl} onChange={() => setTpSl(!tpSl)} />
+                  <CheckBox
+                    checked={tpSl}
+                    onChange={() => {
+                      if (tpSl) {
+                        setTpSl(false);
+                        return;
+                      }
+                      setTpSl(true);
+                      setReduceOnly(false);
+                      setHideFromBook(false);
+                    }}
+                  />
                   <button
                     type="button"
-                    onClick={() => setTpSl(!tpSl)}
+                    onClick={() => {
+                      if (tpSl) {
+                        setTpSl(false);
+                        return;
+                      }
+                      setTpSl(true);
+                      setReduceOnly(false);
+                      setHideFromBook(false);
+                    }}
                     style={{
                       border: "none",
                       background: "transparent",
@@ -729,6 +1026,8 @@ export function MobileOrderPanel({
                   type="button"
                   onClick={() => {
                     setTpSl(true);
+                    setReduceOnly(false);
+                    setHideFromBook(false);
                     setTpSlAdvancedOpen(true);
                   }}
                   style={{
@@ -742,47 +1041,31 @@ export function MobileOrderPanel({
                     fontFamily: FONT,
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "#DBFD5C",
+                    color: "rgba(255,255,255,0.5)",
+                    opacity: reduceOnly ? 0.4 : 1,
                   }}
                 >
                   Advanced
-                  <img
-                    src="/trade/order/advanced-gear.svg"
-                    alt=""
-                    width={14}
-                    height={14}
-                    style={{
-                      display: "block",
-                      width: 14,
-                      height: 14,
-                      minWidth: 14,
-                      minHeight: 14,
-                      flexShrink: 0,
-                      objectFit: "contain",
-                    }}
-                  />
+                  <AdvancedGearIcon size={12} />
                 </button>
               </div>
               {tpSl ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      height: 24,
-                      padding: "2px 8px",
-                      borderRadius: 6,
-                      background: "rgba(255,255,255,0.1)",
-                      fontFamily: FONT,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: "rgba(255,255,255,0.8)",
-                      boxSizing: "border-box",
-                      width: "fit-content",
-                    }}
-                  >
-                    Cross
-                  </span>
+                  <div style={{ width: "fit-content" }}>
+                    <MiniSelect
+                      label={
+                        tpSlPosMode === "full"
+                          ? "Full position"
+                          : "Partial position"
+                      }
+                      onClick={() =>
+                        setTpSlPosMode((m) =>
+                          m === "full" ? "partial" : "full",
+                        )
+                      }
+                      fit
+                    />
+                  </div>
                   <UnitInput
                     label={tpSlFieldLabel(tpSlInputMode, "tp")}
                     value={tpPrice}
@@ -795,7 +1078,11 @@ export function MobileOrderPanel({
                   <UnitInput
                     label={tpSlFieldLabel(tpSlInputMode, "sl")}
                     value={slPrice}
-                    onChange={setSlPrice}
+                    onChange={(v) =>
+                      setSlPrice(
+                        tpSlInputMode === "pnl" ? normalizeSlPnlInput(v) : v,
+                      )
+                    }
                     unit={tpSlModeUnit(tpSlInputMode)}
                     onUnitClick={() => setTpSlSettingsOpen(true)}
                     estimateKind="sl"
@@ -817,12 +1104,21 @@ export function MobileOrderPanel({
                 display: "flex",
                 alignItems: "center",
                 gap: 4,
-                cursor: "pointer",
+                cursor: tpSl ? "not-allowed" : "pointer",
+                opacity: tpSl ? 0.4 : 1,
+                pointerEvents: tpSl ? "none" : "auto",
               }}
             >
               <CheckBox
                 checked={reduceOnly}
-                onChange={() => setReduceOnly(!reduceOnly)}
+                onChange={() => {
+                  if (reduceOnly) {
+                    setReduceOnly(false);
+                    return;
+                  }
+                  setReduceOnly(true);
+                  setTpSl(false);
+                }}
               />
               <span
                 style={{
@@ -835,51 +1131,131 @@ export function MobileOrderPanel({
                 Reduce only
               </span>
             </label>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                position: "relative",
+              }}
+            >
               {showGtc ? (
                 <button
                   type="button"
+                  onClick={() => setTifOpen(true)}
                   style={{
                     border: "none",
                     background: "transparent",
                     cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 2,
+                    gap: 4,
                     fontFamily: FONT,
                     fontSize: 12,
                     fontWeight: 600,
-                    color: "rgba(255,255,255,0.8)",
                     padding: 0,
                   }}
                 >
-                  GTC
-                  <Chevron size={14} />
+                  <span style={{ color: "rgba(255,255,255,0.4)" }}>TIF</span>
+                  <span
+                    style={{
+                      color: "rgba(255,255,255,0.8)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 2,
+                    }}
+                  >
+                    {tif.toUpperCase()}
+                    <Chevron size={14} />
+                  </span>
                 </button>
               ) : null}
-              <GridIcon />
+              <button
+                type="button"
+                aria-label="Order options"
+                aria-expanded={orderOptsOpen}
+                onClick={() => setOrderOptsOpen((o) => !o)}
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 16,
+                  height: 16,
+                }}
+              >
+                <GridIcon />
+              </button>
+              <OrderOptionsMenu
+                open={orderOptsOpen}
+                orderConfirm={orderConfirm}
+                hideFromBook={hideFromBook}
+                hideDisabled={tpSl}
+                onToggleConfirm={() => setOrderConfirm((v) => !v)}
+                onToggleHide={() => {
+                  if (tpSl) return;
+                  setHideFromBook((v) => !v);
+                }}
+                onClose={() => setOrderOptsOpen(false)}
+              />
             </div>
           </div>
         </div>
       </div>
 
+      <OrderConfirmModal
+        open={orderConfirmOpen}
+        data={orderConfirmOpen ? buildConfirmData() : null}
+        disableConfirmChecked={disableOrderConfirmPref}
+        onDisableConfirmChange={setDisableOrderConfirmPref}
+        onCancel={() => setOrderConfirmOpen(false)}
+        onConfirm={() => {
+          if (disableOrderConfirmPref) setOrderConfirm(false);
+          setOrderConfirmOpen(false);
+          onSubmit?.();
+        }}
+      />
       <OrderTypeDrawer
         open={typeOpen}
         value={orderType}
         onSelect={setOrderType}
         onClose={() => setTypeOpen(false)}
       />
+      <TimeInForceDrawer
+        open={tifOpen}
+        value={tif}
+        onSelect={setTif}
+        onClose={() => setTifOpen(false)}
+      />
+      <UnitPreferenceDrawer
+        open={unitPrefOpen}
+        value={qtyUnitPref}
+        baseSymbol="BTC"
+        quoteSymbol={MARKET.quote}
+        onSelect={setQtyUnitPref}
+        onClose={() => setUnitPrefOpen(false)}
+      />
       <TpSlSettingsPicker
         open={tpSlSettingsOpen}
         value={tpSlInputMode}
-        onSelect={setTpSlInputMode}
+        onSelect={(id) => {
+          setTpSlInputMode(id);
+          if (id === "pnl") {
+            setSlPrice((prev) =>
+              prev.trim() ? normalizeSlPnlInput(prev) : prev,
+            );
+          }
+        }}
         onClose={() => setTpSlSettingsOpen(false)}
       />
       <TpSlDrawer
         open={tpSlAdvancedOpen}
         variant="order"
         initialSide={side}
-        initialMode="full"
+        initialMode={tpSlPosMode}
         initialValues={{
           mode: "full",
           tpTrigger: tpPrice,
@@ -897,27 +1273,43 @@ export function MobileOrderPanel({
   );
 }
 
-function MiniSelect({ label }: { label: string }) {
+function MiniSelect({
+  label,
+  onClick,
+  compact,
+  fit,
+}: {
+  label: string;
+  onClick?: () => void;
+  compact?: boolean;
+  /** Width follows label (Full / Partial position) */
+  fit?: boolean;
+}) {
   return (
     <button
       type="button"
+      onClick={onClick}
       style={{
-        flex: 1,
-        minWidth: 0,
+        flex: compact || fit ? undefined : 1,
+        width: fit ? "fit-content" : compact ? 78 : undefined,
+        minWidth: fit ? undefined : compact ? 78 : 0,
         height: 24,
         padding: "2px 8px",
         borderRadius: 6,
         border: "none",
         background: "rgba(255,255,255,0.1)",
-        cursor: "pointer",
-        display: "flex",
+        cursor: onClick ? "pointer" : "default",
+        display: "inline-flex",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: fit ? "flex-start" : "space-between",
+        gap: fit ? 12 : 4,
         fontFamily: FONT,
         fontSize: 12,
         fontWeight: 600,
         color: "rgba(255,255,255,0.8)",
         boxSizing: "border-box",
+        flexShrink: 0,
+        whiteSpace: "nowrap",
       }}
     >
       {label}

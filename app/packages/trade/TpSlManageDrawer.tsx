@@ -2,6 +2,13 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
+import { DrawerDragHandle } from "./MobileDrawerChrome";
+import type { PnlFieldMode } from "./PnlModeField";
+import {
+  TPSL_PNL_MODES,
+  TpSlSettingsPicker,
+  type TpSlInputMode,
+} from "./TpSlSettingsPicker";
 import type { RowTpSlState, TpSlBundle, TpSlMode } from "./tpSlTypes";
 
 type TpSlManageDrawerProps = {
@@ -18,7 +25,6 @@ type TpSlManageDrawerProps = {
 
 const shellBase: CSSProperties = {
   background: "#0c0d10",
-  border: "1px solid #383838",
   boxSizing: "border-box",
   fontFamily: FONT,
   display: "flex",
@@ -46,6 +52,7 @@ export function TpSlManageDrawer({
   const isMobile = useBreakpoint() === "390";
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<TpSlMode>(initialTab);
+  const [estMode, setEstMode] = useState<PnlFieldMode>("pnl");
 
   useEffect(() => {
     setMounted(true);
@@ -54,6 +61,7 @@ export function TpSlManageDrawer({
   useEffect(() => {
     if (!open) return;
     setTab(initialTab);
+    setEstMode("pnl");
   }, [open, initialTab]);
 
   if (!open || !mounted || typeof document === "undefined") return null;
@@ -62,7 +70,8 @@ export function TpSlManageDrawer({
     <div
       style={{
         ...shellBase,
-        borderRadius: isMobile ? "8px 8px 0 0" : 8,
+        borderRadius: isMobile ? "4px 4px 0 0" : 8,
+        border: "none",
         maxWidth: isMobile ? undefined : 420,
         maxHeight: isMobile
           ? "min(90dvh, 90vh)"
@@ -73,12 +82,13 @@ export function TpSlManageDrawer({
       }}
       onClick={(e) => e.stopPropagation()}
     >
+      {isMobile ? <DrawerDragHandle /> : null}
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           gap: 16,
-          padding: "20px 20px 0",
+          padding: isMobile ? "0 20px 0" : "20px 20px 0",
           flexShrink: 0,
         }}
       >
@@ -242,6 +252,7 @@ export function TpSlManageDrawer({
 
       {tab === "partial" ? (
         <div
+          className="trade-drag-scroll"
           style={{
             flex: 1,
             minHeight: 0,
@@ -251,6 +262,8 @@ export function TpSlManageDrawer({
             gap: 16,
             padding: "16px 20px 20px",
             WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
           }}
         >
           <div
@@ -323,6 +336,8 @@ export function TpSlManageDrawer({
                 ) : null}
                 <PartialCard
                   entry={entry}
+                  estMode={estMode}
+                  onEstModeChange={setEstMode}
                   onEdit={() => onEditPartial(entry.id)}
                   onDelete={() => onDeletePartial(entry.id)}
                 />
@@ -360,6 +375,13 @@ export function TpSlManageDrawer({
           }
         `}</style>
       ) : null}
+      <style>{`
+        .trade-drag-scroll {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .trade-drag-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+      `}</style>
       <div
         style={{
           width: "100%",
@@ -493,16 +515,103 @@ function Metric({
   );
 }
 
+function estLabel(mode: PnlFieldMode): string {
+  if (mode === "offset") return "Est.Offset";
+  if (mode === "offset_pct") return "Est.Offset %";
+  return "Est.PnL";
+}
+
+function EstModeMetric({
+  mode,
+  onModeChange,
+  value,
+  valueColor,
+}: {
+  mode: PnlFieldMode;
+  onModeChange: (m: PnlFieldMode) => void;
+  value: string;
+  valueColor?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        alignItems: "flex-end",
+      }}
+    >
+      <button
+        type="button"
+        aria-label="Select estimate mode"
+        aria-expanded={open}
+        onClick={() => setOpen(true)}
+        style={{
+          border: "none",
+          background: "transparent",
+          padding: 0,
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 2,
+          fontFamily: FONT,
+          fontSize: 12,
+          fontWeight: 500,
+          lineHeight: "16px",
+          color: "rgba(255,255,255,0.5)",
+        }}
+      >
+        {estLabel(mode)}
+        <img
+          src="/trade/order/unit-caret.svg"
+          alt=""
+          width={12}
+          height={12}
+          style={{ display: "block", width: 12, height: 12 }}
+        />
+      </button>
+      <span
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          lineHeight: "18px",
+          color: valueColor ?? "rgba(255,255,255,0.9)",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {value}
+      </span>
+      <TpSlSettingsPicker
+        open={open}
+        value={mode}
+        modes={TPSL_PNL_MODES}
+        zIndex={5500}
+        onSelect={(id: TpSlInputMode) => {
+          if (id === "price") return;
+          onModeChange(id);
+        }}
+        onClose={() => setOpen(false)}
+      />
+    </div>
+  );
+}
+
 function LegBlock({
   kind,
   trigger,
   order,
   pnl,
+  estMode,
+  onEstModeChange,
 }: {
   kind: "TP" | "SL";
   trigger?: string;
   order?: string;
   pnl?: string;
+  estMode: PnlFieldMode;
+  onEstModeChange: (m: PnlFieldMode) => void;
 }) {
   if (!trigger) return null;
   const isTp = kind === "TP";
@@ -524,8 +633,9 @@ function LegBlock({
           unit="USDC"
         />
         <Metric label="Order price" value={orderLabel} />
-        <Metric
-          label="Est.PnL"
+        <EstModeMetric
+          mode={estMode}
+          onModeChange={onEstModeChange}
           value={pnl || "--"}
           valueColor={isTp ? TP_BADGE : SL_BADGE}
         />
@@ -536,10 +646,14 @@ function LegBlock({
 
 function PartialCard({
   entry,
+  estMode,
+  onEstModeChange,
   onEdit,
   onDelete,
 }: {
   entry: TpSlBundle;
+  estMode: PnlFieldMode;
+  onEstModeChange: (m: PnlFieldMode) => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -589,12 +703,16 @@ function PartialCard({
           trigger={entry.tp?.trigger}
           order={entry.tp?.order}
           pnl={entry.tp?.pnl}
+          estMode={estMode}
+          onEstModeChange={onEstModeChange}
         />
         <LegBlock
           kind="SL"
           trigger={entry.sl?.trigger}
           order={entry.sl?.order}
           pnl={entry.sl?.pnl}
+          estMode={estMode}
+          onEstModeChange={onEstModeChange}
         />
       </div>
 
@@ -623,14 +741,14 @@ function PartialCard({
           style={{
             flex: 1,
             height: 28,
+            border: "none",
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.2)",
-            background: "transparent",
+            background: "rgba(255,255,255,0.1)",
             cursor: "pointer",
             fontFamily: FONT,
             fontSize: 13,
             fontWeight: 600,
-            color: "rgba(255,255,255,0.6)",
+            color: "rgba(255,255,255,0.9)",
           }}
         >
           Delete

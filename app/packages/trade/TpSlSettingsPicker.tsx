@@ -1,6 +1,13 @@
 import { createPortal } from "react-dom";
-import { COLORS, FONT } from "../nav/design-system";
+import { FONT } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
+import {
+  DrawerDragHandle,
+  DrawerOptionRow,
+  DRAWER_PAD,
+  DRAWER_SHELL,
+  DRAWER_TITLE,
+} from "./MobileDrawerChrome";
 
 export type TpSlInputMode =
   | "price"
@@ -35,6 +42,13 @@ export const TPSL_INPUT_MODES: {
   },
 ];
 
+/** Figma 7541:66620 — PnL / Offset / Offset% only */
+export const TPSL_PNL_MODES: TpSlInputMode[] = [
+  "pnl",
+  "offset",
+  "offset_pct",
+];
+
 export function tpSlModeLabel(mode: TpSlInputMode): string {
   return TPSL_INPUT_MODES.find((m) => m.id === mode)?.label ?? "Price";
 }
@@ -55,24 +69,43 @@ export function tpSlModeUnit(mode: TpSlInputMode): string {
   return "USDC";
 }
 
+/** SL PnL is always a loss — keep / coerce to a leading minus while typing. */
+export function normalizeSlPnlInput(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "";
+  if (t === "-" || t === "+") return "-";
+  const body = t.replace(/^[+-]+/, "");
+  if (!body) return "-";
+  return `-${body}`;
+}
+
 type TpSlSettingsPickerProps = {
   open: boolean;
   value: TpSlInputMode;
   onSelect: (id: TpSlInputMode) => void;
   onClose: () => void;
+  /** Default: all modes. Pass TPSL_PNL_MODES for Figma 7541:66620. */
+  modes?: readonly TpSlInputMode[];
+  zIndex?: number;
 };
 
-/** Figma 7433:50069 — >768 dialog, <768 bottom drawer */
+/** Figma 7541:66620 / 7433:50069 — >768 dialog, <768 bottom drawer */
 export function TpSlSettingsPicker({
   open,
   value,
   onSelect,
   onClose,
+  modes,
+  zIndex = 4300,
 }: TpSlSettingsPickerProps) {
   const bp = useBreakpoint();
   const isDrawer = bp === "390";
 
   if (!open || typeof document === "undefined") return null;
+
+  const options = modes
+    ? TPSL_INPUT_MODES.filter((m) => modes.includes(m.id))
+    : TPSL_INPUT_MODES;
 
   const panel = (
     <div
@@ -80,16 +113,16 @@ export function TpSlSettingsPicker({
       aria-modal="true"
       aria-label="TP/SL Settings"
       onClick={(e) => e.stopPropagation()}
+      className="trade-drag-scroll"
       style={{
+        ...(isDrawer ? DRAWER_SHELL : {}),
         width: "100%",
         maxWidth: isDrawer ? undefined : 390,
         background: "#0c0d10",
-        borderRadius: isDrawer ? "4px 4px 0 0" : 8,
+        borderRadius: isDrawer ? undefined : 8,
         border: isDrawer ? "none" : "1px solid #383838",
         boxSizing: "border-box",
-        padding: isDrawer
-          ? "20px 20px calc(48px + env(safe-area-inset-bottom, 0px))"
-          : "20px",
+        padding: isDrawer ? DRAWER_PAD : "20px",
         display: "flex",
         flexDirection: "column",
         gap: 12,
@@ -98,8 +131,11 @@ export function TpSlSettingsPicker({
           : undefined,
         maxHeight: isDrawer ? "85vh" : "min(720px, 92dvh)",
         overflow: "auto",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
       }}
     >
+      {isDrawer ? <DrawerDragHandle /> : null}
       <div
         style={{
           display: "flex",
@@ -108,51 +144,26 @@ export function TpSlSettingsPicker({
           flexShrink: 0,
         }}
       >
-        <span
-          style={{
-            fontFamily: FONT,
-            fontSize: 16,
-            fontWeight: 600,
-            lineHeight: "20px",
-            color: "#ffffff",
-          }}
-        >
-          TP/SL Settings
-        </span>
+        <span style={DRAWER_TITLE}>TP/SL Settings</span>
       </div>
 
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 8,
+          gap: 12,
           width: "100%",
         }}
       >
-        {TPSL_INPUT_MODES.map((m) => {
+        {options.map((m) => {
           const selected = m.id === value;
           return (
-            <button
+            <DrawerOptionRow
               key={m.id}
-              type="button"
+              selected={selected}
               onClick={() => {
                 onSelect(m.id);
                 onClose();
-              }}
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 4,
-                width: "100%",
-                padding: 12,
-                borderRadius: 8,
-                border: selected
-                  ? "1px solid rgba(255,255,255,0.6)"
-                  : "1px solid transparent",
-                background: "rgba(255,255,255,0.05)",
-                cursor: "pointer",
-                textAlign: "left",
-                boxSizing: "border-box",
               }}
             >
               <div
@@ -180,33 +191,18 @@ export function TpSlSettingsPicker({
                 <span
                   style={{
                     fontFamily: FONT,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: 500,
-                    lineHeight: "16px",
-                    letterSpacing: "-0.33px",
-                    color: COLORS.white40,
+                    lineHeight: "18px",
+                    letterSpacing: "-0.36px",
+                    color: "rgba(255,255,255,0.5)",
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   {m.desc}
                 </span>
               </div>
-              {selected ? (
-                <span
-                  aria-hidden
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: 999,
-                    background: "#dbfd5c",
-                    flexShrink: 0,
-                    marginTop: 6,
-                  }}
-                />
-              ) : (
-                <span style={{ width: 5, flexShrink: 0 }} />
-              )}
-            </button>
+            </DrawerOptionRow>
           );
         })}
       </div>
@@ -218,7 +214,7 @@ export function TpSlSettingsPicker({
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 4300,
+        zIndex,
         display: "flex",
         alignItems: isDrawer ? "flex-end" : "center",
         justifyContent: "center",
@@ -234,6 +230,11 @@ export function TpSlSettingsPicker({
         @keyframes tpSlSettingsBackdropIn {
           from { opacity: 0; }
           to { opacity: 1; }
+        }
+        .trade-drag-scroll::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
         }
       `}</style>
       <button
