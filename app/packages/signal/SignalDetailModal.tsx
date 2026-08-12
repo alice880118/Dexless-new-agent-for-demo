@@ -207,7 +207,7 @@ export function SignalDetailModal({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "14px 20px",
+            padding: asPage ? "14px 16px" : "14px 20px",
             borderBottom: "1px solid #383838",
             flexShrink: 0,
           }}
@@ -274,8 +274,8 @@ export function SignalDetailModal({
               aria-label="Close"
               onClick={onClose}
               style={{
-                width: 20,
-                height: 20,
+                width: 14,
+                height: 14,
                 padding: 0,
                 border: "none",
                 background: "transparent",
@@ -289,9 +289,9 @@ export function SignalDetailModal({
               <img
                 src={ASSETS.close}
                 alt=""
-                width={20}
-                height={20}
-                style={{ display: "block", width: 20, height: 20 }}
+                width={14}
+                height={14}
+                style={{ display: "block", width: 14, height: 14 }}
               />
             </button>
           ) : (
@@ -305,8 +305,9 @@ export function SignalDetailModal({
             display: "flex",
             flexDirection: "column",
             gap: 8,
-            padding: "16px 20px 20px",
+            padding: asPage ? "16px 16px 20px" : "16px 20px 20px",
             boxSizing: "border-box",
+            width: "100%",
             ...(asPage
               ? {
                   flex: 1,
@@ -323,7 +324,7 @@ export function SignalDetailModal({
               display: "flex",
               alignItems: "center",
               gap: 16,
-              padding: "4px 16px",
+              padding: asPage ? "4px 0" : "4px 16px",
               width: "100%",
               boxSizing: "border-box",
             }}
@@ -390,12 +391,15 @@ export function SignalDetailModal({
               display: "flex",
               gap: 8,
               alignItems: "stretch",
-              flexWrap: "wrap",
+              flexWrap: asPage ? "nowrap" : "wrap",
+              flexDirection: asPage ? "column" : "row",
+              width: "100%",
             }}
           >
             <div
               style={{
-                flex: "1 1 280px",
+                flex: asPage ? "none" : "1 1 280px",
+                width: asPage ? "100%" : undefined,
                 minWidth: 0,
                 display: "flex",
                 flexDirection: "column",
@@ -534,14 +538,22 @@ export function SignalDetailModal({
 
             <div
               style={{
-                flex: "1 1 280px",
+                flex: asPage ? "none" : "1 1 280px",
+                width: asPage ? "100%" : undefined,
                 minWidth: 0,
                 display: "flex",
                 flexDirection: "column",
                 gap: 8,
               }}
             >
-              <Panel style={{ flex: 1, background: "transparent", padding: 16 }}>
+              <Panel
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  padding: asPage ? 0 : 16,
+                  width: "100%",
+                }}
+              >
                 <span
                   style={{
                     fontSize: 12,
@@ -553,12 +565,12 @@ export function SignalDetailModal({
                   Price Structure
                 </span>
                 <PriceStructureChart data={data} />
-                <Divider />
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
+                    width: "100%",
                   }}
                 >
                   <span
@@ -586,6 +598,7 @@ export function SignalDetailModal({
                     </span>
                   </div>
                 </div>
+                <Divider />
                 {(
                   [
                     ["Funding rate", funding],
@@ -599,6 +612,7 @@ export function SignalDetailModal({
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
+                      width: "100%",
                     }}
                   >
                     <span

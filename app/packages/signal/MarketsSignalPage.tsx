@@ -279,27 +279,44 @@ function FilterChip({
   return (
     <button
       type="button"
+      aria-label={`Remove ${label} filter`}
       onClick={onRemove}
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
+        justifyContent: "center",
+        gap: 8,
+        minHeight: 28,
         height: 28,
-        padding: "0 10px",
-        borderRadius: 6,
-        border: "1px solid rgba(255,255,255,0.12)",
-        background: "rgba(255,255,255,0.06)",
+        padding: "0 12px",
+        borderRadius: 99,
+        border: "none",
+        background: "rgba(255,255,255,0.08)",
         color: "rgba(255,255,255,0.8)",
         fontSize: 12,
         fontWeight: 500,
+        lineHeight: "16px",
         fontFamily: FONT,
         cursor: "pointer",
         whiteSpace: "nowrap",
         flexShrink: 0,
+        boxSizing: "border-box",
       }}
     >
-      {label}
-      <span style={{ opacity: 0.55 }}>×</span>
+      <span style={{ lineHeight: "16px" }}>{label}</span>
+      <img
+        src="/signal/close.svg"
+        alt=""
+        width={8}
+        height={8}
+        style={{
+          display: "block",
+          width: 8,
+          height: 8,
+          flexShrink: 0,
+          opacity: 0.7,
+        }}
+      />
     </button>
   );
 }
@@ -984,9 +1001,13 @@ export function MarketsPage({
             <div
               style={{
                 display: "flex",
-                gap: 8,
-                overflowX: "auto",
-                paddingBottom: 2,
+                flexWrap: "wrap",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                minHeight: 28,
+                overflow: "visible",
+                boxSizing: "border-box",
               }}
             >
               {filters.sources.titan ? (
@@ -1051,6 +1072,12 @@ export function MarketsPage({
                 <FilterChip
                   label={`R:R ≥${filters.rrMin.toFixed(1)}`}
                   onRemove={() => setFilters((f) => ({ ...f, rrMin: 0 }))}
+                />
+              ) : null}
+              {filters.symbolQuery.trim() ? (
+                <FilterChip
+                  label={filters.symbolQuery.trim()}
+                  onRemove={() => setFilters((f) => ({ ...f, symbolQuery: "" }))}
                 />
               ) : null}
             </div>
