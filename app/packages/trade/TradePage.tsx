@@ -303,7 +303,6 @@ export function TradePage({
               side={sheetSide}
               onClose={() => setSheetOpen(false)}
               walletConnected={walletConnected}
-              onConnectRequest={onConnectRequest}
               onOrderSubmit={handleOrderSubmit}
             />,
             document.body,
@@ -698,13 +697,11 @@ function OrderSheet({
   side,
   onClose,
   walletConnected,
-  onConnectRequest,
   onOrderSubmit,
 }: {
   side: OrderSide;
   onClose: () => void;
   walletConnected: boolean;
-  onConnectRequest?: () => void;
   onOrderSubmit?: () => void;
 }) {
   return (
