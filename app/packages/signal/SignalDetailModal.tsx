@@ -104,7 +104,7 @@ function SetupRow({
               fontSize: 12,
               fontWeight: 500,
               lineHeight: "18px",
-              color: "rgba(255,255,255,0.4)",
+              color: pctColor ?? "rgba(255,255,255,0.4)",
               minWidth: 56,
               textAlign: "right",
             }}

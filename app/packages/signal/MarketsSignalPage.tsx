@@ -269,38 +269,6 @@ function MutedPill({ label }: { label: string }) {
   );
 }
 
-function SectionTitle({
-  title,
-  pill,
-}: {
-  title: string;
-  pill: ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-      }}
-    >
-      <span
-        style={{
-          fontSize: 13,
-          fontWeight: 600,
-          lineHeight: "18px",
-          color: "rgba(255,255,255,0.5)",
-          fontFamily: FONT,
-          whiteSpace: "nowrap",
-        }}
-      >
-        {title}
-      </span>
-      {pill}
-    </div>
-  );
-}
-
 function FilterChip({
   label,
   onRemove,
