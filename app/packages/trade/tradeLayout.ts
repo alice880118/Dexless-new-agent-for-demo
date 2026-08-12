@@ -4,6 +4,9 @@ import type { Breakpoint } from "../nav/design-system";
 
 export type TradeLayoutMode = "xs" | "md" | "lg" | "xl" | "2xl";
 
+/** Desktop trade shell — do not compress below this width (horizontal scroll instead). */
+export const DESKTOP_TRADE_MIN_W = 1280;
+
 export function getTradeLayoutMode(bp: Breakpoint): TradeLayoutMode {
   if (bp === "390") return "xs";
   if (bp === "768") return "md";

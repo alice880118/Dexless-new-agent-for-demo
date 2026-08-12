@@ -72,6 +72,7 @@ export function BottomNavBar({
         justifyContent: "space-between",
         background: COLORS.bottomBg,
         padding: "8px 12px",
+        paddingBottom: "calc(8px + env(safe-area-inset-bottom, 0px))",
         boxSizing: "border-box",
         fontFamily: FONT,
         ...style,

@@ -147,8 +147,9 @@ export function OrderConfirmModal({
       aria-label="Order confirm"
       onClick={(e) => e.stopPropagation()}
       style={{
-        width: "100%",
-        maxWidth: isDrawer ? undefined : 360,
+        width: isDrawer ? "100%" : 418,
+        maxWidth: isDrawer ? undefined : 418,
+        flexShrink: 0,
         background: "#0c0d10",
         borderRadius: isDrawer ? "4px 4px 0 0" : 12,
         border: isDrawer ? "none" : "1px solid #383838",

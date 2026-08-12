@@ -13,7 +13,7 @@ export const COLORS = {
   menuBg: "#1f2125",
   /** Item hover / selected surface */
   menuHover: "rgba(255,255,255,0.05)",
-  bottomBg: "#131519",
+  bottomBg: "#191919",
   bottomText: "#858585",
   sidePanelBg: "#0c0d10",
 } as const;

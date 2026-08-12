@@ -89,6 +89,18 @@ export function FigmaRangeSlider({
         <div
           style={{
             position: "absolute",
+            left: 0,
+            top: 5,
+            height: 2,
+            borderRadius: 1,
+            width: `calc(${pct / 100} * (100% - 12px) + 6px)`,
+            maxWidth: "100%",
+            background: "#ffffff",
+          }}
+        />
+        <div
+          style={{
+            position: "absolute",
             /* Keep thumb fully inside track so value=0 is not clipped */
             left: `calc(${pct / 100} * (100% - 12px))`,
             top: 0,

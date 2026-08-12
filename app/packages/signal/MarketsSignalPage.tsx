@@ -575,29 +575,10 @@ function SignalMarketCard({
       </div>
 
       <div style={{ display: "flex", gap: 12, opacity: muted }}>
-        <button
-          type="button"
-          onClick={onAskAgent}
-          style={{
-            flex: 1,
-            height: 36,
-            borderRadius: 999,
-            border: "none",
-            background: GRADIENTS.connectBtn,
-            color: "#fff",
-            fontSize: 13,
-            fontWeight: 500,
-            lineHeight: "16px",
-            cursor: "pointer",
-            fontFamily: FONT,
-          }}
-        >
-          Ask Agent
-        </button>
-        {!expired ? (
+        {expired ? (
           <button
             type="button"
-            onClick={onTradeNow}
+            onClick={onAskAgent}
             style={{
               flex: 1,
               height: 36,
@@ -612,28 +593,49 @@ function SignalMarketCard({
               fontFamily: FONT,
             }}
           >
-            Trade Now
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onAskAgent}
-            style={{
-              flex: 1,
-              height: 36,
-              borderRadius: 999,
-              border: "none",
-              background: "rgba(255,255,255,0.2)",
-              color: "#fff",
-              fontSize: 13,
-              fontWeight: 500,
-              lineHeight: "16px",
-              cursor: "pointer",
-              fontFamily: FONT,
-            }}
-          >
             Ask Agent
           </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onAskAgent}
+              style={{
+                flex: 1,
+                height: 36,
+                borderRadius: 999,
+                border: "none",
+                background: GRADIENTS.connectBtn,
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 500,
+                lineHeight: "16px",
+                cursor: "pointer",
+                fontFamily: FONT,
+              }}
+            >
+              Ask Agent
+            </button>
+            <button
+              type="button"
+              onClick={onTradeNow}
+              style={{
+                flex: 1,
+                height: 36,
+                borderRadius: 999,
+                border: "none",
+                background: "rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 13,
+                fontWeight: 500,
+                lineHeight: "16px",
+                cursor: "pointer",
+                fontFamily: FONT,
+              }}
+            >
+              Trade Now
+            </button>
+          </>
         )}
       </div>
     </div>

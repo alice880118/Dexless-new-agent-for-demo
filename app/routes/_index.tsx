@@ -27,6 +27,9 @@ export function IndexPage() {
   const breakpoint = useBreakpoint();
   const showBottom = showBottomNav(breakpoint);
   const showFooter = showSiteFooter(breakpoint);
+  /** Desktop shell keeps a normal panel width — scroll horizontally instead of squashing. */
+  const desktopMinW =
+    breakpoint === "390" || breakpoint === "768" ? undefined : 1280;
   const [activePage, setActivePage] = useState<NavPageId | null>("trade_perps");
   const [agentOpen, setAgentOpen] = useState(false);
   const [agentInitialView, setAgentInitialView] = useState<"home" | "signals">(
@@ -97,9 +100,11 @@ export function IndexPage() {
     <div
       style={{
         minHeight: "100dvh",
+        minWidth: desktopMinW,
         background: "#0a0b0d",
         color: "#ffffff",
         fontFamily: "'Poppins', sans-serif",
+        overflowX: desktopMinW ? "auto" : undefined,
       }}
     >
       <TopNavBar
@@ -135,7 +140,7 @@ export function IndexPage() {
         style={{
           height: `calc(100dvh - ${chromeTop}px${
             showBottom && !hideBottomForOnboarding
-              ? " - 53px"
+              ? " - 53px - env(safe-area-inset-bottom, 0px)"
               : showFooter
                 ? ` - ${FOOTER_HEIGHT}px`
                 : ""
@@ -151,6 +156,8 @@ export function IndexPage() {
           boxSizing: "border-box",
           overflow: "hidden",
           minHeight: 0,
+          minWidth: desktopMinW,
+          width: "100%",
         }}
       >
         {showTradePage ? (

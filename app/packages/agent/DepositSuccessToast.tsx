@@ -25,20 +25,35 @@ export function DepositSuccessToast({
         right: pageLevel ? undefined : 16,
         transform: pageLevel ? "translateX(-50%)" : undefined,
         zIndex: pageLevel ? 2000 : 20,
-        display: "flex",
+        display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        width: pageLevel ? "min(360px, calc(100vw - 32px))" : undefined,
-        padding: "10px 14px",
-        borderRadius: 12,
-        border: "1px solid rgba(255,255,255,0.15)",
-        background: "rgba(12,13,16,0.95)",
+        gap: 8,
+        width: pageLevel ? "max-content" : undefined,
+        maxWidth: pageLevel ? "calc(100vw - 32px)" : undefined,
+        padding: "6px 12px",
+        borderRadius: 8,
+        border: "1px solid rgba(255,255,255,0.4)",
+        background: "#191919",
         boxSizing: "border-box",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
         pointerEvents: "none",
         fontFamily: FONT,
       }}
     >
+      <img
+        src="/signal/order-success-check.png"
+        alt=""
+        width={16}
+        height={16}
+        style={{
+          display: "block",
+          width: 16,
+          height: 16,
+          flexShrink: 0,
+          borderRadius: "50%",
+          objectFit: "cover",
+        }}
+      />
       <span
         style={{
           fontFamily: FONT,
@@ -47,6 +62,7 @@ export function DepositSuccessToast({
           lineHeight: "18px",
           color: "#ffffff",
           textAlign: "center",
+          whiteSpace: "nowrap",
         }}
       >
         {message}

@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { SignalTradeModal, type SignalCardData } from "../agent";
+import { DepositSuccessToast } from "../agent/DepositSuccessToast";
 import { COLORS, FONT, useBreakpoint } from "../nav";
 import { ChartPanel } from "./ChartPanel";
 import { MARKET, MARKET_LIST, type MarketListItem } from "./demoData";
@@ -19,6 +20,7 @@ import {
   getOrderWidth,
   getPageMargin,
   getTradeLayoutMode,
+  DESKTOP_TRADE_MIN_W,
 } from "./tradeLayout";
 
 type TradePageProps = {
@@ -86,11 +88,36 @@ export function TradePage({
   const [favorited, setFavorited] = useState(true);
   const [signalPrefillKey, setSignalPrefillKey] = useState(0);
   const signalPrefill = tradeSignal ? signalToPrefill(tradeSignal) : null;
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  const orderToastTimerRef = useRef<number | null>(null);
+
+  const handleOrderSubmit = () => {
+    if (!walletConnected) {
+      onConnectRequest?.();
+      return;
+    }
+    setShowOrderSuccess(true);
+    if (orderToastTimerRef.current) {
+      window.clearTimeout(orderToastTimerRef.current);
+    }
+    orderToastTimerRef.current = window.setTimeout(() => {
+      setShowOrderSuccess(false);
+      orderToastTimerRef.current = null;
+    }, 3200);
+  };
 
   useEffect(() => {
     if (!tradeSignal) return;
     setSignalPrefillKey((k) => k + 1);
   }, [tradeSignal]);
+
+  useEffect(() => {
+    return () => {
+      if (orderToastTimerRef.current) {
+        window.clearTimeout(orderToastTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const onResize = () => {
@@ -146,6 +173,8 @@ export function TradePage({
     setSelectedId(item.id);
   };
 
+  const isDesktopTrade = mode === "lg" || mode === "xl" || mode === "2xl";
+
   return (
     <div
       className={mode === "xs" ? "trade-mobile-scroll" : undefined}
@@ -153,18 +182,30 @@ export function TradePage({
         width: "100%",
         height: "100%",
         minHeight: 0,
-        minWidth: mode === "xs" ? MOBILE_TRADE.frameW : undefined,
+        minWidth:
+          mode === "xs"
+            ? MOBILE_TRADE.frameW
+            : isDesktopTrade
+              ? DESKTOP_TRADE_MIN_W
+              : undefined,
         display: "flex",
         flexDirection: "column",
         background: TRADE_COLORS.page,
         fontFamily: FONT,
         boxSizing: "border-box",
-          overflow: mode === "xs" ? "auto" : tradeSignal ? "visible" : "hidden",
-          WebkitOverflowScrolling: mode === "xs" ? "touch" : undefined,
-          position: "relative",
-          overscrollBehavior: mode === "xs" ? "contain" : undefined,
-        }}
-      >
+        overflow:
+          mode === "xs"
+            ? "auto"
+            : isDesktopTrade
+              ? "auto"
+              : tradeSignal
+                ? "visible"
+                : "hidden",
+        WebkitOverflowScrolling: mode === "xs" ? "touch" : undefined,
+        position: "relative",
+        overscrollBehavior: mode === "xs" ? "contain" : undefined,
+      }}
+    >
       <style>{hideScrollCss}</style>
       <MarketHeader
         mode={mode}
@@ -209,6 +250,7 @@ export function TradePage({
             <XsLayout
               walletConnected={walletConnected}
               onConnectRequest={onConnectRequest}
+              onOrderSubmit={handleOrderSubmit}
               onOpenAgentSignals={onOpenAgentSignals}
               positionsFocusKey={positionsFocusKey}
               tradeSignal={tradeSignal}
@@ -235,6 +277,7 @@ export function TradePage({
               orderW={orderW}
               walletConnected={walletConnected}
               onConnectRequest={onConnectRequest}
+              onOrderSubmit={handleOrderSubmit}
               onOpenAgent={onOpenAgent}
               onOpenAgentSignals={onOpenAgentSignals}
               positionsFocusKey={positionsFocusKey}
@@ -261,10 +304,19 @@ export function TradePage({
               onClose={() => setSheetOpen(false)}
               walletConnected={walletConnected}
               onConnectRequest={onConnectRequest}
+              onOrderSubmit={handleOrderSubmit}
             />,
             document.body,
           )
         : null}
+
+      {showOrderSuccess ? (
+        <DepositSuccessToast
+          pageLevel
+          top={52}
+          message="Order created successfully"
+        />
+      ) : null}
     </div>
   );
 }
@@ -272,6 +324,7 @@ export function TradePage({
 function XsLayout({
   walletConnected,
   onConnectRequest,
+  onOrderSubmit,
   onOpenAgentSignals,
   positionsFocusKey = 0,
   tradeSignal = null,
@@ -281,6 +334,7 @@ function XsLayout({
 }: {
   walletConnected: boolean;
   onConnectRequest?: () => void;
+  onOrderSubmit?: () => void;
   onOpenAgentSignals?: () => void;
   positionsFocusKey?: number;
   tradeSignal?: SignalCardData | null;
@@ -348,9 +402,7 @@ function XsLayout({
         >
           <MobileOrderPanel
             walletConnected={walletConnected}
-            onSubmit={
-              walletConnected ? undefined : () => onConnectRequest?.()
-            }
+            onSubmit={onOrderSubmit ?? (() => onConnectRequest?.())}
             onOpenAgentSignals={onOpenAgentSignals}
             signalPrefill={signalPrefill}
             signalPrefillKey={signalPrefillKey}
@@ -457,6 +509,7 @@ function DesktopLayout({
   orderW,
   walletConnected,
   onConnectRequest,
+  onOrderSubmit,
   onOpenAgent,
   onOpenAgentSignals,
   positionsFocusKey = 0,
@@ -472,6 +525,7 @@ function DesktopLayout({
   orderW: number;
   walletConnected: boolean;
   onConnectRequest?: () => void;
+  onOrderSubmit?: () => void;
   onOpenAgent?: () => void;
   onOpenAgentSignals?: () => void;
   positionsFocusKey?: number;
@@ -535,9 +589,7 @@ function DesktopLayout({
         >
           <OrderPanel
             walletConnected={walletConnected}
-            onSubmit={
-              walletConnected ? undefined : () => onConnectRequest?.()
-            }
+            onSubmit={onOrderSubmit ?? (() => onConnectRequest?.())}
             onOpenAgent={onOpenAgent}
             onOpenAgentSignals={onOpenAgentSignals}
             signalPrefill={signalPrefill}
@@ -647,11 +699,13 @@ function OrderSheet({
   onClose,
   walletConnected,
   onConnectRequest,
+  onOrderSubmit,
 }: {
   side: OrderSide;
   onClose: () => void;
   walletConnected: boolean;
   onConnectRequest?: () => void;
+  onOrderSubmit?: () => void;
 }) {
   return (
     <div
@@ -728,9 +782,10 @@ function OrderSheet({
           initialSide={side}
           embedded
           walletConnected={walletConnected}
-          onSubmit={
-            walletConnected ? undefined : () => onConnectRequest?.()
-          }
+          onSubmit={() => {
+            onOrderSubmit?.();
+            if (walletConnected) onClose();
+          }}
         />
       </div>
     </div>
