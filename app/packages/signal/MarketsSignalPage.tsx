@@ -919,28 +919,35 @@ export function MarketsPage({
           }}
           className="signal-markets-scroll"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <span
-              style={{
-                fontSize: 16,
-                fontWeight: 600,
-                lineHeight: "20px",
-                color: "#fff",
-              }}
-            >
-              Signals
-            </span>
-            <ActivePill label={`${filterActive.length} active`} />
-            <MutedPill label="12 expired in 24h" />
-          </div>
-
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
+              justifyContent: "space-between",
+              gap: 10,
+              width: "100%",
             }}
           >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                minWidth: 0,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  lineHeight: "20px",
+                  color: "#fff",
+                }}
+              >
+                Signals
+              </span>
+              <ActivePill label={`${filterActive.length} active`} />
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -962,6 +969,7 @@ export function MarketsPage({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 4,
+                flexShrink: 0,
               }}
             >
               Filters
@@ -1087,17 +1095,13 @@ export function MarketsPage({
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 16,
+              gap: 4,
               width: "100%",
-              padding: 12,
-              borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.05)",
-              boxSizing: "border-box",
             }}
           >
             <span
               style={{
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: 500,
                 lineHeight: "18px",
                 color: "rgba(255,255,255,0.5)",
@@ -1112,6 +1116,10 @@ export function MarketsPage({
                 gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
                 gap: 8,
                 width: "100%",
+                padding: 12,
+                borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.05)",
+                boxSizing: "border-box",
               }}
             >
               {SOURCE_SUMMARY.map((s) => (
