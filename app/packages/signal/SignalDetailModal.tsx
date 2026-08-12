@@ -630,36 +630,49 @@ export function SignalDetailModal({
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: asPage ? "stretch" : "space-between",
             gap: 12,
-            padding: "12px 20px 16px",
+            padding: asPage ? "12px 16px 16px" : "12px 20px 16px",
             borderTop: "1px solid #383838",
-            flexWrap: "wrap",
+            flexWrap: asPage ? "nowrap" : "wrap",
             flexShrink: 0,
+            width: "100%",
+            boxSizing: "border-box",
+            background: "#0c0d10",
           }}
         >
-          <button
-            type="button"
-            onClick={onViewAll}
+          {!asPage ? (
+            <button
+              type="button"
+              onClick={onViewAll}
+              style={{
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "rgba(255,255,255,0.5)",
+                fontFamily: FONT,
+              }}
+            >
+              View all signals ({MARKET_ACTIVE_SIGNALS.length} active)
+            </button>
+          ) : null}
+          <div
             style={{
-              border: "none",
-              background: "transparent",
-              padding: 0,
-              cursor: "pointer",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "rgba(255,255,255,0.5)",
-              fontFamily: FONT,
+              display: "flex",
+              gap: 8,
+              width: asPage ? "100%" : undefined,
+              flex: asPage ? 1 : undefined,
             }}
           >
-            View all signals ({MARKET_ACTIVE_SIGNALS.length} active)
-          </button>
-          <div style={{ display: "flex", gap: 8 }}>
             <button
               type="button"
               onClick={() => onAskAgent(data)}
               style={{
-                minWidth: 120,
+                flex: asPage ? 1 : undefined,
+                minWidth: asPage ? 0 : 120,
                 height: 36,
                 padding: "0 16px",
                 borderRadius: 999,
@@ -678,7 +691,8 @@ export function SignalDetailModal({
               type="button"
               onClick={() => onTradeNow(data)}
               style={{
-                minWidth: 120,
+                flex: asPage ? 1 : undefined,
+                minWidth: asPage ? 0 : 120,
                 height: 36,
                 padding: "0 16px",
                 borderRadius: 999,
