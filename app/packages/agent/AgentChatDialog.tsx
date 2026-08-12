@@ -86,6 +86,8 @@ type AgentChatDialogProps = {
   onTradeNow?: (signal: SignalCardData) => void;
   onMinimizedChange?: (minimized: boolean) => void;
   initialView?: "home" | "signals";
+  /** Prefill composer with signal snapshot on agent home */
+  pendingSignal?: SignalCardData | null;
   /** Close agent and focus trade Positions table (<768) */
   onViewTradePositions?: () => void;
 };
@@ -315,6 +317,7 @@ export function AgentChatDialog({
   onTradeNow,
   onMinimizedChange,
   initialView = "home",
+  pendingSignal = null,
   onViewTradePositions,
 }: AgentChatDialogProps) {
   const [dragY, setDragY] = useState(0);
@@ -327,6 +330,8 @@ export function AgentChatDialog({
     "I want to long BTC with 20U",
   );
   const [signalSnapshot, setSignalSnapshot] =
+    useState<SignalAskSnapshot | null>(null);
+  const [composerSignal, setComposerSignal] =
     useState<SignalAskSnapshot | null>(null);
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState<FileAttachment | null>(null);
@@ -408,8 +413,14 @@ export function AgentChatDialog({
       setShowOrderSuccess(false);
       setConfirmOrder(null);
       setPanelView(initialView === "signals" ? "signals" : "home");
+      if (pendingSignal) {
+        setComposerSignal(getSignalAskPayload(pendingSignal).snapshot);
+        setPanelView("home");
+      } else {
+        setComposerSignal(null);
+      }
     }
-  }, [isOpen, initialView]);
+  }, [isOpen, initialView, pendingSignal]);
 
   useEffect(() => {
     return () => {
@@ -440,16 +451,23 @@ export function AgentChatDialog({
   const startChat = useCallback(
     (message?: string, snapshot: SignalAskSnapshot | null = null) => {
       const next = (message ?? draft).trim();
-      if (!next && !attachment) return;
-      setChatMessage(next);
-      setSignalSnapshot(snapshot);
+      const snap = snapshot ?? composerSignal;
+      if (!next && !attachment && !snap) return;
+      setChatMessage(
+        next ||
+          (snap
+            ? `Should I take this ${snap.symbol} ${snap.side} signal?`
+            : ""),
+      );
+      setSignalSnapshot(snap);
       setChatAttachment(attachment);
       setDraft("");
       setAttachment(null);
+      setComposerSignal(null);
       setPanelView("chat");
       setChatKey((k) => k + 1);
     },
-    [draft, attachment],
+    [draft, attachment, composerSignal],
   );
 
   const handleDraftDepositApprove = useCallback(() => {
@@ -833,9 +851,9 @@ export function AgentChatDialog({
               onAskAgent={(id) => {
                 const card =
                   SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
-                const payload = getSignalAskPayload(card);
                 setSignalId(id);
-                startChat(payload.message, payload.snapshot);
+                setComposerSignal(getSignalAskPayload(card).snapshot);
+                setPanelView("home");
               }}
               onTradeNow={(id) => {
                 const card =
@@ -852,8 +870,8 @@ export function AgentChatDialog({
                 const card =
                   SIGNAL_CARDS.find((c) => c.id === signalId) ??
                   SIGNAL_CARDS[0];
-                const payload = getSignalAskPayload(card);
-                startChat(payload.message, payload.snapshot);
+                setComposerSignal(getSignalAskPayload(card).snapshot);
+                setPanelView("home");
               }}
               onTradeNow={() => {
                 const card =
@@ -1230,6 +1248,8 @@ export function AgentChatDialog({
             onSend={() => startChat()}
             attachment={attachment}
             onAttachmentChange={setAttachment}
+            signalContext={composerSignal}
+            onSignalContextChange={setComposerSignal}
           />
         </div>
       )}

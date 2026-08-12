@@ -26,8 +26,12 @@ type AgentOverlayProps = {
   onTradeNow?: (signal: SignalCardData) => void;
   /** Open to Signal list when agent opens */
   initialView?: "home" | "signals";
+  /** Prefill home composer with this signal snapshot */
+  pendingSignal?: SignalCardData | null;
   /** <768 View Position → focus trade Positions table */
   onViewTradePositions?: () => void;
+  /** Top chrome height (nav + optional marquee). Defaults to nav only. */
+  topChromeHeight?: number;
 };
 
 /** Floating agent icon when bottom nav is shown (768 / 390); desktop uses Trader DNA badge */
@@ -43,10 +47,13 @@ export function AgentOverlay({
   walletConnected = false,
   onTradeNow,
   initialView = "home",
+  pendingSignal = null,
   onViewTradePositions,
+  topChromeHeight = TOP_NAV_HEIGHT,
 }: AgentOverlayProps) {
   const phoneMode = useFloatingAgentEntry(breakpoint);
   const bottomInset = showBottomNav ? BOTTOM_NAV_HEIGHT : 0;
+  const topInset = topChromeHeight;
   const isControlled = controlledOpen !== undefined;
   const prevPhoneModeRef = useRef(phoneMode);
 
@@ -101,19 +108,19 @@ export function AgentOverlay({
       setAgentPosition((prev) => {
         const maxX = Math.max(0, width - AGENT_ICON_SIZE);
         const maxY = Math.max(
-          TOP_NAV_HEIGHT,
+          topInset,
           height - bottomInset - AGENT_ICON_SIZE,
         );
         return {
           x: Math.min(prev.x, maxX),
-          y: Math.min(Math.max(prev.y, TOP_NAV_HEIGHT), maxY),
+          y: Math.min(Math.max(prev.y, topInset), maxY),
         };
       });
     };
 
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [bottomInset]);
+  }, [bottomInset, topInset]);
 
   const handleOpenChat = useCallback(() => {
     setIsIconActive(true);
@@ -178,6 +185,7 @@ export function AgentOverlay({
           onClose={() => setChatOpen(false)}
           onTradeNow={onTradeNow}
           initialView={initialView}
+          pendingSignal={pendingSignal}
         />
       </>
     );
@@ -207,7 +215,7 @@ export function AgentOverlay({
         <FloatingAgentIcon
           containerWidth={viewport.width}
           containerHeight={viewport.height}
-          topInset={TOP_NAV_HEIGHT}
+          topInset={topInset}
           bottomInset={bottomInset}
           isActive={isIconActive}
           isChatOpen={isChatOpen}
@@ -221,13 +229,14 @@ export function AgentOverlay({
           onClose={handleCloseChat}
           width={viewport.width}
           height={viewport.height}
-          topInset={TOP_NAV_HEIGHT}
+          topInset={topInset}
           bottomInset={bottomInset}
           anchorX={agentAnchorX}
           anchorY={agentAnchorY}
           onTradeNow={onTradeNow}
           onMinimizedChange={setAgentMinimized}
           initialView={initialView}
+          pendingSignal={pendingSignal}
           onViewTradePositions={onViewTradePositions}
         />
       </div>

@@ -36,6 +36,20 @@
       button {
         font: inherit;
       }
+      /* Hide scrollbars project-wide; scrolling still works */
+      *,
+      *::before,
+      *::after {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      *::-webkit-scrollbar,
+      *::before::-webkit-scrollbar,
+      *::after::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
     </style>
   </head>
   <body>

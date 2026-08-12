@@ -6,11 +6,109 @@ import {
   type FileAttachment,
 } from "./file-attachment";
 import { FileAttachmentChip } from "./FileAttachmentChip";
+import type { SignalAskSnapshot } from "./SignalViews";
 
 const ASSETS = {
   add: "/trader-dna/add.png",
   send: "/trader-dna/send.png",
+  close: "/trader-dna/chat/file-close.svg",
+  signal: "/trader-dna/signal/clock-time.png",
 } as const;
+
+function SignalContextChip({
+  snapshot,
+  onRemove,
+}: {
+  snapshot: SignalAskSnapshot;
+  onRemove?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "flex-start",
+        gap: 8,
+        padding: 8,
+        borderRadius: 12,
+        border: "1px solid rgba(255,255,255,0.1)",
+        boxSizing: "border-box",
+        maxWidth: "100%",
+        background: "rgba(255,255,255,0.04)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 4,
+          minWidth: 0,
+          flex: 1,
+          fontFamily: FONT,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            lineHeight: "14px",
+            color: "rgba(255,255,255,0.45)",
+          }}
+        >
+          Signal snapshot
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            lineHeight: "16px",
+            color: "rgba(255,255,255,0.9)",
+          }}
+        >
+          {snapshot.symbol} · {snapshot.side}
+        </span>
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            lineHeight: "14px",
+            color: "rgba(255,255,255,0.55)",
+          }}
+        >
+          Entry {snapshot.entry} · SL {snapshot.stopLoss} · TP {snapshot.takeProfit}
+        </span>
+      </div>
+      {onRemove ? (
+        <button
+          type="button"
+          aria-label="Remove signal"
+          data-chat-hit="signal-remove"
+          onClick={onRemove}
+          style={{
+            width: 12,
+            height: 12,
+            padding: 0,
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            marginTop: 2,
+          }}
+        >
+          <img
+            src={ASSETS.close}
+            alt=""
+            width={8}
+            height={8}
+            style={{ display: "block" }}
+          />
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export function AskingBox({
   value,
@@ -18,12 +116,16 @@ export function AskingBox({
   onSend,
   attachment,
   onAttachmentChange,
+  signalContext = null,
+  onSignalContextChange,
 }: {
   value: string;
   onChange: (value: string) => void;
   onSend: () => void;
   attachment: FileAttachment | null;
   onAttachmentChange: (file: FileAttachment | null) => void;
+  signalContext?: SignalAskSnapshot | null;
+  onSignalContextChange?: (next: SignalAskSnapshot | null) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -53,6 +155,18 @@ export function AskingBox({
         boxSizing: "border-box",
       }}
     >
+      {signalContext ? (
+        <div style={{ display: "flex", justifyContent: "flex-start" }}>
+          <SignalContextChip
+            snapshot={signalContext}
+            onRemove={
+              onSignalContextChange
+                ? () => onSignalContextChange(null)
+                : undefined
+            }
+          />
+        </div>
+      ) : null}
       {attachment && (
         <div style={{ display: "flex", justifyContent: "flex-start" }}>
           <FileAttachmentChip
@@ -123,7 +237,11 @@ export function AskingBox({
                 onSend();
               }
             }}
-            placeholder="Tell me about your trading habits..."
+            placeholder={
+              signalContext
+                ? "Ask about this signal..."
+                : "Tell me about your trading habits..."
+            }
             style={{
               flex: 1,
               minWidth: 0,

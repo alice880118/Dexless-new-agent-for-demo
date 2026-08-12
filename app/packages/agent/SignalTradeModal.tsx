@@ -4,7 +4,7 @@ import { useSignalCountdown } from "./signal-countdown";
 import type { SignalCardData } from "./SignalViews";
 
 const ASSETS = {
-  close: "/trader-dna/signal/trade-close.svg",
+  close: "/trader-dna/close.svg",
   clock: "/trader-dna/signal/clock-time.png",
 } as const;
 
@@ -12,7 +12,7 @@ const ASSETS = {
 export function SignalTradeModal({
   data,
   onClose,
-  /** <768: force label/value text to 13px; card can be dragged */
+  /** <768: force label/value text to 13px */
   dense = false,
 }: {
   data: SignalCardData;
@@ -38,7 +38,6 @@ export function SignalTradeModal({
 
   const onDragPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLDivElement>) => {
-      if (!dense) return;
       if ((e.target as HTMLElement).closest("button")) return;
       dragRef.current = {
         pointerId: e.pointerId,
@@ -49,7 +48,7 @@ export function SignalTradeModal({
       };
       e.currentTarget.setPointerCapture(e.pointerId);
     },
-    [dense, offset.x, offset.y],
+    [offset.x, offset.y],
   );
 
   const onDragPointerMove = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
@@ -81,10 +80,10 @@ export function SignalTradeModal({
       role="dialog"
       aria-label="Signal"
       data-signal-trade-card
-      onPointerDown={dense ? onDragPointerDown : undefined}
-      onPointerMove={dense ? onDragPointerMove : undefined}
-      onPointerUp={dense ? onDragPointerUp : undefined}
-      onPointerCancel={dense ? onDragPointerUp : undefined}
+      onPointerDown={onDragPointerDown}
+      onPointerMove={onDragPointerMove}
+      onPointerUp={onDragPointerUp}
+      onPointerCancel={onDragPointerUp}
       style={{
         width: "100%",
         maxWidth: dense ? undefined : 360,
@@ -98,14 +97,13 @@ export function SignalTradeModal({
         background: "#121419",
         fontFamily: FONT,
         boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
-        transform: dense
-          ? `translate(${offset.x}px, ${offset.y}px)`
-          : undefined,
-        cursor: dense ? "grab" : undefined,
-        touchAction: dense ? "none" : undefined,
-        userSelect: dense ? "none" : undefined,
-        position: dense ? "relative" : undefined,
-        zIndex: dense ? 30 : undefined,
+        transform: `translate(${offset.x}px, ${offset.y}px)`,
+        cursor: "grab",
+        touchAction: "none",
+        userSelect: "none",
+        position: "relative",
+        zIndex: 30,
+        overflow: "visible",
       }}
     >
       <div
@@ -149,8 +147,8 @@ export function SignalTradeModal({
               aria-label="Close"
               onClick={onClose}
               style={{
-                width: 20,
-                height: 20,
+                width: 14,
+                height: 14,
                 padding: 0,
                 border: "none",
                 background: "transparent",
@@ -161,32 +159,13 @@ export function SignalTradeModal({
                 flexShrink: 0,
               }}
             >
-              <span
-                style={{
-                  position: "relative",
-                  display: "block",
-                  width: 20,
-                  height: 20,
-                  overflow: "hidden",
-                }}
-              >
-                <span
-                  style={{
-                    position: "absolute",
-                    inset: "16.27% 16.64% 17.01% 16.6%",
-                  }}
-                >
-                  <img
-                    src={ASSETS.close}
-                    alt=""
-                    style={{
-                      display: "block",
-                      width: "100%",
-                      height: "100%",
-                    }}
-                  />
-                </span>
-              </span>
+              <img
+                src={ASSETS.close}
+                alt=""
+                width={14}
+                height={14}
+                style={{ display: "block", width: 14, height: 14 }}
+              />
             </button>
           </div>
           <div
@@ -255,6 +234,10 @@ export function SignalTradeModal({
                 fontWeight: 600,
                 lineHeight: "18px",
                 color: "rgba(255,255,255,0.8)",
+                fontVariantNumeric: "tabular-nums",
+                fontFeatureSettings: '"tnum" 1, "lnum" 1',
+                minWidth: dense ? 72 : 78,
+                justifyContent: "flex-end",
               }}
             >
               <img
@@ -262,7 +245,7 @@ export function SignalTradeModal({
                 alt=""
                 width={14}
                 height={14}
-                style={{ display: "block" }}
+                style={{ display: "block", flexShrink: 0 }}
               />
               {timerLabel}
             </span>

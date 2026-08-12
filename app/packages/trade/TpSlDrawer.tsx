@@ -290,22 +290,24 @@ export function TpSlDrawer({
             aria-label="Close"
             onClick={onClose}
             style={{
-              width: 16,
-              height: 16,
+              width: 14,
+              height: 14,
               border: "none",
               background: "transparent",
               padding: 0,
               cursor: "pointer",
               display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
               flexShrink: 0,
             }}
           >
             <img
               src="/trader-dna/close.svg"
               alt=""
-              width={16}
-              height={16}
-              style={{ display: "block", width: 16, height: 16 }}
+              width={14}
+              height={14}
+              style={{ display: "block", width: 14, height: 14 }}
             />
           </button>
         </div>

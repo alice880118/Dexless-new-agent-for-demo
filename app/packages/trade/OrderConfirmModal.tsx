@@ -358,7 +358,7 @@ export function OrderConfirmModal({
               color: "#ffffff",
             }}
           >
-            Confirm
+            Submit
           </button>
         </div>
       </div>

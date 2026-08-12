@@ -71,6 +71,7 @@ type DesktopTraderDnaPanelProps = {
   onClose: () => void;
   onTradeNow?: (signal: SignalCardData) => void;
   initialView?: "home" | "signals";
+  pendingSignal?: SignalCardData | null;
 };
 
 export function DesktopTraderDnaPanel({
@@ -78,6 +79,7 @@ export function DesktopTraderDnaPanel({
   onClose,
   onTradeNow,
   initialView = "home",
+  pendingSignal = null,
 }: DesktopTraderDnaPanelProps) {
   const [activeChip, setActiveChip] = useState<string | null>(null);
   const [panelView, setPanelView] = useState<PanelView>(initialView);
@@ -86,6 +88,8 @@ export function DesktopTraderDnaPanel({
     "I want to long BTC with 20U",
   );
   const [signalSnapshot, setSignalSnapshot] =
+    useState<SignalAskSnapshot | null>(null);
+  const [composerSignal, setComposerSignal] =
     useState<SignalAskSnapshot | null>(null);
   const [draft, setDraft] = useState("");
   const [attachment, setAttachment] = useState<FileAttachment | null>(null);
@@ -118,12 +122,19 @@ export function DesktopTraderDnaPanel({
     snapshot: SignalAskSnapshot | null = null,
   ) => {
     const next = (message ?? draft).trim();
-    if (!next && !attachment) return;
-    setChatMessage(next);
-    setSignalSnapshot(snapshot);
+    const snap = snapshot ?? composerSignal;
+    if (!next && !attachment && !snap) return;
+    setChatMessage(
+      next ||
+        (snap
+          ? `Should I take this ${snap.symbol} ${snap.side} signal?`
+          : ""),
+    );
+    setSignalSnapshot(snap);
     setChatAttachment(attachment);
     setDraft("");
     setAttachment(null);
+    setComposerSignal(null);
     setPanelView("chat");
     setChatKey((k) => k + 1);
     setShowPosition(false);
@@ -160,6 +171,12 @@ export function DesktopTraderDnaPanel({
       setShowOrderSuccess(false);
       setConfirmOrder(null);
       setPanelView(initialView === "signals" ? "signals" : "home");
+      if (pendingSignal) {
+        setComposerSignal(getSignalAskPayload(pendingSignal).snapshot);
+        setPanelView("home");
+      } else {
+        setComposerSignal(null);
+      }
       setVisible(true);
       setEntered(false);
       const id = window.requestAnimationFrame(() => {
@@ -170,7 +187,7 @@ export function DesktopTraderDnaPanel({
     setEntered(false);
     const t = window.setTimeout(() => setVisible(false), 220);
     return () => window.clearTimeout(t);
-  }, [isOpen, initialView]);
+  }, [isOpen, initialView, pendingSignal]);
 
   useEffect(() => {
     return () => {
@@ -460,13 +477,13 @@ export function DesktopTraderDnaPanel({
               setSignalId(id);
               setPanelView("detail");
             }}
-            onAskAgent={(id) => {
-              const card =
-                SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
-              const payload = getSignalAskPayload(card);
-              setSignalId(id);
-              startChat(payload.message, payload.snapshot);
-            }}
+              onAskAgent={(id) => {
+                const card =
+                  SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
+                setSignalId(id);
+                setComposerSignal(getSignalAskPayload(card).snapshot);
+                setPanelView("home");
+              }}
             onTradeNow={(id) => {
               const card =
                 SIGNAL_CARDS.find((c) => c.id === id) ?? SIGNAL_CARDS[0];
@@ -478,13 +495,13 @@ export function DesktopTraderDnaPanel({
           <SignalDetailView
             signalId={signalId}
             onBack={() => setPanelView("signals")}
-            onAskAgent={() => {
-              const card =
-                SIGNAL_CARDS.find((c) => c.id === signalId) ??
-                SIGNAL_CARDS[0];
-              const payload = getSignalAskPayload(card);
-              startChat(payload.message, payload.snapshot);
-            }}
+              onAskAgent={() => {
+                const card =
+                  SIGNAL_CARDS.find((c) => c.id === signalId) ??
+                  SIGNAL_CARDS[0];
+                setComposerSignal(getSignalAskPayload(card).snapshot);
+                setPanelView("home");
+              }}
             onTradeNow={() => {
               const card =
                 SIGNAL_CARDS.find((c) => c.id === signalId) ??
@@ -808,6 +825,8 @@ export function DesktopTraderDnaPanel({
             onSend={() => startChat()}
             attachment={attachment}
             onAttachmentChange={setAttachment}
+            signalContext={composerSignal}
+            onSignalContextChange={setComposerSignal}
           />
         </div>
       )}

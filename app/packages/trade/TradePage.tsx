@@ -8,7 +8,7 @@ import { MarketHeader } from "./MarketHeader";
 import { MarketPanel } from "./MarketPanel";
 import { MobileOrderPanel } from "./MobileOrderPanel";
 import { OrderBookPanel } from "./OrderBookPanel";
-import { OrderPanel, type OrderSide } from "./OrderPanel";
+import { OrderPanel, type OrderSide, type SignalOrderPrefill } from "./OrderPanel";
 import { PositionsPanel } from "./PositionsPanel";
 import {
   TRADE_COLORS,
@@ -48,6 +48,15 @@ function toHeaderMarket(item: MarketListItem) {
   };
 }
 
+function signalToPrefill(signal: SignalCardData): SignalOrderPrefill {
+  return {
+    side: signal.side === "LONG" ? "buy" : "sell",
+    price: signal.entry,
+    tpPrice: signal.takeProfit,
+    slPrice: signal.stopLoss,
+  };
+}
+
 export function TradePage({
   walletConnected = false,
   onConnectRequest,
@@ -75,6 +84,13 @@ export function TradePage({
   const [selectedId, setSelectedId] = useState("btc");
   const [marketPickerOpen, setMarketPickerOpen] = useState(false);
   const [favorited, setFavorited] = useState(true);
+  const [signalPrefillKey, setSignalPrefillKey] = useState(0);
+  const signalPrefill = tradeSignal ? signalToPrefill(tradeSignal) : null;
+
+  useEffect(() => {
+    if (!tradeSignal) return;
+    setSignalPrefillKey((k) => k + 1);
+  }, [tradeSignal]);
 
   useEffect(() => {
     const onResize = () => {
@@ -197,6 +213,8 @@ export function TradePage({
               positionsFocusKey={positionsFocusKey}
               tradeSignal={tradeSignal}
               onCloseTradeSignal={onCloseTradeSignal}
+              signalPrefill={signalPrefill}
+              signalPrefillKey={signalPrefillKey}
             />
           ) : mode === "md" ? (
             <MdLayout
@@ -222,6 +240,8 @@ export function TradePage({
               positionsFocusKey={positionsFocusKey}
               tradeSignal={tradeSignal}
               onCloseTradeSignal={onCloseTradeSignal}
+              signalPrefill={signalPrefill}
+              signalPrefillKey={signalPrefillKey}
             />
           )}
         </div>
@@ -256,6 +276,8 @@ function XsLayout({
   positionsFocusKey = 0,
   tradeSignal = null,
   onCloseTradeSignal,
+  signalPrefill = null,
+  signalPrefillKey = 0,
 }: {
   walletConnected: boolean;
   onConnectRequest?: () => void;
@@ -263,6 +285,8 @@ function XsLayout({
   positionsFocusKey?: number;
   tradeSignal?: SignalCardData | null;
   onCloseTradeSignal?: () => void;
+  signalPrefill?: SignalOrderPrefill | null;
+  signalPrefillKey?: number;
 }) {
   const [chartCollapsed, setChartCollapsed] = useState(false);
 
@@ -328,6 +352,8 @@ function XsLayout({
               walletConnected ? undefined : () => onConnectRequest?.()
             }
             onOpenAgentSignals={onOpenAgentSignals}
+            signalPrefill={signalPrefill}
+            signalPrefillKey={signalPrefillKey}
           />
           {tradeSignal ? (
             <div
@@ -436,6 +462,8 @@ function DesktopLayout({
   positionsFocusKey = 0,
   tradeSignal = null,
   onCloseTradeSignal,
+  signalPrefill = null,
+  signalPrefillKey = 0,
 }: {
   mode: "lg" | "xl" | "2xl";
   gutter: number;
@@ -449,6 +477,8 @@ function DesktopLayout({
   positionsFocusKey?: number;
   tradeSignal?: SignalCardData | null;
   onCloseTradeSignal?: () => void;
+  signalPrefill?: SignalOrderPrefill | null;
+  signalPrefillKey?: number;
 }) {
   return (
     <div
@@ -510,6 +540,8 @@ function DesktopLayout({
             }
             onOpenAgent={onOpenAgent}
             onOpenAgentSignals={onOpenAgentSignals}
+            signalPrefill={signalPrefill}
+            signalPrefillKey={signalPrefillKey}
           />
           {tradeSignal ? (
             <div

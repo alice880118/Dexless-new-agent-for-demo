@@ -6,5 +6,5 @@ export { OrderTypeDrawer } from "./OrderTypeDrawer";
 export { TpSlDrawer } from "./TpSlDrawer";
 export { TpSlManageDrawer } from "./TpSlManageDrawer";
 export { LiveChart } from "./LiveChart";
+export type { OrderSide, SignalOrderPrefill } from "./OrderPanel";
 export { OrderPanel } from "./OrderPanel";
-export type { OrderSide } from "./OrderPanel";

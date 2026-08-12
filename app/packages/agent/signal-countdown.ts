@@ -27,7 +27,16 @@ export function formatSecondsToTimer(total: number): string {
   return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-export function useSignalCountdown(id: string, initialTimer: string): string {
+export function useSignalCountdownState(
+  id: string,
+  initialTimer: string,
+): {
+  label: string;
+  remainingSec: number;
+  initialSec: number;
+  /** 1 → full time left; 0 → expired */
+  progress: number;
+} {
   const [now, setNow] = useState(() => Date.now());
 
   if (!timerStarts.has(id)) {
@@ -44,5 +53,18 @@ export function useSignalCountdown(id: string, initialTimer: string): string {
 
   const start = timerStarts.get(id)!;
   const elapsed = Math.floor((now - start.startMs) / 1000);
-  return formatSecondsToTimer(start.initialSec - elapsed);
+  const remainingSec = Math.max(0, start.initialSec - elapsed);
+  const progress =
+    start.initialSec > 0 ? remainingSec / start.initialSec : 0;
+
+  return {
+    label: formatSecondsToTimer(remainingSec),
+    remainingSec,
+    initialSec: start.initialSec,
+    progress,
+  };
+}
+
+export function useSignalCountdown(id: string, initialTimer: string): string {
+  return useSignalCountdownState(id, initialTimer).label;
 }

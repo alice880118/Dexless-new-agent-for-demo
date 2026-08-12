@@ -33,6 +33,13 @@ export type OrderSide = "buy" | "sell";
 
 type OrderType = "limit" | "market" | "stop";
 
+export type SignalOrderPrefill = {
+  side: OrderSide;
+  price: string;
+  tpPrice: string;
+  slPrice: string;
+};
+
 type OrderPanelProps = {
   /** Force initial side when opened from mobile CTA */
   initialSide?: OrderSide;
@@ -48,6 +55,9 @@ type OrderPanelProps = {
   onOpenAgent?: () => void;
   /** Open agent Signal page (signal bars icon) */
   onOpenAgentSignals?: () => void;
+  /** Prefill from Signal Trade Now */
+  signalPrefill?: SignalOrderPrefill | null;
+  signalPrefillKey?: number;
   style?: CSSProperties;
 };
 
@@ -424,6 +434,8 @@ export function OrderPanel({
   onSubmit,
   onOpenAgent,
   onOpenAgentSignals,
+  signalPrefill = null,
+  signalPrefillKey = 0,
   style,
 }: OrderPanelProps) {
   const [side, setSide] = useState<OrderSide>(initialSide);
@@ -449,6 +461,18 @@ export function OrderPanel({
   const [hidden, setHidden] = useState(false);
   const [marginMode, setMarginMode] = useState<MarginMode>("cross");
   const [tpSlPosMode, setTpSlPosMode] = useState<TpSlPosMode>("full");
+
+  useEffect(() => {
+    if (!signalPrefill || signalPrefillKey <= 0) return;
+    setSide(signalPrefill.side);
+    setOrderType("limit");
+    setPrice(signalPrefill.price);
+    setTpSlOn(true);
+    setTpSlInputMode("price");
+    setTpPrice(signalPrefill.tpPrice);
+    setSlPrice(signalPrefill.slPrice);
+    setMidActive(false);
+  }, [signalPrefill, signalPrefillKey]);
 
   const orderTypeLabel =
     orderType === "limit"

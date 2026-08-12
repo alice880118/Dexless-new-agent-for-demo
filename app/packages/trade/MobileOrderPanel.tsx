@@ -42,6 +42,8 @@ type MobileOrderPanelProps = {
   onSubmit?: () => void;
   walletConnected?: boolean;
   onOpenAgentSignals?: () => void;
+  signalPrefill?: import("./OrderPanel").SignalOrderPrefill | null;
+  signalPrefillKey?: number;
 };
 
 function Chevron({ size = 14 }: { size?: number }) {
@@ -461,6 +463,8 @@ export function MobileOrderPanel({
   onSubmit,
   walletConnected = true,
   onOpenAgentSignals,
+  signalPrefill = null,
+  signalPrefillKey = 0,
 }: MobileOrderPanelProps) {
   const [side, setSide] = useState<"buy" | "sell">("buy");
   const [orderType, setOrderType] = useState<MobileOrderType>("limit");
@@ -492,6 +496,17 @@ export function MobileOrderPanel({
   const [disableOrderConfirmPref, setDisableOrderConfirmPref] = useState(false);
   const [hideFromBook, setHideFromBook] = useState(false);
   const [orderOptsOpen, setOrderOptsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!signalPrefill || signalPrefillKey <= 0) return;
+    setSide(signalPrefill.side);
+    setOrderType("limit");
+    setPrice(signalPrefill.price);
+    setTpSl(true);
+    setTpSlInputMode("price");
+    setTpPrice(signalPrefill.tpPrice);
+    setSlPrice(signalPrefill.slPrice);
+  }, [signalPrefill, signalPrefillKey]);
 
   const isBuy = side === "buy";
   const setPctAndQty = (next: number) => {
