@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
+import { COLORS, FONT, FONT_WEIGHT, GRADIENTS } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
 
@@ -548,7 +548,7 @@ export function PrimaryButton({
           : GRADIENTS.connectBtn,
         color: "#ffffff",
         fontSize: 14,
-        fontWeight: 600,
+        fontWeight: FONT_WEIGHT.medium,
         fontFamily: FONT,
         display: "flex",
         alignItems: "center",
@@ -593,7 +593,7 @@ export function SecondaryButton({
         background: "transparent",
         color: "#ffffff",
         fontSize: 14,
-        fontWeight: 600,
+        fontWeight: FONT_WEIGHT.medium,
         fontFamily: FONT,
         opacity: 0.5,
       }}

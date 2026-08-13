@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { COLORS, FONT } from "../nav/design-system";
+import { COLORS, FONT, FONT_WEIGHT, MODAL_WIDTH } from "../nav/design-system";
 import { ONBOARDING_ASSETS, SIGN_PAYLOAD } from "./assets";
 
 type SignMessageModalProps = {
@@ -10,7 +10,7 @@ type SignMessageModalProps = {
 const modalShell: CSSProperties = {
   position: "relative",
   width: "100%",
-  maxWidth: 360,
+  maxWidth: MODAL_WIDTH.compact,
   background: "#0b0d12",
   borderRadius: 16,
   border: "1px solid #424242",
@@ -200,7 +200,7 @@ export function SignMessageModal({ onClose, onSign }: SignMessageModalProps) {
             background: "rgba(255,255,255,0.1)",
             color: "#ffffff",
             fontSize: 14,
-            fontWeight: 600,
+            fontWeight: FONT_WEIGHT.medium,
             fontFamily: FONT,
             cursor: "pointer",
           }}

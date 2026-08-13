@@ -11,6 +11,8 @@ export {
   WALLET_CHEVRON,
   EXTERNAL_LINK_SIZE,
   FOOTER_HEIGHT,
+  MODAL_WIDTH,
+  getModalMaxWidth,
 } from "./sizing";
 export {
   BREAKPOINT_MIN,

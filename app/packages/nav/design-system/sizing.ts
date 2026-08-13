@@ -1,3 +1,5 @@
+import type { Breakpoint } from "./breakpoints";
+
 /** Layout / component sizes */
 export const NAV_HEIGHT = 48;
 
@@ -19,3 +21,18 @@ export const EXTERNAL_LINK_SIZE = 24;
 
 /** Site footer bar (desktop >768) */
 export const FOOTER_HEIGHT = 30;
+
+/**
+ * Dialog / modal shell widths (px).
+ * - compact (360): <768 — matches “Your account is live”
+ * - default (418): ≥768
+ */
+export const MODAL_WIDTH = {
+  compact: 360,
+  default: 418,
+} as const;
+
+/** Modal max-width for current breakpoint */
+export function getModalMaxWidth(bp: Breakpoint): number {
+  return bp === "390" ? MODAL_WIDTH.compact : MODAL_WIDTH.default;
+}

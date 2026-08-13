@@ -1,4 +1,4 @@
-import { COLORS, FONT } from "../nav/design-system";
+import { COLORS, FONT, MODAL_WIDTH } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { AccountLiveHeroLottie } from "./AccountLiveHeroLottie";
 import { ONBOARDING_ASSETS } from "./assets";
@@ -131,7 +131,7 @@ export function TraderDnaLiveModal({
     <div
       style={{
         width: "100%",
-        maxWidth: 360,
+        maxWidth: MODAL_WIDTH.compact,
         background: "#0c0d10",
         border: "1px solid #424242",
         borderRadius: 8,

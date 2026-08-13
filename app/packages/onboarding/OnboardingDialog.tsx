@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { COLORS, FONT, GRADIENTS } from "../nav/design-system";
+import { COLORS, FONT, GRADIENTS, MODAL_WIDTH } from "../nav/design-system";
 import { useBreakpoint } from "../nav/useBreakpoint";
 import { LOGO_WIDTH, ONBOARDING_ASSETS } from "./assets";
 import { AddFundsPanel } from "./AddFundsPanel";
@@ -275,8 +275,8 @@ export function OnboardingDialog({
     onClose();
   };
 
+  /** Show “Your account is live” — do not mark wallet connected yet (avoids Connect history racing) */
   const goTraderDnaLive = (asPopup = false) => {
-    onComplete?.({ openAgent: false });
     setLiveAsPopup(asPopup);
     setLastPageStep("trader-dna-live");
     setStep("trader-dna-live");
@@ -1030,7 +1030,7 @@ export function OnboardingDialog({
         <div
           style={{
             width: "100%",
-            maxWidth: 360,
+            maxWidth: MODAL_WIDTH.compact,
             maxHeight: "100%",
             overflow: "auto",
             overscrollBehavior: "contain",
@@ -1075,7 +1075,7 @@ export function OnboardingDialog({
         <div
           style={{
             width: "100%",
-            maxWidth: 360,
+            maxWidth: MODAL_WIDTH.compact,
             maxHeight: "100%",
             overflow: "auto",
             overscrollBehavior: "contain",

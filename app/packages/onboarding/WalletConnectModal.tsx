@@ -1,5 +1,5 @@
 import { type CSSProperties } from "react";
-import { COLORS, FONT } from "../nav/design-system";
+import { COLORS, FONT, FONT_WEIGHT, MODAL_WIDTH } from "../nav/design-system";
 import { ONBOARDING_ASSETS, WC_COPY_LINK } from "./assets";
 
 type WalletConnectModalProps = {
@@ -15,7 +15,7 @@ type WalletConnectModalProps = {
 const modalShell: CSSProperties = {
   position: "relative",
   width: "100%",
-  maxWidth: 360,
+  maxWidth: MODAL_WIDTH.compact,
   background: "#1a1a1a",
   borderRadius: 24,
   border: "1px solid #424242",
@@ -33,7 +33,7 @@ const qcBtn: CSSProperties = {
   cursor: "pointer",
   fontFamily: FONT,
   fontSize: 12,
-  fontWeight: 600,
+  fontWeight: FONT_WEIGHT.medium,
   lineHeight: "16px",
   color: "#ffffff",
   textAlign: "left",

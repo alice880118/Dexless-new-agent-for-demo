@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AgentOverlay, type SignalCardData } from "../packages/agent";
+import { DexlessAiPage } from "../packages/dexless-ai";
 import { OnboardingDialog } from "../packages/onboarding";
 import { TradePage } from "../packages/trade";
 import {
@@ -51,14 +52,19 @@ export function IndexPage() {
   const hideBottomForOnboarding = isMobile && onboardingOpen;
   const showTradePage = isTradePage(activePage);
   const showMarketsPage = activePage === "markets";
+  const showDexlessAiPage = activePage === "dexless_ai";
+  const showFullBleedPage = showTradePage || showMarketsPage || showDexlessAiPage;
   const showSignalChrome = walletConnected;
   const chromeTop = 48 + (showSignalChrome ? MARQUEE_HEIGHT : 0);
-  const openOnboarding = () => setOnboardingOpen(true);
+  const openOnboarding = () => {
+    if (walletState === "connected") return;
+    setOnboardingOpen(true);
+  };
   const openAgent = (
     view: "home" | "signals" = "home",
     signal: SignalCardData | null = null,
   ) => {
-    if (!walletConnected) {
+    if (walletState !== "connected") {
       openOnboarding();
       return;
     }
@@ -147,12 +153,10 @@ export function IndexPage() {
           })`,
           display: "flex",
           flexDirection: "column",
-          alignItems:
-            showTradePage || showMarketsPage ? "stretch" : "center",
-          justifyContent:
-            showTradePage || showMarketsPage ? "flex-start" : "center",
-          gap: showTradePage || showMarketsPage ? 0 : 12,
-          padding: showTradePage || showMarketsPage ? 0 : 24,
+          alignItems: showFullBleedPage ? "stretch" : "center",
+          justifyContent: showFullBleedPage ? "flex-start" : "center",
+          gap: showFullBleedPage ? 0 : 12,
+          padding: showFullBleedPage ? 0 : 24,
           boxSizing: "border-box",
           overflow: "hidden",
           minHeight: 0,
@@ -185,6 +189,13 @@ export function IndexPage() {
               setActivePage("trade_perps");
             }}
             onAskAgent={(signal) => openAgent("home", signal)}
+          />
+        ) : activePage === "dexless_ai" ? (
+          <DexlessAiPage
+            walletConnected={walletConnected}
+            onConnectWallet={openOnboarding}
+            agentOpen={agentOpen}
+            deferConsent={onboardingOpen}
           />
         ) : activePage ? (
           <p
@@ -266,8 +277,19 @@ export function IndexPage() {
         }}
         onComplete={(options) => {
           setWalletState("connected");
+          setOnboardingOpen(false);
+          navigateTo("dexless_ai");
           if (options?.openAgent) {
-            window.setTimeout(() => openAgent("home"), 0);
+            // Open agent directly — do not call openAgent() here (stale walletConnected
+            // closure would re-open Sign In before the connected state commits).
+            window.setTimeout(() => {
+              setTradeSignal(null);
+              setDetailSignalId(null);
+              setMarqueePreviewId(null);
+              setAgentPendingSignal(null);
+              setAgentInitialView("home");
+              setAgentOpen(true);
+            }, 0);
           }
         }}
       />

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
-import { COLORS, FONT } from "../nav/design-system";
+import { COLORS, FONT, getModalMaxWidth } from "../nav/design-system";
+import { useBreakpoint } from "../nav/useBreakpoint";
 import { ONBOARDING_ASSETS } from "./assets";
 import { PrimaryButton } from "./OnboardingShell";
 
@@ -13,17 +14,6 @@ type EnableTradingPanelProps = {
 };
 
 /** Figma 7526:83099 — standalone Enable trading (return wallet) */
-const shell: CSSProperties = {
-  width: "100%",
-  maxWidth: 418,
-  background: "#0c0d10",
-  border: "1px solid #424242",
-  borderRadius: 8,
-  overflow: "hidden",
-  boxSizing: "border-box",
-  fontFamily: FONT,
-};
-
 export function EnableTradingPanel({
   waiting = false,
   rememberMe = false,
@@ -32,6 +22,17 @@ export function EnableTradingPanel({
   onContinue,
   onDisconnect,
 }: EnableTradingPanelProps) {
+  const bp = useBreakpoint();
+  const shell: CSSProperties = {
+    width: "100%",
+    maxWidth: getModalMaxWidth(bp),
+    background: "#0c0d10",
+    border: "1px solid #424242",
+    borderRadius: 8,
+    overflow: "hidden",
+    boxSizing: "border-box",
+    fontFamily: FONT,
+  };
   return (
     <div style={shell} onClick={(e) => e.stopPropagation()}>
       <div

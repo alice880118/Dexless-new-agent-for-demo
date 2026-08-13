@@ -5,7 +5,7 @@ import {
   type CSSProperties,
   type KeyboardEvent,
 } from "react";
-import { COLORS, FONT } from "../nav/design-system";
+import { COLORS, FONT, MODAL_WIDTH } from "../nav/design-system";
 import {
   NEW_USER_EMAIL,
   NEW_USER_CODE,
@@ -77,7 +77,7 @@ function isValidEmailInput(value: string): boolean {
 const modalShell: CSSProperties = {
   position: "relative",
   width: "100%",
-  maxWidth: 360,
+  maxWidth: MODAL_WIDTH.compact,
   background: "#0b0d12",
   borderRadius: 16,
   border: "1px solid #424242",

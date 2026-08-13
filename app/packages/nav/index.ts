@@ -29,6 +29,8 @@ export {
   NAV_ASSETS,
   FOOTER_ASSETS,
   FOOTER_HEIGHT,
+  MODAL_WIDTH,
+  getModalMaxWidth,
   DOCS_URL,
 } from "./design-system";
 export type { Breakpoint } from "./design-system";
