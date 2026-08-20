@@ -663,6 +663,11 @@ export function TopNavBar({
               active={activePage === "points"}
               onClick={() => goTo("points")}
             />
+            <NavLink
+              label="Rewards"
+              active={activePage === "rewards"}
+              onClick={() => goTo("rewards")}
+            />
 
             <div style={{ position: "relative" }}>
               <NavLink

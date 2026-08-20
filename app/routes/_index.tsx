@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AgentOverlay, type SignalCardData } from "../packages/agent";
 import { DexlessAiPage } from "../packages/dexless-ai";
+import { RewardsPage } from "../packages/rewards";
 import { OnboardingDialog } from "../packages/onboarding";
 import { TradePage } from "../packages/trade";
 import {
@@ -53,7 +54,9 @@ export function IndexPage() {
   const showTradePage = isTradePage(activePage);
   const showMarketsPage = activePage === "markets";
   const showDexlessAiPage = activePage === "dexless_ai";
-  const showFullBleedPage = showTradePage || showMarketsPage || showDexlessAiPage;
+  const showRewardsPage = activePage === "rewards";
+  const showFullBleedPage =
+    showTradePage || showMarketsPage || showDexlessAiPage || showRewardsPage;
   const showSignalChrome = walletConnected;
   const chromeTop = 48 + (showSignalChrome ? MARQUEE_HEIGHT : 0);
   const openOnboarding = () => {
@@ -197,6 +200,8 @@ export function IndexPage() {
             agentOpen={agentOpen}
             deferConsent={onboardingOpen}
           />
+        ) : showRewardsPage ? (
+          <RewardsPage />
         ) : activePage ? (
           <p
             style={{

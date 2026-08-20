@@ -6,6 +6,7 @@ export type NavPageId =
   | "referrals"
   | "vaults"
   | "points"
+  | "rewards"
   | "more_docs"
   | "airdrop"
   | "portfolio";
@@ -18,6 +19,7 @@ const PAGE_TITLES: Record<NavPageId, string> = {
   referrals: "Referrals",
   vaults: "Vaults",
   points: "Points",
+  rewards: "Rewards",
   more_docs: "More_Docs",
   airdrop: "Airdrop",
   portfolio: "Portfolio",
