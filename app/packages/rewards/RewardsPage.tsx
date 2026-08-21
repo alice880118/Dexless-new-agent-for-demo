@@ -15,7 +15,7 @@ export function RewardsPage() {
     >
       <iframe
         title="Rewards"
-        src="/rewards/page.html?v=20260820g"
+        src="/rewards/page.html?v=20260821ao"
         style={{
           display: "block",
           width: "100%",

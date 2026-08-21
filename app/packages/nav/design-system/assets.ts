@@ -26,6 +26,7 @@ export const NAV_ASSETS = {
   menuReferrals: "/nav/menu-referrals.png",
   menuPoints: "/nav/menu-points.png",
   menuVaults: "/nav/menu-vaults.png",
+  menuRewards: "/nav/menu-rewards.svg",
   menuMoreDots: "/nav/menu-more-dots.png",
   menuSupport: "/nav/menu-support.png",
   menuSwapAccount: "/nav/menu-swap-account-new.png",

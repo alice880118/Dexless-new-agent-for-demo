@@ -1,0 +1,18 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="492.614" height="493.222" viewBox="0 0 492.614 493.222" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1533214046">
+<g id="Subtract" filter="url(#filter0_f_0_66)">
+<path d="M284.641 32.1987C331.726 63.0853 372.493 105.161 402.57 157.256C432.329 208.8 448.361 264.503 451.802 320.131C452.355 329.062 445.11 336.405 436.162 336.405L118.01 336.405C105.694 336.405 97.9956 323.072 104.154 312.405L262.787 37.6463C267.247 29.9215 277.183 27.3063 284.641 32.1987Z" fill="url(#paint0_radial_0_66)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_66" x="98.9866" y="26.7174" width="355.845" height="312.688" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1.5" result="effect1_foregroundBlur_0_66"/>
+</filter>
+<radialGradient id="paint0_radial_0_66" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(64.1139 309) rotate(-2.08104) scale(327.486 327.486)">
+<stop stop-color="#6E6E6E"/>
+<stop offset="1"/>
+</radialGradient>
+</defs>
+</svg>

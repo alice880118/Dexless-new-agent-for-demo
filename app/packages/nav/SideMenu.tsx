@@ -48,6 +48,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   { id: "referrals", label: "Referrals", icon: NAV_ASSETS.menuReferrals, page: "referrals" },
   { id: "points", label: "Points", icon: NAV_ASSETS.menuPoints, page: "points" },
   { id: "vaults", label: "Vaults", icon: NAV_ASSETS.menuVaults, page: "vaults" },
+  { id: "rewards", label: "Reward", icon: NAV_ASSETS.menuRewards, page: "rewards" },
   {
     id: "more",
     label: "More",

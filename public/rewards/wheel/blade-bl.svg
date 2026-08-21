@@ -1,0 +1,18 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="359.689" height="354.596" viewBox="0 0 359.689 354.596" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1533214057">
+<g id="Vector" filter="url(#filter0_f_0_6)">
+<path d="M12.7192 309.872C28.5196 317.944 44.9099 324.879 61.7235 330.597C99.6942 343.53 139.818 350.158 179.986 350.291C237.342 350.583 294.793 337.402 346.242 311.849C354.785 307.901 357.963 296.221 353.109 288.309C326.211 241.536 299.274 194.787 272.297 148.06C246.249 102.944 220.164 57.85 194.041 12.7771C188.165 1.44405 169.816 1.49435 164.008 12.8079C115.966 96.4069 68.0515 180.08 20.2653 263.826C15.6389 271.935 11.0136 280.043 6.38955 288.153C1.91962 295.514 4.89286 306.252 12.7192 309.872C4.9341 306.155 2.15788 295.471 6.62996 288.291C11.3408 280.232 16.0505 272.172 20.7589 264.112C69.3923 180.854 117.898 97.5224 166.275 14.1171C171.233 4.535 186.776 4.5853 191.667 14.1478C217.64 59.3069 243.651 104.444 269.698 149.56C296.676 196.287 323.693 242.99 350.751 289.67C354.869 296.341 352.224 306.161 345.07 309.495C294.086 335.067 237.097 348.509 179.986 348.654C139.991 348.825 99.9461 342.583 61.9043 330.056C45.0596 324.517 28.6097 317.765 12.7192 309.872ZM12.7192 309.872" fill="url(#paint0_radial_0_6)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_6" x="-1.78814e-07" y="0" width="359.689" height="354.596" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="2.15" result="effect1_foregroundBlur_0_6"/>
+</filter>
+<radialGradient id="paint0_radial_0_6" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(225.039 245.917) rotate(170.255) scale(181.428 180.595)">
+<stop stop-color="#DBFD5C"/>
+<stop offset="1" stop-color="white"/>
+</radialGradient>
+</defs>
+</svg>

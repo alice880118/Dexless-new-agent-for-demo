@@ -85,7 +85,37 @@ function Divider({ height = 28 }: { height?: number }) {
   );
 }
 
-function BorderedIconButton({ children }: { children: ReactNode }) {
+function BorderedIconButton({
+  children,
+  onClick,
+  ariaLabel,
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  ariaLabel?: string;
+}) {
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        onClick={onClick}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 4,
+          borderRadius: 8,
+          border: `1px solid ${COLORS.white10}`,
+          flexShrink: 0,
+          background: "transparent",
+          cursor: "pointer",
+        }}
+      >
+        {children}
+      </button>
+    );
+  }
   return (
     <span
       style={{
@@ -736,7 +766,24 @@ export function TopNavBar({
               </div>
               <Divider />
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <NavIcon src={NAV_ASSETS.rwd} />
+                <button
+                  type="button"
+                  aria-label="Reward"
+                  onClick={() => goTo("rewards")}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    padding: 0,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <NavIcon src={NAV_ASSETS.rwd} />
+                </button>
                 <NavIcon src={NAV_ASSETS.language} />
                 <NavIcon src={NAV_ASSETS.personal} />
               </div>
@@ -762,7 +809,24 @@ export function TopNavBar({
               >
                 <NavIcon src={NAV_ASSETS.more} />
               </button>
-              <NavIcon src={NAV_ASSETS.rwd} />
+              <button
+                type="button"
+                aria-label="Reward"
+                onClick={() => goTo("rewards")}
+                style={{
+                  width: 20,
+                  height: 20,
+                  border: "none",
+                  background: "transparent",
+                  cursor: "pointer",
+                  padding: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <NavIcon src={NAV_ASSETS.rwd} />
+              </button>
               <NavIcon src={NAV_ASSETS.arbitrum} />
               <Divider />
             </>
@@ -771,7 +835,10 @@ export function TopNavBar({
           {/* 768 / 390 tablet right (shared RWD) */}
           {tablet && (
             <>
-              <BorderedIconButton>
+              <BorderedIconButton
+                ariaLabel="Reward"
+                onClick={() => goTo("rewards")}
+              >
                 <NavIcon src={NAV_ASSETS.rwd} />
               </BorderedIconButton>
               <BorderedIconButton>

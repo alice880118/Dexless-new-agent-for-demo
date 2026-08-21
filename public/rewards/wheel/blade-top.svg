@@ -1,0 +1,18 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="361.119" height="316.8" viewBox="0 0 361.119 316.8" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 1533214054">
+<g id="Vector" filter="url(#filter0_f_0_14)">
+<path d="M172.832 6.79345C157.941 16.4411 143.741 27.1681 130.382 38.8701C100.196 65.2872 74.3942 96.7217 54.1947 131.442C25.2636 180.967 7.95366 237.312 4.35904 294.644C3.50592 304.017 12.0319 312.609 21.3115 312.361C75.2665 312.454 129.221 312.5 183.176 312.5C235.272 312.5 287.367 312.457 339.463 312.371C352.215 312.948 361.347 297.032 354.453 286.345C306.075 202.94 257.569 119.609 208.936 36.3514C204.227 28.2907 199.518 20.2308 194.807 12.1716C190.667 4.61999 179.88 1.82577 172.832 6.79345C179.944 1.90999 190.585 4.84774 194.566 12.3104C199.19 20.4197 203.816 28.5284 208.442 36.6364C256.229 120.383 304.143 204.056 352.185 287.654C358.005 296.739 350.19 310.175 339.463 309.629C287.367 309.543 235.272 309.5 183.176 309.5C129.221 309.5 75.2665 309.546 21.3115 309.639C13.4758 309.87 6.29391 302.669 6.98314 294.806C10.3288 237.867 27.1827 181.792 55.6121 132.26C75.4618 97.538 100.89 65.9785 130.76 39.297C143.979 27.4784 158.051 16.6084 172.832 6.79345ZM172.832 6.79345" fill="url(#paint0_radial_0_14)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_14" x="0" y="-2.23517e-08" width="361.119" height="316.8" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="2.15" result="effect1_foregroundBlur_0_14"/>
+</filter>
+<radialGradient id="paint0_radial_0_14" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(122.059 222.645) rotate(-69.7449) scale(181.428 180.595)">
+<stop stop-color="#DBFD5C"/>
+<stop offset="1" stop-color="white"/>
+</radialGradient>
+</defs>
+</svg>

@@ -38,6 +38,17 @@
         min-height: 100dvh;
         min-height: 100%;
       }
+      /*
+        Desktop panel min-width must be CSS media-query based.
+        JS min-width breaks Chrome DevTools device mode (page shrink-to-fit,
+        iframe still sees a wide CSS viewport → desktop Rewards layout).
+      */
+      @media (min-width: 1024px) {
+        .app-shell {
+          min-width: 1280px;
+          overflow-x: auto;
+        }
+      }
       button {
         font: inherit;
       }
